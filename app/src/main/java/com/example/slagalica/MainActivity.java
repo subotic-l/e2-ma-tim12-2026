@@ -28,5 +28,11 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, WhoKnowsKnows.class);
             startActivity(intent);
         });
+
+        Button startMatchingGameButton = findViewById(R.id.buttonStartMatchingGame);
+        startMatchingGameButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, MatchingGameActivity.class);
+            startActivity(intent);
+        });
     }
 }

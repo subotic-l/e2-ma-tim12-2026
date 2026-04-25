@@ -8,4 +8,6 @@
     <color name="wrong_answer_border">#C62828</color>
     <color name="button_default_color">#5277CC</color>
     <color name="button_default_border">#4768B3</color>
+    <color name="button_selected_color">#3F64B0</color>
+    <color name="button_selected_border">#2F4F8C</color>
 </resources>

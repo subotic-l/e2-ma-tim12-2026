@@ -23,6 +23,15 @@
             android:backgroundTint="@color/button_default_color"
             android:textColor="@color/white"/>
 
+        <Button
+            android:id="@+id/buttonStartMatchingGame"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:text="Pokreni Spojnice"
+            android:backgroundTint="@color/button_default_color"
+            android:textColor="@color/white"/>
+
         <FrameLayout
             android:id="@+id/fragmentContainer"
             android:layout_width="match_parent"
