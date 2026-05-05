@@ -58,8 +58,9 @@ public class RegisterActivity extends AppCompatActivity {
         String email = getText(emailInput);
         String username = getText(usernameInput);
         String region = getText(regionInput);
-        String password = getText(passwordInput);
-        String passwordRepeat = getText(passwordRepeatInput);
+        // Passwords are not trimmed to preserve exactly what the user typed.
+        String password = getRawText(passwordInput);
+        String passwordRepeat = getRawText(passwordRepeatInput);
 
         setLoading(true);
 
@@ -102,5 +103,9 @@ public class RegisterActivity extends AppCompatActivity {
 
     private String getText(TextInputEditText input) {
         return input.getText() != null ? input.getText().toString().trim() : "";
+    }
+
+    private String getRawText(TextInputEditText input) {
+        return input.getText() != null ? input.getText().toString() : "";
     }
 }
