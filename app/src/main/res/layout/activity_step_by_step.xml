@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/step_by_step_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Top row: points + timer -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:layout_marginBottom="12dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            android:layout_marginEnd="8dp">
+
+            <TextView
+                android:id="@+id/pointsTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:text="Bodovi: 20"
+                android:textStyle="bold"
+                android:textSize="18sp" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            android:layout_marginStart="8dp">
+
+            <TextView
+                android:id="@+id/timerTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:text="Vreme: 10"
+                android:textStyle="bold"
+                android:textSize="18sp" />
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+
+    <!-- 7 clue rows -->
+    <TextView
+        android:id="@+id/clue1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_marginBottom="6dp"
+        android:background="@android:color/darker_gray"
+        android:text="(zatvoreno)" />
+
+    <TextView
+        android:id="@+id/clue2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_marginBottom="6dp"
+        android:background="@android:color/darker_gray"
+        android:text="(zatvoreno)" />
+
+    <TextView
+        android:id="@+id/clue3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_marginBottom="6dp"
+        android:background="@android:color/darker_gray"
+        android:text="(zatvoreno)" />
+
+    <TextView
+        android:id="@+id/clue4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_marginBottom="6dp"
+        android:background="@android:color/darker_gray"
+        android:text="(zatvoreno)" />
+
+    <TextView
+        android:id="@+id/clue5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_marginBottom="6dp"
+        android:background="@android:color/darker_gray"
+        android:text="(zatvoreno)" />
+
+    <TextView
+        android:id="@+id/clue6"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_marginBottom="6dp"
+        android:background="@android:color/darker_gray"
+        android:text="(zatvoreno)" />
+
+    <TextView
+        android:id="@+id/clue7"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_marginBottom="12dp"
+        android:background="@android:color/darker_gray"
+        android:text="(zatvoreno)" />
+
+    <!-- Guess row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/guessInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Unesite pojam" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+            android:id="@+id/submitGuessButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Submit"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+</LinearLayout>

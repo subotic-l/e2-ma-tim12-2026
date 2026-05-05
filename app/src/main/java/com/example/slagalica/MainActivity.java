@@ -34,5 +34,17 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, MatchingGameActivity.class);
             startActivity(intent);
         });
+
+        Button startStepByStepButton = findViewById(R.id.buttonStartStepByStep);
+        startStepByStepButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, StepByStepActivity.class);
+            startActivity(intent);
+        });
+
+        Button startNumbersGameButton = findViewById(R.id.buttonStartNumbersGame);
+        startNumbersGameButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, NumbersGameActivity.class);
+            startActivity(intent);
+        });
     }
 }

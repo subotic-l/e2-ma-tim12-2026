@@ -32,6 +32,24 @@
             android:backgroundTint="@color/button_default_color"
             android:textColor="@color/white"/>
 
+        <Button
+            android:id="@+id/buttonStartStepByStep"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:text="Pokreni Korak po korak"
+            android:backgroundTint="@color/button_default_color"
+            android:textColor="@color/white"/>
+
+        <Button
+            android:id="@+id/buttonStartNumbersGame"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:text="Pokreni Moj broj"
+            android:backgroundTint="@color/button_default_color"
+            android:textColor="@color/white"/>
+
         <FrameLayout
             android:id="@+id/fragmentContainer"
             android:layout_width="match_parent"
@@ -42,15 +60,5 @@
         <include layout="@layout/bottom_bar" />
     </LinearLayout>
 
-
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
