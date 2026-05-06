@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Slagalica</string>
+    <string name="question_mark">?</string>
 </resources>
