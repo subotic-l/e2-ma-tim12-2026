@@ -2,11 +2,18 @@ package com.example.slagalica;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.widget.Button;
+import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+import com.google.android.material.button.MaterialButton;
 
 import java.util.Stack;
 
@@ -14,26 +21,36 @@ public class NumbersGameActivity extends AppCompatActivity {
 
     private TextView targetTextView;
     private TextView expressionTextView;
-    private Button stopButton;
-    private Button confirmButton;
+    private TextView stopTimerTextView;
+    private LinearLayout stopTimerRow;
+    private MaterialButton stopButton;
+    private MaterialButton confirmButton;
 
-    private Button[] numberButtons;
+    private MaterialButton[] numberButtons;
 
     private NumbersGame game;
-    private int stopStage = 0; // 0 = nothing, 1 = target shown, 2 = numbers shown
+    private int stopStage = 0; // 0 = nothing shown, 1 = target shown, 2 = numbers shown
     private CountDownTimer autoStopTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_numbers_game);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         targetTextView = findViewById(R.id.targetTextView);
         expressionTextView = findViewById(R.id.expressionTextView);
+        stopTimerTextView = findViewById(R.id.stopTimerTextView);
+        stopTimerRow = findViewById(R.id.stopTimerRow);
         stopButton = findViewById(R.id.stopButton);
         confirmButton = findViewById(R.id.confirmButton);
 
-        numberButtons = new Button[] {
+        numberButtons = new MaterialButton[] {
                 findViewById(R.id.numButton1),
                 findViewById(R.id.numButton2),
                 findViewById(R.id.numButton3),
@@ -53,13 +70,16 @@ public class NumbersGameActivity extends AppCompatActivity {
     private void startNewGame() {
         game = NumbersGame.createRandom();
         stopStage = 0;
-        targetTextView.setText("?");
+        targetTextView.setText(getString(R.string.question_mark));
         expressionTextView.setText("");
 
-        for (Button b : numberButtons) {
-            b.setText("?");
+        for (MaterialButton b : numberButtons) {
+            b.setText(getString(R.string.question_mark));
             b.setEnabled(false);
         }
+
+        stopButton.setVisibility(View.VISIBLE);
+        stopTimerRow.setVisibility(View.VISIBLE);
 
         startAutoStopTimer();
     }
@@ -87,13 +107,21 @@ public class NumbersGameActivity extends AppCompatActivity {
             numberButtons[i].setEnabled(true);
         }
         cancelAutoStopTimer();
+        stopButton.setVisibility(View.GONE);
+        stopTimerRow.setVisibility(View.GONE);
     }
 
     private void startAutoStopTimer() {
         cancelAutoStopTimer();
         autoStopTimer = new CountDownTimer(5000, 1000) {
-            @Override public void onTick(long millisUntilFinished) { }
-            @Override public void onFinish() {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                stopTimerTextView.setText(String.valueOf(millisUntilFinished / 1000 + 1));
+            }
+
+            @Override
+            public void onFinish() {
+                stopTimerTextView.setText("0");
                 if (stopStage == 0) {
                     showTarget();
                 } else if (stopStage == 1) {
@@ -112,7 +140,7 @@ public class NumbersGameActivity extends AppCompatActivity {
     }
 
     private void setupNumberButtons() {
-        for (Button b : numberButtons) {
+        for (MaterialButton b : numberButtons) {
             b.setOnClickListener(v -> {
                 if (b.isEnabled()) {
                     expressionTextView.append(b.getText().toString());
@@ -127,15 +155,15 @@ public class NumbersGameActivity extends AppCompatActivity {
                 R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide
         };
         for (int id : ids) {
-            Button b = findViewById(id);
+            MaterialButton b = findViewById(id);
             b.setOnClickListener(v -> {
                 String op = b.getText().toString();
-                if (op.equals(":")) op = "/";
+                if (op.equals("÷")) op = "/";
                 expressionTextView.append(op);
             });
         }
 
-        Button clearBtn = findViewById(R.id.clearButton);
+        MaterialButton clearBtn = findViewById(R.id.clearButton);
         clearBtn.setOnClickListener(v -> expressionTextView.setText(""));
     }
 
@@ -149,12 +177,19 @@ public class NumbersGameActivity extends AppCompatActivity {
                 if (Math.abs(result - game.targetNumber) < 0.0001) {
                     Toast.makeText(this, "Tačno! +10 bodova", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "Netačno (" + result + ")", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Netačno (" + formatResult(result) + ")", Toast.LENGTH_SHORT).show();
                 }
             } catch (Exception e) {
                 Toast.makeText(this, "Neispravan izraz", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private String formatResult(double result) {
+        if (result == Math.floor(result) && !Double.isInfinite(result)) {
+            return String.valueOf((int) result);
+        }
+        return String.format("%.2f", result);
     }
 
     // Simple expression evaluator (+,-,*,/, parentheses)

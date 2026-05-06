@@ -18,9 +18,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        // Apply top/side insets to root; bottom inset is handled by BottomNavigationView
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
             return insets;
         });
 
@@ -49,6 +51,14 @@ public class MainActivity extends AppCompatActivity {
         });
 
         BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
+
+        // Apply bottom system bar inset specifically to the nav view so it sits flush at bottom
+        ViewCompat.setOnApplyWindowInsetsListener(bottomNavigation, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(0, 0, 0, systemBars.bottom);
+            return insets;
+        });
+
         bottomNavigation.setOnItemSelectedListener(item -> {
             if (item.getItemId() == R.id.navigation_profile) {
                 Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
