@@ -19,6 +19,8 @@ import java.util.Stack;
 
 public class NumbersGameActivity extends AppCompatActivity {
 
+    private static final String DIVIDE_SYMBOL = "÷";
+
     private TextView targetTextView;
     private TextView expressionTextView;
     private TextView stopTimerTextView;
@@ -158,7 +160,7 @@ public class NumbersGameActivity extends AppCompatActivity {
             MaterialButton b = findViewById(id);
             b.setOnClickListener(v -> {
                 String op = b.getText().toString();
-                if (op.equals("÷")) op = "/";
+                if (op.equals(DIVIDE_SYMBOL)) op = "/";
                 expressionTextView.append(op);
             });
         }
