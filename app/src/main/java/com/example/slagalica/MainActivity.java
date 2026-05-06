@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -45,6 +46,16 @@ public class MainActivity extends AppCompatActivity {
         startNumbersGameButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, NumbersGameActivity.class);
             startActivity(intent);
+        });
+
+        BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            if (item.getItemId() == R.id.navigation_profile) {
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                startActivity(intent);
+                return true;
+            }
+            return false;
         });
     }
 }
