@@ -2,11 +2,15 @@ package com.example.slagalica;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.Arrays;
@@ -19,7 +23,7 @@ public class StepByStepActivity extends AppCompatActivity {
     private TextView timerTextView;
     private TextView[] clueViews;
     private TextInputEditText guessInput;
-    private Button submitButton;
+    private MaterialButton submitButton;
 
     private CountDownTimer timer;
     private int currentStep = 0;
@@ -29,7 +33,13 @@ public class StepByStepActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_step_by_step);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         pointsTextView = findViewById(R.id.pointsTextView);
         timerTextView = findViewById(R.id.timerTextView);
@@ -55,7 +65,6 @@ public class StepByStepActivity extends AppCompatActivity {
     }
 
     private void loadGame() {
-        // Placeholder data; replace with real data or API later.
         List<String> clues = Arrays.asList(
                 "Najpoznatiji srpski naučnik",
                 "Rođen u Smiljanu",
@@ -87,6 +96,12 @@ public class StepByStepActivity extends AppCompatActivity {
         }
     }
 
+    private void revealAllClues() {
+        for (int i = 0; i < clueViews.length && i < game.maxSteps(); i++) {
+            clueViews[i].setText(game.clues.get(i));
+        }
+    }
+
     private void startTimer() {
         if (timer != null) timer.cancel();
 
@@ -110,6 +125,7 @@ public class StepByStepActivity extends AppCompatActivity {
         if (guess.equalsIgnoreCase(game.answer)) {
             finishGameCorrect();
         } else {
+            guessInput.setText("");
             moveToNextStepOrFinish();
         }
     }
@@ -130,12 +146,16 @@ public class StepByStepActivity extends AppCompatActivity {
     private void finishGameCorrect() {
         if (timer != null) timer.cancel();
         submitButton.setEnabled(false);
+        revealAllClues();
         guessInput.setText(game.answer);
+        timerTextView.setText("Tačno!");
     }
 
     private void finishGameFail() {
         if (timer != null) timer.cancel();
         submitButton.setEnabled(false);
+        revealAllClues();
         guessInput.setText(game.answer);
+        timerTextView.setText("Kraj");
     }
 }

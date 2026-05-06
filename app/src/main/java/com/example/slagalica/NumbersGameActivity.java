@@ -2,38 +2,80 @@ package com.example.slagalica;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.widget.Button;
+import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.button.MaterialButton;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 public class NumbersGameActivity extends AppCompatActivity {
 
+    private static final String DIVIDE_SYMBOL = "÷";
+
     private TextView targetTextView;
     private TextView expressionTextView;
-    private Button stopButton;
-    private Button confirmButton;
+    private TextView stopTimerTextView;
+    private LinearLayout stopTimerRow;
+    private MaterialButton stopButton;
+    private MaterialButton confirmButton;
 
-    private Button[] numberButtons;
+    private MaterialButton[] numberButtons;
 
     private NumbersGame game;
-    private int stopStage = 0; // 0 = nothing, 1 = target shown, 2 = numbers shown
+    private int stopStage = 0; // 0 = nothing shown, 1 = target shown, 2 = numbers shown
     private CountDownTimer autoStopTimer;
+    private TextView gameTimerTextView;
+    private CountDownTimer gameTimer;
+
+    private final Stack<MaterialButton> usedNumberButtons = new Stack<>();
+    private final List<Token> tokens = new ArrayList<>();
+    private int openParensCount = 0;
+
+    private enum TokenType { NUMBER, OPERATOR, OPEN_PAREN, CLOSE_PAREN }
+
+    private static class Token {
+        final String text;
+        final TokenType type;
+        final MaterialButton button; // only for numbers
+
+        Token(String text, TokenType type, MaterialButton button) {
+            this.text = text;
+            this.type = type;
+            this.button = button;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_numbers_game);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         targetTextView = findViewById(R.id.targetTextView);
         expressionTextView = findViewById(R.id.expressionTextView);
+        stopTimerTextView = findViewById(R.id.stopTimerTextView);
+        gameTimerTextView = findViewById(R.id.gameTimerTextView);
+        stopTimerRow = findViewById(R.id.stopTimerRow);
         stopButton = findViewById(R.id.stopButton);
         confirmButton = findViewById(R.id.confirmButton);
 
-        numberButtons = new Button[] {
+        numberButtons = new MaterialButton[] {
                 findViewById(R.id.numButton1),
                 findViewById(R.id.numButton2),
                 findViewById(R.id.numButton3),
@@ -53,13 +95,23 @@ public class NumbersGameActivity extends AppCompatActivity {
     private void startNewGame() {
         game = NumbersGame.createRandom();
         stopStage = 0;
-        targetTextView.setText("?");
+        targetTextView.setText(getString(R.string.question_mark));
         expressionTextView.setText("");
+        tokens.clear();
+        openParensCount = 0;
+        usedNumberButtons.clear();
 
-        for (Button b : numberButtons) {
-            b.setText("?");
+        gameTimerTextView.setText("60");
+        cancelGameTimer();
+
+        for (MaterialButton b : numberButtons) {
+            b.setText(getString(R.string.question_mark));
             b.setEnabled(false);
+            b.setAlpha(1f);
         }
+
+        stopButton.setVisibility(View.VISIBLE);
+        stopTimerRow.setVisibility(View.VISIBLE);
 
         startAutoStopTimer();
     }
@@ -87,13 +139,22 @@ public class NumbersGameActivity extends AppCompatActivity {
             numberButtons[i].setEnabled(true);
         }
         cancelAutoStopTimer();
+        startGameTimer();
+        stopButton.setVisibility(View.GONE);
+        stopTimerRow.setVisibility(View.GONE);
     }
 
     private void startAutoStopTimer() {
         cancelAutoStopTimer();
         autoStopTimer = new CountDownTimer(5000, 1000) {
-            @Override public void onTick(long millisUntilFinished) { }
-            @Override public void onFinish() {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                stopTimerTextView.setText(String.valueOf(millisUntilFinished / 1000 + 1));
+            }
+
+            @Override
+            public void onFinish() {
+                stopTimerTextView.setText("0");
                 if (stopStage == 0) {
                     showTarget();
                 } else if (stopStage == 1) {
@@ -111,11 +172,44 @@ public class NumbersGameActivity extends AppCompatActivity {
         if (autoStopTimer != null) autoStopTimer.cancel();
     }
 
+    private void startGameTimer() {
+        if (gameTimer != null) gameTimer.cancel();
+        gameTimer = new CountDownTimer(60000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                int seconds = (int) (millisUntilFinished / 1000);
+                gameTimerTextView.setText(String.valueOf(seconds));
+            }
+
+            @Override
+            public void onFinish() {
+                gameTimerTextView.setText("0");
+
+                for (MaterialButton b : numberButtons) {
+                    b.setEnabled(false);
+                }
+                confirmButton.setEnabled(false);
+                expressionTextView.setEnabled(false);
+                Toast.makeText(NumbersGameActivity.this, "Vreme je isteklo!", Toast.LENGTH_SHORT).show();
+                expressionTextView.setText("");
+            }
+        }.start();
+    }
+
+    private void cancelGameTimer() {
+        if (gameTimer != null) gameTimer.cancel();
+    }
+
     private void setupNumberButtons() {
-        for (Button b : numberButtons) {
+        for (MaterialButton b : numberButtons) {
             b.setOnClickListener(v -> {
-                if (b.isEnabled()) {
-                    expressionTextView.append(b.getText().toString());
+                if (b.isEnabled() && canAddNumber()) {
+                    String value = b.getText().toString();
+                    tokens.add(new Token(value, TokenType.NUMBER, b));
+                    appendExpressionText();
+                    b.setEnabled(false);
+                    b.setAlpha(0.5f);
+                    usedNumberButtons.push(b);
                 }
             });
         }
@@ -127,34 +221,139 @@ public class NumbersGameActivity extends AppCompatActivity {
                 R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide
         };
         for (int id : ids) {
-            Button b = findViewById(id);
+            MaterialButton b = findViewById(id);
             b.setOnClickListener(v -> {
                 String op = b.getText().toString();
-                if (op.equals(":")) op = "/";
-                expressionTextView.append(op);
+                handleOperator(op);
             });
         }
 
-        Button clearBtn = findViewById(R.id.clearButton);
-        clearBtn.setOnClickListener(v -> expressionTextView.setText(""));
+        MaterialButton clearBtn = findViewById(R.id.clearButton);
+        clearBtn.setOnClickListener(v -> removeLastToken());
+    }
+
+    private void handleOperator(String op) {
+        if (op.equals("(")) {
+            if (canAddOpenParen()) {
+                tokens.add(new Token(op, TokenType.OPEN_PAREN, null));
+                openParensCount++;
+                appendExpressionText();
+            }
+            return;
+        }
+
+        if (op.equals(")")) {
+            if (canAddCloseParen()) {
+                tokens.add(new Token(op, TokenType.CLOSE_PAREN, null));
+                openParensCount--;
+                appendExpressionText();
+            }
+            return;
+        }
+
+        if (op.equals(DIVIDE_SYMBOL)) op = "/";
+
+        if (canAddOperator()) {
+            tokens.add(new Token(op, TokenType.OPERATOR, null));
+            appendExpressionText();
+        }
+    }
+
+    private void removeLastToken() {
+        if (tokens.isEmpty()) return;
+
+        Token removed = tokens.remove(tokens.size() - 1);
+        if (removed.type == TokenType.OPEN_PAREN) {
+            openParensCount = Math.max(0, openParensCount - 1);
+        } else if (removed.type == TokenType.CLOSE_PAREN) {
+            openParensCount++;
+        }
+
+        if (removed.type == TokenType.NUMBER && removed.button != null) {
+            removed.button.setEnabled(true);
+            removed.button.setAlpha(1f);
+            if (!usedNumberButtons.isEmpty() && usedNumberButtons.peek() == removed.button) {
+                usedNumberButtons.pop();
+            }
+        }
+
+        appendExpressionText();
+    }
+
+    private boolean canAddNumber() {
+        if (tokens.isEmpty()) return true;
+        TokenType last = tokens.get(tokens.size() - 1).type;
+        return last == TokenType.OPERATOR || last == TokenType.OPEN_PAREN;
+    }
+
+    private boolean canAddOperator() {
+        if (tokens.isEmpty()) return false;
+        TokenType last = tokens.get(tokens.size() - 1).type;
+        return last == TokenType.NUMBER || last == TokenType.CLOSE_PAREN;
+    }
+
+    private boolean canAddOpenParen() {
+        if (tokens.isEmpty()) return true;
+        TokenType last = tokens.get(tokens.size() - 1).type;
+        return last == TokenType.OPERATOR || last == TokenType.OPEN_PAREN;
+    }
+
+    private boolean canAddCloseParen() {
+        if (openParensCount <= 0) return false;
+        if (tokens.isEmpty()) return false;
+        TokenType last = tokens.get(tokens.size() - 1).type;
+        return last == TokenType.NUMBER || last == TokenType.CLOSE_PAREN;
+    }
+
+    private void appendExpressionText() {
+        StringBuilder sb = new StringBuilder();
+        for (Token t : tokens) {
+            if (sb.length() > 0) sb.append(" ");
+            if (t.type == TokenType.OPERATOR && t.text.equals("/")) {
+                sb.append(DIVIDE_SYMBOL);
+            } else {
+                sb.append(t.text);
+            }
+        }
+        expressionTextView.setText(sb.toString());
     }
 
     private void setupConfirmButton() {
         confirmButton.setOnClickListener(v -> {
-            String expr = expressionTextView.getText().toString().trim();
+            String expr = buildEvalExpression();
             if (expr.isEmpty()) return;
 
             try {
                 double result = evaluate(expr);
                 if (Math.abs(result - game.targetNumber) < 0.0001) {
                     Toast.makeText(this, "Tačno! +10 bodova", Toast.LENGTH_SHORT).show();
+                    cancelGameTimer();
                 } else {
-                    Toast.makeText(this, "Netačno (" + result + ")", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Netačno (" + formatResult(result) + ")", Toast.LENGTH_SHORT).show();
                 }
             } catch (Exception e) {
                 Toast.makeText(this, "Neispravan izraz", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private String buildEvalExpression() {
+        StringBuilder sb = new StringBuilder();
+        for (Token t : tokens) {
+            if (t.type == TokenType.OPERATOR && t.text.equals(DIVIDE_SYMBOL)) {
+                sb.append("/");
+            } else {
+                sb.append(t.text);
+            }
+        }
+        return sb.toString();
+    }
+
+    private String formatResult(double result) {
+        if (result == Math.floor(result) && !Double.isInfinite(result)) {
+            return String.valueOf((int) result);
+        }
+        return String.format("%.2f", result);
     }
 
     // Simple expression evaluator (+,-,*,/, parentheses)
