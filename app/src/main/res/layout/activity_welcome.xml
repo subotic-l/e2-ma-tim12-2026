@@ -22,7 +22,7 @@
         android:id="@+id/btn_login"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login"
+        android:text="Ulogujte se"
         android:textColor="@color/white"
         android:layout_marginBottom="12dp"
 
@@ -36,7 +36,7 @@
         android:id="@+id/btn_register"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Register"
+        android:text="Registrujte se"
         android:textColor="@color/white"
         android:layout_marginBottom="12dp"
 
@@ -50,7 +50,7 @@
         android:id="@+id/btn_guest"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Continue as Guest"
+        android:text="Nastavite kao gost"
         android:textColor="@color/white"
 
         android:backgroundTint="@color/correct_answer_color"
