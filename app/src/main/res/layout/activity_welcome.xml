@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/welcome_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -14,26 +15,48 @@
         android:text="Slagalica"
         android:textSize="28sp"
         android:textStyle="bold"
-        android:layout_marginBottom="32dp" />
+        android:layout_marginBottom="32dp"
+        android:textColor="@color/button_default_color"/>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_login"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login" />
+        android:text="Login"
+        android:textColor="@color/white"
+        android:layout_marginBottom="12dp"
 
-    <Button
+        android:backgroundTint="@color/button_default_color"
+        app:strokeColor="@color/button_default_border"
+        app:strokeWidth="2dp"
+        app:cornerRadius="12dp"
+        android:elevation="6dp"/>
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_register"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Register"
-        android:layout_marginTop="12dp" />
+        android:textColor="@color/white"
+        android:layout_marginBottom="12dp"
 
-    <Button
+        android:backgroundTint="@color/button_selected_color"
+        app:strokeColor="@color/button_selected_border"
+        app:strokeWidth="2dp"
+        app:cornerRadius="12dp"
+        android:elevation="6dp"/>
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_guest"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Continue as Guest"
-        android:layout_marginTop="12dp" />
+        android:textColor="@color/white"
+
+        android:backgroundTint="@color/correct_answer_color"
+        app:strokeColor="@color/correct_answer_border"
+        app:strokeWidth="2dp"
+        app:cornerRadius="12dp"
+        android:elevation="6dp"/>
 
 </LinearLayout>

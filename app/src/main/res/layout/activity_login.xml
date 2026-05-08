@@ -15,13 +15,18 @@
         android:text="Login"
         android:textSize="28sp"
         android:textStyle="bold"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="24dp"
+        android:textColor="@color/button_default_color"/>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/login_user_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Email or Username">
+        android:hint="Email ili Username"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="@color/button_default_border"
+        app:hintTextColor="@color/button_default_border"
+        android:textColor="@color/white">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/login_user"
@@ -35,8 +40,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:hint="Password"
-        app:endIconMode="password_toggle">
+        android:hint="Lozinka"
+        app:endIconMode="password_toggle"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="@color/button_default_border"
+        app:hintTextColor="@color/button_default_border"
+        android:textColor="@color/white">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/login_password"
@@ -45,18 +54,26 @@
             android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_login_submit"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login"
-        android:layout_marginTop="20dp" />
+        android:text="Prijavi se"
+        android:textColor="@color/white"
+        android:layout_marginTop="20dp"
 
-    <Button
+        android:backgroundTint="@color/button_default_color"
+        app:strokeColor="@color/button_default_border"
+        app:strokeWidth="2dp"
+        app:cornerRadius="12dp"
+        android:elevation="6dp"/>
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_forgot_password"
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Forgot Password?"
-        android:layout_marginTop="4dp" />
+        android:text="Zaboravljena lozinka?"
+        android:textColor="@color/button_default_color"
+        android:layout_marginTop="4dp"/>
 </LinearLayout>

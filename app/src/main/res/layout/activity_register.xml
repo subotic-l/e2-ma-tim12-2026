@@ -16,6 +16,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Registracija"
+            android:textColor="@color/button_default_color"
+            android:layout_gravity="center"
             android:textSize="28sp"
             android:textStyle="bold"
             android:layout_marginBottom="24dp" />
@@ -24,7 +26,11 @@
             android:id="@+id/register_email_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Email">
+            android:hint="Email"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="@color/button_default_border"
+            app:hintTextColor="@color/button_default_border"
+            android:textColor="@color/white">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/register_email"
@@ -38,7 +44,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="Username">
+            android:hint="Korisničko ime"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="@color/button_default_border"
+            app:hintTextColor="@color/button_default_border"
+            android:textColor="@color/white">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/register_username"
@@ -52,7 +62,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="Region">
+            android:hint="Region"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="@color/button_default_border"
+            app:hintTextColor="@color/button_default_border"
+            android:textColor="@color/white">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/register_region"
@@ -66,8 +80,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="Password"
-            app:endIconMode="password_toggle">
+            android:hint="Lozinka"
+            app:endIconMode="password_toggle"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="@color/button_default_border"
+            app:hintTextColor="@color/button_default_border"
+            android:textColor="@color/white">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/register_password"
@@ -81,8 +99,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="Repeat Password"
-            app:endIconMode="password_toggle">
+            android:hint="Ponovljena lozinka"
+            app:endIconMode="password_toggle"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="@color/button_default_border"
+            app:hintTextColor="@color/button_default_border"
+            android:textColor="@color/white">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/register_password_repeat"
@@ -91,12 +113,19 @@
                 android:inputType="textPassword" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_register_submit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Register"
-            android:layout_marginTop="20dp" />
+            android:text="Registruj se"
+            android:textColor="@color/white"
+            android:layout_marginTop="20dp"
+
+            android:backgroundTint="@color/button_selected_color"
+            app:strokeColor="@color/button_selected_border"
+            app:strokeWidth="2dp"
+            app:cornerRadius="12dp"
+            android:elevation="6dp"/>
 
     </LinearLayout>
 </ScrollView>
