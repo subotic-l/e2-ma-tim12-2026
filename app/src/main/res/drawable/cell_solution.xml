@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- PRITISNUTO (crveno) -->
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="#FF5252"/>
+            <stroke android:width="2dp" android:color="#B71C1C"/>
+            <corners android:radius="50dp"/>
+        </shape>
+    </item>
+
+    <!-- DEFAULT (žuto) -->
+    <item>
+        <shape>
+            <solid android:color="#FFEB3B"/>
+            <stroke android:width="2dp" android:color="#F57F17"/>
+            <corners android:radius="50dp"/>
+        </shape>
+    </item>
+
+</selector>

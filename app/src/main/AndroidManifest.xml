@@ -56,6 +56,12 @@
 
         <activity android:name=".ProfileActivity"
             android:exported="false"/>
+
+        <activity android:name=".SkockoGameActivity" />
+
+        <activity android:name=".AsocijacijeGameActivity" />
+
+        <activity android:name=".NotificationsActivity" />
     </application>
 
 </manifest>
