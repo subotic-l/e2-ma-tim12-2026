@@ -65,7 +65,24 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
                 return true;
             }
+            if (item.getItemId() == R.id.navigation_notifications) {
+                Intent intent = new Intent(MainActivity.this, NotificationsActivity.class);
+                startActivity(intent);
+                return true;
+            }
             return false;
+        });
+
+        Button startSkockoButton = findViewById(R.id.buttonStartSkocko);
+        startSkockoButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SkockoGameActivity.class);
+            startActivity(intent);
+        });
+
+        Button startAsocijacijeButton = findViewById(R.id.buttonStartAsocijacije);
+        startAsocijacijeButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, AsocijacijeGameActivity.class);
+            startActivity(intent);
         });
     }
 }

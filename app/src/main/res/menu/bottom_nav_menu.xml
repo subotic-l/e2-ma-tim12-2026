@@ -16,8 +16,14 @@
         android:id="@+id/navigation_rankings"
         android:icon="@drawable/ic_rankings"
         android:title="Rang lista" />
+    <!--     PRIVREMENO ZAKOMENTARISANO, NE MOZE VISE OD 5
     <item
         android:id="@+id/navigation_newgame"
         android:icon="@drawable/ic_new_game"
         android:title="Nova igra" />
+    -->
+    <item
+        android:id="@+id/navigation_notifications"
+        android:icon="@drawable/ic_notification"
+        android:title="Notifikacije" />
 </menu>
