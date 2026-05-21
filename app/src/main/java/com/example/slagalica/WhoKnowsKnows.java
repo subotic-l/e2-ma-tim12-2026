@@ -33,6 +33,10 @@ public class WhoKnowsKnows extends AppCompatActivity {
     private MaterialButton[] answerButtons;
     private int score = 0;
     private boolean resultSent = false;
+    private int basePlayerOneScore = 0;
+    private int basePlayerTwoScore = 0;
+    private TextView playerOneScoreView;
+    private TextView playerTwoScoreView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +52,14 @@ public class WhoKnowsKnows extends AppCompatActivity {
 
         timerTextView = findViewById(R.id.timerTextView);
         questionTextView = findViewById(R.id.questionTextView);
+        playerOneScoreView = findViewById(R.id.playerOneScore);
+        playerTwoScoreView = findViewById(R.id.playerTwoScore);
+        Intent intent = getIntent();
+        if (intent != null) {
+            basePlayerOneScore = intent.getIntExtra(MatchConstants.EXTRA_PLAYER_ONE_SCORE, 0);
+            basePlayerTwoScore = intent.getIntExtra(MatchConstants.EXTRA_PLAYER_TWO_SCORE, 0);
+        }
+        updateScoreHeader();
         answerButtons = new MaterialButton[] {
                 findViewById(R.id.answerButton1),
                 findViewById(R.id.answerButton2),
@@ -166,6 +178,7 @@ public class WhoKnowsKnows extends AppCompatActivity {
             answerButtons[correctIndex].setStrokeColor(
                     ColorStateList.valueOf(correctBorder));
         }
+        updateScoreHeader();
     }
 
     private void showCorrectAnswerOnTimeUp() {
@@ -225,6 +238,15 @@ public class WhoKnowsKnows extends AppCompatActivity {
     private void disableAnswerButtons() {
         for (Button button : answerButtons) {
             button.setEnabled(false);
+        }
+    }
+
+    private void updateScoreHeader() {
+        if (playerOneScoreView != null) {
+            playerOneScoreView.setText(String.valueOf(basePlayerOneScore + score));
+        }
+        if (playerTwoScoreView != null) {
+            playerTwoScoreView.setText(String.valueOf(basePlayerTwoScore));
         }
     }
 }

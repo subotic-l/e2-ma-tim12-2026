@@ -64,7 +64,23 @@ public class MatchPlayActivity extends AppCompatActivity {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         score = result.getData().getIntExtra(MatchConstants.EXTRA_GAME_SCORE, 0);
                     }
-                    if (currentPlayer == MatchConstants.PLAYER_ONE) {
+                    Class<?> currentGame = gameOrder.get(currentGameIndex);
+                    if (currentGame == WhoKnowsKnows.class) {
+                        playerOneScore += score;
+                        currentPlayer = MatchConstants.PLAYER_ONE;
+                        currentGameIndex++;
+                    } else if (currentGame == AsocijacijeGameActivity.class) {
+                        if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                            int playerOneGameScore = result.getData()
+                                    .getIntExtra(MatchConstants.EXTRA_GAME_SCORE_PLAYER_ONE, 0);
+                            int playerTwoGameScore = result.getData()
+                                    .getIntExtra(MatchConstants.EXTRA_GAME_SCORE_PLAYER_TWO, 0);
+                            playerOneScore += playerOneGameScore;
+                            playerTwoScore += playerTwoGameScore;
+                        }
+                        currentPlayer = MatchConstants.PLAYER_ONE;
+                        currentGameIndex++;
+                    } else if (currentPlayer == MatchConstants.PLAYER_ONE) {
                         playerOneScore += score;
                         currentPlayer = MatchConstants.PLAYER_TWO;
                     } else {
