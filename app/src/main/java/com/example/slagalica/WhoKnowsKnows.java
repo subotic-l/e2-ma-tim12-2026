@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -30,6 +31,8 @@ public class WhoKnowsKnows extends AppCompatActivity {
     private TextView timerTextView;
     private TextView questionTextView;
     private MaterialButton[] answerButtons;
+    private int score = 0;
+    private boolean resultSent = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +44,7 @@ public class WhoKnowsKnows extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        MatchUiHelper.bindPlayerHeader(this, getIntent());
 
         timerTextView = findViewById(R.id.timerTextView);
         questionTextView = findViewById(R.id.questionTextView);
@@ -145,11 +149,13 @@ public class WhoKnowsKnows extends AppCompatActivity {
         int wrongBorder = ContextCompat.getColor(this, R.color.wrong_answer_border);
 
         if (selectedIndex == correctIndex) {
+            score += 10;
             answerButtons[selectedIndex].setBackgroundTintList(
                     ColorStateList.valueOf(correctBg));
             answerButtons[selectedIndex].setStrokeColor(
                     ColorStateList.valueOf(correctBorder));
         } else {
+            score -= 5;
             answerButtons[selectedIndex].setBackgroundTintList(
                     ColorStateList.valueOf(wrongBg));
             answerButtons[selectedIndex].setStrokeColor(
@@ -190,7 +196,30 @@ public class WhoKnowsKnows extends AppCompatActivity {
         disableAnswerButtons();
         questionTextView.setText("Igra je završena!");
 
-        new Handler(Looper.getMainLooper()).postDelayed(this::finish, 2000);
+        new Handler(Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
+    }
+
+    private void finishWithScore() {
+        if (resultSent) {
+            finish();
+            return;
+        }
+        resultSent = true;
+        Intent data = new Intent();
+        data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+        setResult(RESULT_OK, data);
+        finish();
+    }
+
+    @Override
+    public void finish() {
+        if (!resultSent) {
+            Intent data = new Intent();
+            data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+            setResult(RESULT_OK, data);
+            resultSent = true;
+        }
+        super.finish();
     }
 
     private void disableAnswerButtons() {
@@ -199,4 +228,3 @@ public class WhoKnowsKnows extends AppCompatActivity {
         }
     }
 }
-

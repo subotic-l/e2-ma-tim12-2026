@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
@@ -41,6 +42,8 @@ public class NumbersGameActivity extends AppCompatActivity {
     private final Stack<MaterialButton> usedNumberButtons = new Stack<>();
     private final List<Token> tokens = new ArrayList<>();
     private int openParensCount = 0;
+    private int score = 0;
+    private boolean resultSent = false;
 
     private enum TokenType { NUMBER, OPERATOR, OPEN_PAREN, CLOSE_PAREN }
 
@@ -66,6 +69,7 @@ public class NumbersGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        MatchUiHelper.bindPlayerHeader(this, getIntent());
 
         targetTextView = findViewById(R.id.targetTextView);
         expressionTextView = findViewById(R.id.expressionTextView);
@@ -95,6 +99,7 @@ public class NumbersGameActivity extends AppCompatActivity {
     private void startNewGame() {
         game = NumbersGame.createRandom();
         stopStage = 0;
+        score = 0;
         targetTextView.setText(getString(R.string.question_mark));
         expressionTextView.setText("");
         tokens.clear();
@@ -192,6 +197,10 @@ public class NumbersGameActivity extends AppCompatActivity {
                 expressionTextView.setEnabled(false);
                 Toast.makeText(NumbersGameActivity.this, "Vreme je isteklo!", Toast.LENGTH_SHORT).show();
                 expressionTextView.setText("");
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                        NumbersGameActivity.this::finishWithScore,
+                        1500
+                );
             }
         }.start();
     }
@@ -328,6 +337,8 @@ public class NumbersGameActivity extends AppCompatActivity {
                 if (Math.abs(result - game.targetNumber) < 0.0001) {
                     Toast.makeText(this, "Tačno! +10 bodova", Toast.LENGTH_SHORT).show();
                     cancelGameTimer();
+                    score = 10;
+                    finishWithScore();
                 } else {
                     Toast.makeText(this, "Netačno (" + formatResult(result) + ")", Toast.LENGTH_SHORT).show();
                 }
@@ -335,6 +346,29 @@ public class NumbersGameActivity extends AppCompatActivity {
                 Toast.makeText(this, "Neispravan izraz", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void finishWithScore() {
+        if (resultSent) {
+            finish();
+            return;
+        }
+        resultSent = true;
+        Intent data = new Intent();
+        data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+        setResult(RESULT_OK, data);
+        finish();
+    }
+
+    @Override
+    public void finish() {
+        if (!resultSent) {
+            Intent data = new Intent();
+            data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+            setResult(RESULT_OK, data);
+            resultSent = true;
+        }
+        super.finish();
     }
 
     private String buildEvalExpression() {

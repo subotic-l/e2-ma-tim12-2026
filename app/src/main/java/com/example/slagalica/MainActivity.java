@@ -32,6 +32,14 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        Button startMatchButton = findViewById(R.id.buttonStartMatch);
+        startMatchButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, MatchPlayActivity.class);
+            intent.putExtra(MatchConstants.EXTRA_PLAYER_ONE_NAME, MatchConstants.DEFAULT_PLAYER_ONE_NAME);
+            intent.putExtra(MatchConstants.EXTRA_PLAYER_TWO_NAME, MatchConstants.DEFAULT_PLAYER_TWO_NAME);
+            startActivity(intent);
+        });
+
         Button startMatchingGameButton = findViewById(R.id.buttonStartMatchingGame);
         startMatchingGameButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, MatchingGameActivity.class);

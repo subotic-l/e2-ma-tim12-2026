@@ -15,6 +15,15 @@
         <include layout="@layout/top_bar" />
 
         <Button
+            android:id="@+id/buttonStartMatch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:text="Igraj partiju"
+            android:backgroundTint="@color/button_default_color"
+            android:textColor="@color/white"/>
+
+        <Button
             android:id="@+id/buttonStartWhoKnows"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

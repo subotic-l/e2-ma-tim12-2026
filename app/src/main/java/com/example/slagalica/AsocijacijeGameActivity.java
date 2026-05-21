@@ -1,16 +1,24 @@
 package com.example.slagalica;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import android.graphics.Color;
 
 public class AsocijacijeGameActivity extends AppCompatActivity {
+
+    private static final int GROUP_POINTS = 5;
+    private static final int FINAL_POINTS = 10;
 
     private final String[][] groups = {
             {"MAK", "NIT", "RANA", "ZUB"},
@@ -31,11 +39,20 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
     private Button btnFinal;
 
     private boolean[] solvedGroups = new boolean[4];
+    private int score = 0;
+    private boolean resultSent = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_asocijacije);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+        MatchUiHelper.bindPlayerHeader(this, getIntent());
 
         setupViews();
         setupClickListeners();
@@ -81,6 +98,10 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
                 }
 
                 btnFinal.setEnabled(false);
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                        AsocijacijeGameActivity.this::finishWithScore,
+                        2000
+                );
             }
         }.start();
     }
@@ -139,6 +160,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
     }
 
     private void openGroup(int groupIndex) {
+        score += GROUP_POINTS;
         solvedGroups[groupIndex] = true;
         for (int i = 0; i < 4; i++) {
             wordButtons[groupIndex][i].setText(groups[groupIndex][i]);
@@ -159,6 +181,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         builder.setPositiveButton("Potvrdi", (dialog, which) -> {
             String guess = input.getText().toString().trim().toUpperCase();
             if (guess.equals(finalWord)) {
+                score += FINAL_POINTS;
                 if (countDownTimer != null) {
                     countDownTimer.cancel();
                 }
@@ -244,5 +267,29 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         btnFinal.setBackgroundTintList(getColorStateList(android.R.color.holo_orange_dark));
 
         Toast.makeText(this, "POBEDA!", Toast.LENGTH_LONG).show();
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
+    }
+
+    private void finishWithScore() {
+        if (resultSent) {
+            finish();
+            return;
+        }
+        resultSent = true;
+        Intent data = new Intent();
+        data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+        setResult(RESULT_OK, data);
+        finish();
+    }
+
+    @Override
+    public void finish() {
+        if (!resultSent) {
+            Intent data = new Intent();
+            data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+            setResult(RESULT_OK, data);
+            resultSent = true;
+        }
+        super.finish();
     }
 }
