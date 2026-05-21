@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -30,6 +31,12 @@ public class WhoKnowsKnows extends AppCompatActivity {
     private TextView timerTextView;
     private TextView questionTextView;
     private MaterialButton[] answerButtons;
+    private int score = 0;
+    private boolean resultSent = false;
+    private int basePlayerOneScore = 0;
+    private int basePlayerTwoScore = 0;
+    private TextView playerOneScoreView;
+    private TextView playerTwoScoreView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,9 +48,18 @@ public class WhoKnowsKnows extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        MatchUiHelper.bindPlayerHeader(this, getIntent());
 
         timerTextView = findViewById(R.id.timerTextView);
         questionTextView = findViewById(R.id.questionTextView);
+        playerOneScoreView = findViewById(R.id.playerOneScore);
+        playerTwoScoreView = findViewById(R.id.playerTwoScore);
+        Intent intent = getIntent();
+        if (intent != null) {
+            basePlayerOneScore = intent.getIntExtra(MatchConstants.EXTRA_PLAYER_ONE_SCORE, 0);
+            basePlayerTwoScore = intent.getIntExtra(MatchConstants.EXTRA_PLAYER_TWO_SCORE, 0);
+        }
+        updateScoreHeader();
         answerButtons = new MaterialButton[] {
                 findViewById(R.id.answerButton1),
                 findViewById(R.id.answerButton2),
@@ -145,11 +161,13 @@ public class WhoKnowsKnows extends AppCompatActivity {
         int wrongBorder = ContextCompat.getColor(this, R.color.wrong_answer_border);
 
         if (selectedIndex == correctIndex) {
+            score += 10;
             answerButtons[selectedIndex].setBackgroundTintList(
                     ColorStateList.valueOf(correctBg));
             answerButtons[selectedIndex].setStrokeColor(
                     ColorStateList.valueOf(correctBorder));
         } else {
+            score -= 5;
             answerButtons[selectedIndex].setBackgroundTintList(
                     ColorStateList.valueOf(wrongBg));
             answerButtons[selectedIndex].setStrokeColor(
@@ -160,6 +178,7 @@ public class WhoKnowsKnows extends AppCompatActivity {
             answerButtons[correctIndex].setStrokeColor(
                     ColorStateList.valueOf(correctBorder));
         }
+        updateScoreHeader();
     }
 
     private void showCorrectAnswerOnTimeUp() {
@@ -190,7 +209,30 @@ public class WhoKnowsKnows extends AppCompatActivity {
         disableAnswerButtons();
         questionTextView.setText("Igra je završena!");
 
-        new Handler(Looper.getMainLooper()).postDelayed(this::finish, 2000);
+        new Handler(Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
+    }
+
+    private void finishWithScore() {
+        if (resultSent) {
+            finish();
+            return;
+        }
+        resultSent = true;
+        Intent data = new Intent();
+        data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+        setResult(RESULT_OK, data);
+        finish();
+    }
+
+    @Override
+    public void finish() {
+        if (!resultSent) {
+            Intent data = new Intent();
+            data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+            setResult(RESULT_OK, data);
+            resultSent = true;
+        }
+        super.finish();
     }
 
     private void disableAnswerButtons() {
@@ -198,5 +240,13 @@ public class WhoKnowsKnows extends AppCompatActivity {
             button.setEnabled(false);
         }
     }
-}
 
+    private void updateScoreHeader() {
+        if (playerOneScoreView != null) {
+            playerOneScoreView.setText(String.valueOf(basePlayerOneScore + score));
+        }
+        if (playerTwoScoreView != null) {
+            playerTwoScoreView.setText(String.valueOf(basePlayerTwoScore));
+        }
+    }
+}

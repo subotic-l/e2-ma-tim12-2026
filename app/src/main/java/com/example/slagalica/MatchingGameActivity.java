@@ -1,6 +1,7 @@
 package com.example.slagalica;
 
 import android.content.res.ColorStateList;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -37,6 +38,8 @@ public class MatchingGameActivity extends AppCompatActivity {
     private int wrongColor;
     private int correctBorder;
     private int wrongBorder;
+    private int score = 0;
+    private boolean resultSent = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +51,7 @@ public class MatchingGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        MatchUiHelper.bindPlayerHeader(this, getIntent());
 
         timerTextView = findViewById(R.id.timerTextView);
         instructionsTextView = findViewById(R.id.instructionsTextView);
@@ -157,6 +161,7 @@ public class MatchingGameActivity extends AppCompatActivity {
     }
 
     private void markPairCorrect(int leftIndex, int rightIndex) {
+        score += 2;
         leftButtons[leftIndex].setBackgroundTintList(ColorStateList.valueOf(correctColor));
         leftButtons[leftIndex].setStrokeColor(ColorStateList.valueOf(correctBorder));
 
@@ -231,5 +236,16 @@ public class MatchingGameActivity extends AppCompatActivity {
             rightButtons[i].setStrokeColor(ColorStateList.valueOf(correctBorder));
             rightButtons[i].setEnabled(false);
         }
+    }
+
+    @Override
+    public void finish() {
+        if (!resultSent) {
+            Intent data = new Intent();
+            data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+            setResult(RESULT_OK, data);
+            resultSent = true;
+        }
+        super.finish();
     }
 }

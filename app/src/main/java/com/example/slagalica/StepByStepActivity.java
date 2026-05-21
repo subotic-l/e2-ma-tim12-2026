@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.widget.TextView;
@@ -29,6 +30,8 @@ public class StepByStepActivity extends AppCompatActivity {
     private int currentStep = 0;
     private int currentPoints = 20;
     private static final int STEP_TIME_MS = 10000;
+    private int score = 0;
+    private boolean resultSent = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +43,7 @@ public class StepByStepActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        MatchUiHelper.bindPlayerHeader(this, getIntent());
 
         pointsTextView = findViewById(R.id.pointsTextView);
         timerTextView = findViewById(R.id.timerTextView);
@@ -149,6 +153,8 @@ public class StepByStepActivity extends AppCompatActivity {
         revealAllClues();
         guessInput.setText(game.answer);
         timerTextView.setText("Tačno!");
+        score = currentPoints;
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
     }
 
     private void finishGameFail() {
@@ -157,5 +163,30 @@ public class StepByStepActivity extends AppCompatActivity {
         revealAllClues();
         guessInput.setText(game.answer);
         timerTextView.setText("Kraj");
+        score = 0;
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
+    }
+
+    private void finishWithScore() {
+        if (resultSent) {
+            finish();
+            return;
+        }
+        resultSent = true;
+        Intent data = new Intent();
+        data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+        setResult(RESULT_OK, data);
+        finish();
+    }
+
+    @Override
+    public void finish() {
+        if (!resultSent) {
+            Intent data = new Intent();
+            data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+            setResult(RESULT_OK, data);
+            resultSent = true;
+        }
+        super.finish();
     }
 }

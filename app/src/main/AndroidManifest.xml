@@ -23,6 +23,12 @@
             android:name=".MainActivity"
             android:exported="true" >
         </activity>
+        <activity
+            android:name=".MatchPlayActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MatchSummaryActivity"
+            android:exported="false" />
 
         <activity
             android:name=".WelcomeActivity"

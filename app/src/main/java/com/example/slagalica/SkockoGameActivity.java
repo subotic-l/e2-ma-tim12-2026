@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -10,7 +11,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.example.slagalica.R;
 import com.example.slagalica.SkockoGame;
@@ -32,6 +37,8 @@ public class SkockoGameActivity extends AppCompatActivity {
     private int timeLeft = 35;
     private android.os.CountDownTimer countDownTimer;
     private TextView timerText;
+    private int score = 0;
+    private boolean resultSent = false;
 
     private final String[] symbols = {"S", "T", "K", "P", "H", "Z"};
     private final int[] drawableIds = {
@@ -49,7 +56,14 @@ public class SkockoGameActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_skocko);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+        MatchUiHelper.bindPlayerHeader(this, getIntent());
 
         timerText = findViewById(R.id.timerText);
         startTimer();
@@ -327,9 +341,22 @@ public class SkockoGameActivity extends AppCompatActivity {
         Toast.makeText(this,
                 win ? "Pobeda!" : "Vreme isteklo!",
                 Toast.LENGTH_LONG).show();
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
     }
 
     private void showSolution(boolean won) {
+        if (won) {
+            int attempt = currentRow + 1;
+            if (attempt <= 2) {
+                score = 20;
+            } else if (attempt <= 4) {
+                score = 15;
+            } else {
+                score = 10;
+            }
+        } else {
+            score = 0;
+        }
         for (int i = 0; i < 4; i++) {
             int idx = Arrays.asList(symbols).indexOf(game.solution[i]);
             solutionViews[i].setImageResource(drawableIds[idx]);
@@ -342,5 +369,28 @@ public class SkockoGameActivity extends AppCompatActivity {
             countDownTimer.cancel();
         }
         gameOver(won);
+    }
+
+    private void finishWithScore() {
+        if (resultSent) {
+            finish();
+            return;
+        }
+        resultSent = true;
+        Intent data = new Intent();
+        data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+        setResult(RESULT_OK, data);
+        finish();
+    }
+
+    @Override
+    public void finish() {
+        if (!resultSent) {
+            Intent data = new Intent();
+            data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
+            setResult(RESULT_OK, data);
+            resultSent = true;
+        }
+        super.finish();
     }
 }
