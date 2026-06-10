@@ -1,7 +1,10 @@
 package com.example.slagalica;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -9,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,7 +29,16 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
+import java.io.File;
+import java.io.FileOutputStream;
+
 public class ProfileActivity extends AppCompatActivity {
+
+    private static final String PREFS_NAME = "profile_cache";
+    private static final String KEY_USERNAME = "username";
+    private static final String KEY_EMAIL = "email";
+    private static final String KEY_REGION = "region";
+    private static final String KEY_AVATAR_URL = "avatar_url";
 
     private UserService userService;
 
@@ -34,6 +47,7 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView textRegion;
     private ImageView avatarImage;
     private ImageButton buttonEditAvatar;
+    private ProgressBar avatarProgressBar;
 
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -57,12 +71,14 @@ public class ProfileActivity extends AppCompatActivity {
         textRegion = findViewById(R.id.textRegion);
         avatarImage = findViewById(R.id.avatarImage);
         buttonEditAvatar = findViewById(R.id.buttonEditAvatar);
+        avatarProgressBar = findViewById(R.id.avatarProgressBar);
 
         loadProfile();
 
         Button logoutButton = findViewById(R.id.buttonLogout);
         logoutButton.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().clear().apply();
             Intent intent = new Intent(ProfileActivity.this, WelcomeActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
@@ -132,6 +148,8 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void loadProfile() {
+        loadCachedProfile();
+
         userService.loadProfile().addOnSuccessListener(document -> {
             if (document.exists()) {
                 String username = document.getString("username");
@@ -144,11 +162,49 @@ public class ProfileActivity extends AppCompatActivity {
                 textRegion.setText(region != null ? "Region: " + region : "Region: Nepoznato");
 
                 loadAvatar(avatarUrl);
+
+                cacheProfile(username, email, region, avatarUrl);
             }
         }).addOnFailureListener(e -> {
-            Toast.makeText(this, "Greška pri učitavanju profila: " + e.getMessage(),
-                    Toast.LENGTH_SHORT).show();
+            if (getCachedUsername() == null) {
+                Toast.makeText(this, "Greška pri učitavanju profila: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
         });
+    }
+
+    private void loadCachedProfile() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String username = prefs.getString(KEY_USERNAME, null);
+        String email = prefs.getString(KEY_EMAIL, null);
+        String region = prefs.getString(KEY_REGION, null);
+        String avatarUrl = prefs.getString(KEY_AVATAR_URL, null);
+
+        if (username != null) textUsername.setText(username);
+        if (email != null) textEmail.setText(email);
+        if (region != null) textRegion.setText("Region: " + region);
+        if (avatarUrl != null) loadAvatar(avatarUrl);
+    }
+
+    private void cacheProfile(String username, String email, String region, String avatarUrl) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit()
+                .putString(KEY_USERNAME, username)
+                .putString(KEY_EMAIL, email)
+                .putString(KEY_REGION, region)
+                .putString(KEY_AVATAR_URL, avatarUrl)
+                .apply();
+    }
+
+    private String getCachedUsername() {
+        return getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString(KEY_USERNAME, null);
+    }
+
+    private void updateCachedAvatarUrl(String avatarUrl) {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                .edit()
+                .putString(KEY_AVATAR_URL, avatarUrl)
+                .apply();
     }
 
     private void loadAvatar(String avatarUrl) {
@@ -167,18 +223,57 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void uploadAvatar(Uri imageUri) {
         buttonEditAvatar.setEnabled(false);
-        Toast.makeText(this, "Otpremanje slike...", Toast.LENGTH_SHORT).show();
+        avatarProgressBar.setVisibility(View.VISIBLE);
 
-        userService.uploadAndUpdateAvatar(imageUri)
-                .addOnSuccessListener(uri -> {
-                    loadAvatar(uri.toString());
+        loadAvatar(imageUri.toString());
+
+        Uri compressedUri = compressImage(imageUri);
+
+        userService.uploadAndUpdateAvatar(compressedUri)
+                .addOnSuccessListener(url -> {
+                    updateCachedAvatarUrl(url.toString());
+                    Glide.with(this).load(url.toString()).circleCrop().into(avatarImage);
                     Toast.makeText(this, "Avatar ažuriran", Toast.LENGTH_SHORT).show();
                     buttonEditAvatar.setEnabled(true);
+                    avatarProgressBar.setVisibility(View.GONE);
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     buttonEditAvatar.setEnabled(true);
+                    avatarProgressBar.setVisibility(View.GONE);
                 });
+    }
+
+    private Uri compressImage(Uri imageUri) {
+        try {
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+
+            int maxSize = 600;
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            float ratio = (float) Math.max(width, height) / maxSize;
+            if (ratio > 1) {
+                width = (int) (width / ratio);
+                height = (int) (height / ratio);
+            }
+
+            Bitmap resized = Bitmap.createScaledBitmap(bitmap, width, height, true);
+
+            File tempDir = new File(getCacheDir(), "upload");
+            tempDir.mkdirs();
+            File tempFile = new File(tempDir, "avatar_compressed.jpg");
+            FileOutputStream out = new FileOutputStream(tempFile);
+            resized.compress(Bitmap.CompressFormat.JPEG, 80, out);
+            out.close();
+
+            if (bitmap != resized) bitmap.recycle();
+            resized.recycle();
+
+            return Uri.fromFile(tempFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return imageUri;
+        }
     }
 
     private void generateQrCode(String text, ImageView targetView) {
