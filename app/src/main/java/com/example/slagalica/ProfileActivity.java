@@ -152,16 +152,12 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void loadAvatar(String avatarUrl) {
-        if (avatarUrl != null && !avatarUrl.isEmpty()) {
-            Glide.with(this)
-                    .load(avatarUrl)
-                    .placeholder(R.drawable.default_profile)
-                    .error(R.drawable.default_profile)
-                    .circleCrop()
-                    .into(avatarImage);
-        } else {
-            avatarImage.setImageResource(R.drawable.default_profile);
-        }
+        Glide.with(this)
+                .load(avatarUrl != null && !avatarUrl.isEmpty() ? avatarUrl : R.drawable.default_profile)
+                .placeholder(R.drawable.default_profile)
+                .error(R.drawable.default_profile)
+                .circleCrop()
+                .into(avatarImage);
     }
 
     private void openGallery() {
