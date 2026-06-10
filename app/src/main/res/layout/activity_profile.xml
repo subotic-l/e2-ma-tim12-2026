@@ -49,33 +49,37 @@
                         <FrameLayout
                             android:layout_width="160dp"
                             android:layout_height="160dp"
-                            android:layout_marginBottom="16dp"
-                            android:padding="6dp"
-                            android:background="@drawable/avatar_circle_bg"
-                            android:clipToOutline="true"
-                            android:foreground="@drawable/profile_frame">
+                            android:layout_marginBottom="16dp">
 
                             <ImageView
                                 android:id="@+id/avatarImage"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:src="@drawable/default_profile"
+                                android:layout_margin="6dp"
+                                android:background="@drawable/avatar_circle_bg"
+                                android:clipToOutline="true"
                                 android:scaleType="centerCrop"
                                 android:contentDescription="Avatar" />
 
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/profile_frame"
+                                android:clickable="false"
+                                android:focusable="false" />
+
                             <ImageButton
                                 android:id="@+id/buttonEditAvatar"
-                                android:layout_width="36dp"
-                                android:layout_height="36dp"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
                                 android:layout_gravity="bottom|end"
                                 android:layout_marginEnd="4dp"
                                 android:layout_marginBottom="4dp"
                                 android:src="@drawable/ic_edit_white"
-                                android:background="@drawable/avatar_circle_bg"
-                                android:backgroundTint="@color/button_default_color"
+                                android:background="@drawable/edit_avatar_bg"
                                 android:clipToOutline="true"
-                                android:elevation="4dp"
-                                android:padding="8dp"
+                                android:elevation="6dp"
+                                android:padding="10dp"
                                 android:contentDescription="Uredi avatar" />
                         </FrameLayout>
 
