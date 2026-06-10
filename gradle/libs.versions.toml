@@ -9,6 +9,8 @@ activity = "1.8.0"
 constraintlayout = "2.1.4"
 firebaseBom = "33.7.0"
 googleServices = "4.4.2"
+glide = "4.16.0"
+cloudinaryAndroid = "3.0.2"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -21,6 +23,9 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+firebase-storage = { group = "com.google.firebase", name = "firebase-storage" }
+glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+cloudinary-android = { group = "com.cloudinary", name = "cloudinary-android", version.ref = "cloudinaryAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

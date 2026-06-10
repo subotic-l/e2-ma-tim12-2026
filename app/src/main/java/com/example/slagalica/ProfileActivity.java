@@ -2,24 +2,63 @@ package com.example.slagalica;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
+import com.example.slagalica.service.UserService;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
 public class ProfileActivity extends AppCompatActivity {
 
+    private UserService userService;
+
+    private TextView textUsername;
+    private TextView textEmail;
+    private TextView textRegion;
+    private ImageView avatarImage;
+    private ImageButton buttonEditAvatar;
+
+    private final ActivityResultLauncher<Intent> pickImageLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Uri imageUri = result.getData().getData();
+                    if (imageUri != null) {
+                        uploadAvatar(imageUri);
+                    }
+                }
+            });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
+
+        userService = new UserService();
+
+        textUsername = findViewById(R.id.textUsername);
+        textEmail = findViewById(R.id.textEmail);
+        textRegion = findViewById(R.id.textRegion);
+        avatarImage = findViewById(R.id.avatarImage);
+        buttonEditAvatar = findViewById(R.id.buttonEditAvatar);
+
+        loadProfile();
 
         Button logoutButton = findViewById(R.id.buttonLogout);
         logoutButton.setOnClickListener(v -> {
@@ -29,11 +68,11 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        buttonEditAvatar.setOnClickListener(v -> openGallery());
+
         ImageView qrCodeImage = findViewById(R.id.qrCodeImage);
-        String qrLink = getIntent().getStringExtra("qr_link");
-        if (qrLink == null || qrLink.isEmpty()) {
-            qrLink = "https://www.example.com";
-        }
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String qrLink = currentUser != null ? currentUser.getUid() : "";
         generateQrCode(qrLink, qrCodeImage);
 
         View WhoKnowsStatsToggleHeader = findViewById(R.id.WhoKnowsStatsToggleHeader);
@@ -90,6 +129,60 @@ public class ProfileActivity extends AppCompatActivity {
             ConnectionsStatsExpandedContainer.setVisibility(expanded ? View.GONE : View.VISIBLE);
             ConnectionsStatsToggleIcon.setImageResource(expanded ? R.drawable.ic_arrow_down : R.drawable.ic_arrow_up);
         });
+    }
+
+    private void loadProfile() {
+        userService.loadProfile().addOnSuccessListener(document -> {
+            if (document.exists()) {
+                String username = document.getString("username");
+                String email = document.getString("email");
+                String region = document.getString("region");
+                String avatarUrl = document.getString("avatarUrl");
+
+                textUsername.setText(username != null ? username : "Nepoznato");
+                textEmail.setText(email != null ? email : "Nepoznato");
+                textRegion.setText(region != null ? "Region: " + region : "Region: Nepoznato");
+
+                loadAvatar(avatarUrl);
+            }
+        }).addOnFailureListener(e -> {
+            Toast.makeText(this, "Greška pri učitavanju profila: " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void loadAvatar(String avatarUrl) {
+        if (avatarUrl != null && !avatarUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(avatarUrl)
+                    .placeholder(R.drawable.default_profile)
+                    .error(R.drawable.default_profile)
+                    .circleCrop()
+                    .into(avatarImage);
+        } else {
+            avatarImage.setImageResource(R.drawable.default_profile);
+        }
+    }
+
+    private void openGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        pickImageLauncher.launch(intent);
+    }
+
+    private void uploadAvatar(Uri imageUri) {
+        buttonEditAvatar.setEnabled(false);
+        Toast.makeText(this, "Otpremanje slike...", Toast.LENGTH_SHORT).show();
+
+        userService.uploadAndUpdateAvatar(imageUri)
+                .addOnSuccessListener(uri -> {
+                    loadAvatar(uri.toString());
+                    Toast.makeText(this, "Avatar ažuriran", Toast.LENGTH_SHORT).show();
+                    buttonEditAvatar.setEnabled(true);
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    buttonEditAvatar.setEnabled(true);
+                });
     }
 
     private void generateQrCode(String text, ImageView targetView) {

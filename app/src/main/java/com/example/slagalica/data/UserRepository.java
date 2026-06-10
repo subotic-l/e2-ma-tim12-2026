@@ -1,6 +1,14 @@
 package com.example.slagalica.data;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.net.Uri;
+
+import com.cloudinary.android.MediaManager;
+import com.cloudinary.android.callback.ErrorInfo;
+import com.cloudinary.android.callback.UploadCallback;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.EmailAuthProvider;
@@ -15,7 +23,7 @@ import java.util.Map;
 
 /**
  * Data-access layer: wraps Firebase Auth and Firestore.
- * Activities should never call Firebase directly – they go through AuthService.
+ * Activities should never call Firebase directly – they go through AuthService / UserService.
  */
 public class UserRepository {
 
@@ -85,20 +93,6 @@ public class UserRepository {
     // --------------------------------------------------------------- Firestore
 
     /**
-     * Saves the user profile document in Firestore under users/{uid}.
-     * Called after successful Auth account creation.
-     */
-    public Task<Void> saveUserProfile(String uid, String email,
-                                      String username, String region) {
-        Map<String, Object> profile = new HashMap<>();
-        profile.put("email", email);
-        profile.put("username", username);
-        profile.put("region", region);
-
-        return db.collection(USERS_COLLECTION).document(uid).set(profile);
-    }
-
-    /**
      * Looks up the email for a given username by querying the users collection.
      * Returns a Task that resolves to the email string, or null if not found.
      */
@@ -114,5 +108,88 @@ public class UserRepository {
                     DocumentSnapshot doc = snap.getDocuments().get(0);
                     return doc.getString("email");
                 });
+    }
+
+    // ------------------------------------------------------------ Profile
+
+    /** Fetches the full user profile document from Firestore. */
+    public Task<DocumentSnapshot> getUserProfile(String uid) {
+        return db.collection(USERS_COLLECTION).document(uid).get();
+    }
+
+    // ------------------------------------------------------------- Avatar
+
+    /**
+     * Uploads the image at the given Uri to Cloudinary and returns the URL.
+     * Uses the Cloudinary Android SDK via MediaManager.
+     */
+    public Task<String> uploadAvatar(String uid, Uri imageUri) {
+        TaskCompletionSource<String> tcs = new TaskCompletionSource<>();
+
+        MediaManager.get().upload(imageUri)
+                .option("public_id", "avatar_" + uid)
+                .option("folder", "slagalica_avatars")
+                .callback(new UploadCallback() {
+                    @Override
+                    public void onStart(String requestId) {}
+
+                    @Override
+                    public void onProgress(String requestId, long bytes, long totalBytes) {}
+
+                    @Override
+                    public void onSuccess(String requestId, Map resultData) {
+                        String url = (String) resultData.get("secure_url");
+                        if (url == null) {
+                            url = (String) resultData.get("url");
+                        }
+                        if (url != null) {
+                            tcs.setResult(url);
+                        } else {
+                            tcs.setException(new Exception("Failed to get URL from Cloudinary"));
+                        }
+                    }
+
+                    @Override
+                    public void onError(String requestId, ErrorInfo error) {
+                        tcs.setException(new Exception(
+                                "Cloudinary error: " + error.getDescription()));
+                    }
+
+                    @Override
+                    public void onReschedule(String requestId, ErrorInfo error) {
+                        tcs.setException(new Exception(
+                                "Cloudinary reschedule: " + error.getDescription()));
+                    }
+                })
+                .dispatch();
+
+        return tcs.getTask();
+    }
+
+    /** Updates the avatarUrl field in the user's Firestore document. */
+    public Task<Void> updateAvatarUrl(String uid, String avatarUrl) {
+        return db.collection(USERS_COLLECTION)
+                .document(uid)
+                .update("avatarUrl", avatarUrl);
+    }
+
+    // --------------------------------------------------------- Initial profile
+
+    /**
+     * Saves the initial user profile in Firestore after registration.
+     * Includes default values for tokens, stars, league, and avatarUrl.
+     */
+    public Task<Void> saveUserProfile(String uid, String email,
+                                      String username, String region) {
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("email", email);
+        profile.put("username", username);
+        profile.put("region", region);
+        profile.put("avatarUrl", "");
+        profile.put("tokens", 5);
+        profile.put("stars", 0);
+        profile.put("league", 0);
+
+        return db.collection(USERS_COLLECTION).document(uid).set(profile);
     }
 }
