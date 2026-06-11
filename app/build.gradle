@@ -69,7 +69,9 @@ dependencies {
     implementation libs.firebase.auth
     implementation libs.firebase.firestore
     implementation libs.glide
-    implementation libs.cloudinary.android
+    implementation ("com.cloudinary:cloudinary-android:3.0.2") {
+        exclude group: "com.facebook.fresco"
+    }
 
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit

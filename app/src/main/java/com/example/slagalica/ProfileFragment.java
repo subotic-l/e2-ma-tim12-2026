@@ -9,6 +9,7 @@ import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -76,6 +77,11 @@ public class ProfileFragment extends Fragment {
         avatarImage = view.findViewById(R.id.avatarImage);
         buttonEditAvatar = view.findViewById(R.id.buttonEditAvatar);
         avatarProgressBar = view.findViewById(R.id.avatarProgressBar);
+        Button forgotPasswordButton = view.findViewById(R.id.btn_forgot_password);
+        forgotPasswordButton.setOnClickListener(v -> {
+            Intent intent = new Intent(requireActivity(), ChangePasswordActivity.class);
+            startActivity(intent);
+        });
 
         loadProfile();
 

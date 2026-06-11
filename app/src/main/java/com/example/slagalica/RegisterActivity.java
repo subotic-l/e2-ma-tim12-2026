@@ -3,12 +3,15 @@ package com.example.slagalica;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.slagalica.data.RegionRepository;
 import com.example.slagalica.service.AuthService;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -24,7 +27,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     private TextInputEditText emailInput;
     private TextInputEditText usernameInput;
-    private TextInputEditText regionInput;
+    private MaterialAutoCompleteTextView regionInput;
     private TextInputEditText passwordInput;
     private TextInputEditText passwordRepeatInput;
     private Button registerButton;
@@ -45,6 +48,16 @@ public class RegisterActivity extends AppCompatActivity {
         emailInput = findViewById(R.id.register_email);
         usernameInput = findViewById(R.id.register_username);
         regionInput = findViewById(R.id.register_region);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_dropdown_item_1line,
+                RegionRepository.getAllNames()
+        );
+
+        regionInput.setAdapter(adapter);
+        regionInput.setFocusable(false);
+        regionInput.setClickable(true);
+        regionInput.setOnClickListener(v -> regionInput.showDropDown());
         passwordInput = findViewById(R.id.register_password);
         passwordRepeatInput = findViewById(R.id.register_password_repeat);
         registerButton = findViewById(R.id.btn_register_submit);
@@ -57,7 +70,9 @@ public class RegisterActivity extends AppCompatActivity {
 
         String email = getText(emailInput);
         String username = getText(usernameInput);
-        String region = getText(regionInput);
+        String region = regionInput.getText() != null
+                ? regionInput.getText().toString()
+                : "";
         // Passwords are not trimmed to preserve exactly what the user typed.
         String password = getRawText(passwordInput);
         String passwordRepeat = getRawText(passwordRepeatInput);
