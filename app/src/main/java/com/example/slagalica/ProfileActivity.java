@@ -19,8 +19,10 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.example.slagalica.service.UserService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -145,6 +147,86 @@ public class ProfileActivity extends AppCompatActivity {
             ConnectionsStatsExpandedContainer.setVisibility(expanded ? View.GONE : View.VISIBLE);
             ConnectionsStatsToggleIcon.setImageResource(expanded ? R.drawable.ic_arrow_down : R.drawable.ic_arrow_up);
         });
+
+        setupStatsProgress();
+    }
+
+    private void setupStatsProgress() {
+        LinearProgressIndicator winProgress = findViewById(R.id.winProgress);
+        LinearProgressIndicator whoKnowsAvgProgress = findViewById(R.id.whoKnowsAvgProgress);
+        LinearProgressIndicator numbersRatioProgress = findViewById(R.id.numbersRatioProgress);
+        LinearProgressIndicator numbersAvgProgress = findViewById(R.id.numbersAvgProgress);
+        LinearProgressIndicator stepByStepAvgProgress = findViewById(R.id.stepByStepAvgProgress);
+        LinearProgressIndicator associationsRatioProgress = findViewById(R.id.associationsRatioProgress);
+        LinearProgressIndicator associationsAvgProgress = findViewById(R.id.associationsAvgProgress);
+        LinearProgressIndicator skockoAvgProgress = findViewById(R.id.skockoAvgProgress);
+        LinearProgressIndicator connectionsRatioProgress = findViewById(R.id.connectionsRatioProgress);
+        LinearProgressIndicator connectionsAvgProgress = findViewById(R.id.connectionsAvgProgress);
+
+        int goodColor = ContextCompat.getColor(this, R.color.correct_answer_color);
+        int mediumColor = ContextCompat.getColor(this, R.color.performance_medium);
+        int badColor = ContextCompat.getColor(this, R.color.wrong_answer_color);
+
+        int winPct = 76;
+        winProgress.setProgress(winPct);
+        winProgress.setIndicatorColor(winPct >= 50 ? goodColor : badColor);
+
+        int whoKnowsCorrect = 32;
+        int whoKnowsTotal = whoKnowsCorrect + 14;
+        int whoKnowsPct = whoKnowsTotal > 0 ? (whoKnowsCorrect * 100 / whoKnowsTotal) : 0;
+
+        int whoKnowsAvg = 12;
+        int whoKnowsMax = 50;
+        whoKnowsAvgProgress.setProgress(whoKnowsAvg * 100 / whoKnowsMax);
+        whoKnowsAvgProgress.setIndicatorColor(getPerformanceColor(whoKnowsAvg * 100 / whoKnowsMax, goodColor, mediumColor, badColor));
+
+        int numbersPct = 54;
+        numbersRatioProgress.setProgress(numbersPct);
+        numbersRatioProgress.setIndicatorColor(getPerformanceColor(numbersPct, goodColor, mediumColor, badColor));
+
+        int numbersAvg = 12;
+        int numbersMax = 20;
+        numbersAvgProgress.setProgress(numbersAvg * 100 / numbersMax);
+        numbersAvgProgress.setIndicatorColor(getPerformanceColor(numbersAvg * 100 / numbersMax, goodColor, mediumColor, badColor));
+
+        int stepByStepPct = 50;
+
+        int stepByStepAvg = 18;
+        int stepByStepMax = 40;
+        stepByStepAvgProgress.setProgress(stepByStepAvg * 100 / stepByStepMax);
+        stepByStepAvgProgress.setIndicatorColor(getPerformanceColor(stepByStepAvg * 100 / stepByStepMax, goodColor, mediumColor, badColor));
+
+        int associationsCorrect = 25;
+        int associationsTotal = 100;
+        associationsRatioProgress.setProgress(associationsCorrect);
+        associationsRatioProgress.setIndicatorColor(getPerformanceColor(associationsCorrect, goodColor, mediumColor, badColor));
+
+        int associationsAvg = 32;
+        int associationsMax = 60;
+        associationsAvgProgress.setProgress(associationsAvg * 100 / associationsMax);
+        associationsAvgProgress.setIndicatorColor(getPerformanceColor(associationsAvg * 100 / associationsMax, goodColor, mediumColor, badColor));
+
+        int skockoPct = 60;
+
+        int skockoAvg = 32;
+        int skockoMax = 40;
+        skockoAvgProgress.setProgress(skockoAvg * 100 / skockoMax);
+        skockoAvgProgress.setIndicatorColor(getPerformanceColor(skockoAvg * 100 / skockoMax, goodColor, mediumColor, badColor));
+
+        int connectionsPct = 78;
+        connectionsRatioProgress.setProgress(connectionsPct);
+        connectionsRatioProgress.setIndicatorColor(getPerformanceColor(connectionsPct, goodColor, mediumColor, badColor));
+
+        int connectionsAvg = 16;
+        int connectionsMax = 20;
+        connectionsAvgProgress.setProgress(connectionsAvg * 100 / connectionsMax);
+        connectionsAvgProgress.setIndicatorColor(getPerformanceColor(connectionsAvg * 100 / connectionsMax, goodColor, mediumColor, badColor));
+    }
+
+    private int getPerformanceColor(int percentage, int goodColor, int mediumColor, int badColor) {
+        if (percentage >= 70) return goodColor;
+        if (percentage >= 40) return mediumColor;
+        return badColor;
     }
 
     private void loadProfile() {
