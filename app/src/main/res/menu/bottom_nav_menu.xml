@@ -9,6 +9,10 @@
         android:icon="@drawable/ic_stats"
         android:title="Statistika" />
     <item
+        android:id="@+id/navigation_home"
+        android:icon="@drawable/ic_home"
+        android:title="Početna" />
+    <item
         android:id="@+id/navigation_friends"
         android:icon="@drawable/ic_friends"
         android:title="Prijatelji" />
@@ -22,8 +26,8 @@
         android:icon="@drawable/ic_new_game"
         android:title="Nova igra" />
     -->
-    <item
+    <!-- <item
         android:id="@+id/navigation_notifications"
         android:icon="@drawable/ic_notification"
-        android:title="Notifikacije" />
+        android:title="Notifikacije" /> -->
 </menu>
