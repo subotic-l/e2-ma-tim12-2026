@@ -250,8 +250,13 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         if (answered) return;
         answered = true; myAns = idx; myTime = Q_TIME_MS - remain;
         if (timer != null) { timer.cancel(); timer = null; }
-        btns[idx].setBackgroundTintList(ColorStateList.valueOf(0x66FFAA00));
-        btns[idx].setStrokeColor(ColorStateList.valueOf(0xFFFF8800));
+        if (me == 1) {
+            btns[idx].setBackgroundTintList(ColorStateList.valueOf(0x662196F3));
+            btns[idx].setStrokeColor(ColorStateList.valueOf(0xFF1565C0));
+        } else {
+            btns[idx].setBackgroundTintList(ColorStateList.valueOf(0x66FFAA00));
+            btns[idx].setStrokeColor(ColorStateList.valueOf(0xFFFF8800));
+        }
         for (int j = 0; j < btns.length; j++) if (j != idx) btns[j].setEnabled(false);
         writeAns();
     }
