@@ -148,7 +148,23 @@ public class ProfileActivity extends AppCompatActivity {
             ConnectionsStatsToggleIcon.setImageResource(expanded ? R.drawable.ic_arrow_down : R.drawable.ic_arrow_up);
         });
 
+        BottomNavigationHelper.setup(this, R.id.navigation_profile, (fromId, toId) -> {
+
+            if (toId == R.id.navigation_home) {
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
+            }
+        });
+
         setupStatsProgress();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        BottomNavigationHelper.onResume(this);
     }
 
     private void setupStatsProgress() {
