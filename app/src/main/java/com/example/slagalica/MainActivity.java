@@ -7,9 +7,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.fragment.app.Fragment;
 
 public class MainActivity extends AppCompatActivity {
+
+    private NavigationHelper navHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,47 +24,21 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragmentContainer, new HomeFragment())
-                    .commit();
-        }
+        navHelper = new NavigationHelper(this, R.id.navigation_home)
+                .addFragmentTab(R.id.navigation_home, HomeFragment.class)
+                .addFragmentTab(R.id.navigation_profile, ProfileFragment.class)
+                .addSoonTab(R.id.navigation_stats)
+                .addSoonTab(R.id.navigation_friends)
+                .addSoonTab(R.id.navigation_rankings);
 
-        BottomNavigationHelper.setup(this, R.id.navigation_home, this::switchFragment);
+        navHelper.setup(savedInstanceState);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        BottomNavigationHelper.onResume(this);
-    }
-
-    private void switchFragment(int fromItemId, int toItemId) {
-        Fragment fragment;
-        if (toItemId == R.id.navigation_home) {
-            fragment = new HomeFragment();
-        } else if (toItemId == R.id.navigation_profile) {
-            fragment = new ProfileFragment();
-        } else {
-            return;
-        }
-        navigateToFragment(fragment, fromItemId, toItemId);
-    }
-
-    private void navigateToFragment(Fragment fragment, int fromItemId, int toItemId) {
-        int fromIndex = BottomNavigationHelper.tabIndex(fromItemId);
-        int toIndex = BottomNavigationHelper.tabIndex(toItemId);
-
-        if (toIndex > fromIndex) {
-            getSupportFragmentManager().beginTransaction()
-                    .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left)
-                    .replace(R.id.fragmentContainer, fragment)
-                    .commit();
-        } else {
-            getSupportFragmentManager().beginTransaction()
-                    .setCustomAnimations(R.anim.slide_in_left, R.anim.slide_out_right)
-                    .replace(R.id.fragmentContainer, fragment)
-                    .commit();
+        if (navHelper != null) {
+            navHelper.onResume();
         }
     }
 }
