@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -20,9 +21,9 @@ import com.bumptech.glide.request.RequestOptions;
 import com.example.slagalica.Question;
 import com.example.slagalica.R;
 import com.example.slagalica.data.GameSessionManager;
+import com.example.slagalica.data.QuestionRepository;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     private int localMyPts = 0, localOppPts = 0;
     private boolean done = false;
     private boolean iAmFinisher = false;
+    private QuestionRepository questionRepository;
 
     private TextView timerView, qView, myNameView, oppNameView, myScoreView, oppScoreView;
     private android.widget.ImageView myAvatarView, oppAvatarView;
@@ -93,7 +95,15 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         if (myName == null || myName.isEmpty()) myName = "Igrač 1";
         myAvatar = i.getStringExtra("myAvatarUrl");
 
-        loadQ();
+        for (Button b : btns) b.setVisibility(View.GONE);
+        timerView.setVisibility(View.GONE);
+        qView.setText("Priprema...");
+
+        questionRepository = new QuestionRepository();
+        if (me == 1) {
+            loadQuestionsFromFirestore();
+        }
+
         sm = new GameSessionManager();
         sm.attachToMatch(matchId, me);
         sm.listenToMatch(createL());
@@ -127,24 +137,32 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
 
                 Map<String, Object> gs = (Map<String, Object>) full.get("gameState");
                 if (gs == null || gs.isEmpty()) {
-                    if (me == 1 && !gameStarted) {
-                        gameStarted = true;
-                        curQ = 0;
-                        iAmFinisher = true;
-                        Map<String, Object> gs2 = new HashMap<>();
-                        gs2.put("curQ", 0L);
-                        gs2.put("phase", "q");
-                        gs2.put("p1Ans", -2L);
-                        gs2.put("p2Ans", -2L);
-                        gs2.put("p1Time", -1L);
-                        gs2.put("p2Time", -1L);
-                        gs2.put("p1Pts", 0L);
-                        gs2.put("p2Pts", 0L);
-                        sm.setGameState(gs2);
-                        startNewQ();
+                    return;
+                }
+
+                if (questions == null) {
+                    if (gs.containsKey("questions")) {
+                        questions = deserializeQuestions(gs);
+                        if (me == 2) {
+                            sm.updateField("gameState.player2Ready", true);
+                        }
                     }
                     return;
                 }
+
+                String phase = (String) gs.get("phase");
+                if ("loading".equals(phase)) {
+                    boolean p1r = Boolean.TRUE.equals(gs.get("player1Ready"));
+                    boolean p2r = Boolean.TRUE.equals(gs.get("player2Ready"));
+                    if (me == 1 && p1r && p2r) {
+                        Map<String, Object> updates = new HashMap<>();
+                        updates.put("phase", "q");
+                        sm.updateGameState(updates);
+                        runOnUiThread(() -> startNewQ());
+                    }
+                    return;
+                }
+
                 runOnUiThread(() -> process(gs));
             }
             public void onMatchEnded(Map<String, Object> f) {
@@ -208,6 +226,9 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     }
 
     private void startNewQ() {
+        for (Button b : btns) b.setVisibility(View.VISIBLE);
+        timerView.setVisibility(View.VISIBLE);
+
         myAns = -1; myTime = -1; answered = false;
         Question q = questions.get(curQ);
         qView.setText((curQ + 1) + ". " + q.questionText);
@@ -361,13 +382,59 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         oppScoreView.setText(String.valueOf(localOppPts));
     }
 
-    private void loadQ() {
-        questions = new ArrayList<>();
-        questions.add(new Question("U kom veku je vođena bitka kod Vučijeg dola?", Arrays.asList("X", "XVI", "XVII", "XIX"), 3));
-        questions.add(new Question("Pored kog grada se nalazi aerodrom 'Marko Polo'?", Arrays.asList("Venecija", "Skoplje", "Atina", "Đenova"), 0));
-        questions.add(new Question("Na kojem instrumentu je svirao Džon Koltrejn?", Arrays.asList("gitara", "bubnjevi", "saksofon", "klavir"), 2));
-        questions.add(new Question("Šta je bedeker?", Arrays.asList("kolač", "vodič za turiste", "građevinska mešalica", "rekvizit u karlingu"), 1));
-        questions.add(new Question("Na zastavi koje države se nalazi stablo kedra?", Arrays.asList("Libije", "Sirije", "Izraela", "Libana"), 3));
+    private void writeInitialState() {
+        gameStarted = true;
+        curQ = 0;
+        iAmFinisher = true;
+        Map<String, Object> gs2 = new HashMap<>();
+        gs2.put("curQ", 0L);
+        gs2.put("phase", "loading");
+        gs2.put("p1Ans", -2L);
+        gs2.put("p2Ans", -2L);
+        gs2.put("p1Time", -1L);
+        gs2.put("p2Time", -1L);
+        gs2.put("p1Pts", 0L);
+        gs2.put("p2Pts", 0L);
+        gs2.put("questions", serializeQuestions(questions));
+        gs2.put("player1Ready", true);
+        sm.setGameState(gs2);
+    }
+
+    private void loadQuestionsFromFirestore() {
+        questionRepository.getRandomQuestions()
+                .addOnSuccessListener(loaded -> {
+                    questions = loaded;
+                    writeInitialState();
+                })
+                .addOnFailureListener(e -> {
+                    questions = new ArrayList<>();
+                });
+    }
+
+    private List<Map<String, Object>> serializeQuestions(List<Question> qs) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Question q : qs) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("questionText", q.questionText);
+            m.put("answers", q.answers);
+            m.put("correctAnswerIndex", (long) q.correctAnswerIndex);
+            result.add(m);
+        }
+        return result;
+    }
+
+    private List<Question> deserializeQuestions(Map<String, Object> gs) {
+        List<Map<String, Object>> qMaps = (List<Map<String, Object>>) gs.get("questions");
+        List<Question> result = new ArrayList<>();
+        for (Map<String, Object> m : qMaps) {
+            String qText = (String) m.get("questionText");
+            List<String> answers = (List<String>) m.get("answers");
+            Long correctIdx = (Long) m.get("correctAnswerIndex");
+            if (qText != null && answers != null && correctIdx != null) {
+                result.add(new Question(qText, answers, correctIdx.intValue()));
+            }
+        }
+        return result;
     }
 
     @Override protected void onDestroy() {
