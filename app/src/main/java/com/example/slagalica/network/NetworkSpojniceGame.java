@@ -459,6 +459,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         } else {
             flashRightIndex = displayedRightIndex;
             localFlashWrong = true;
+            updateUI();
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 localFlashWrong = false;
                 resetBtn(rightBtns[displayedRightIndex]);
@@ -556,6 +557,10 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         if (moveToR2) {
             shuffleOrder = shuffleOrder1;
             if (games != null && games.size() > 1) currentGame = games.get(1);
+            syncLeftMatched = new boolean[TOTAL_ITEMS];
+            syncRightUsed = new boolean[TOTAL_ITEMS];
+            syncMatchedByPlayer = new int[TOTAL_ITEMS];
+            firstLeft = 0;
         }
 
         syncActivePlayer = nextActive;
@@ -636,8 +641,10 @@ public class NetworkSpojniceGame extends AppCompatActivity {
     }
 
     private void updateScoreDisplay() {
-        myScoreView.setText(String.valueOf(localMyPts));
-        oppScoreView.setText(String.valueOf(localOppPts));
+        int myTotal = (me == 1 ? previousP1Score : previousP2Score) + localMyPts;
+        int oppTotal = (me == 1 ? previousP2Score : previousP1Score) + localOppPts;
+        myScoreView.setText(String.valueOf(myTotal));
+        oppScoreView.setText(String.valueOf(oppTotal));
     }
 
     private void loadAvatar(android.widget.ImageView iv, String url) {
