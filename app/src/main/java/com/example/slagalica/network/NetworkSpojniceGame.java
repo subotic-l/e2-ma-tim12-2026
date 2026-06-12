@@ -34,6 +34,9 @@ public class NetworkSpojniceGame extends AppCompatActivity {
     private static final int TOTAL_ITEMS = 5;
     private static final int ROUND_TIME = 30;
     private static final int WRONG_FLASH_MS = 400;
+    private static final int END_DELAY_MS = 2000;
+    private static final int P1_MATCH_COLOR = 0xFF1565C0;
+    private static final int P2_MATCH_COLOR = 0xFFE65100;
 
     private static final String PHASE_INIT = "init";
     private static final String PHASE_R1_PLAY = "round1_play";
@@ -65,6 +68,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
     private boolean[] syncLeftMatched = new boolean[TOTAL_ITEMS];
     private boolean[] syncRightUsed = new boolean[TOTAL_ITEMS];
     private int[] syncMatchedByPlayer = new int[TOTAL_ITEMS];
+    private int[] syncRightMatchedByPlayer = new int[TOTAL_ITEMS];
     private int syncCurrentLeft = 0;
     private long syncP1Score = 0;
     private long syncP2Score = 0;
@@ -274,6 +278,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         syncLeftMatched = readBoolArray(gs.get("leftMatched"), TOTAL_ITEMS);
         syncRightUsed = readBoolArray(gs.get("rightUsed"), TOTAL_ITEMS);
         syncMatchedByPlayer = readIntArray(gs.get("matchedByPlayer"), TOTAL_ITEMS);
+        syncRightMatchedByPlayer = readIntArray(gs.get("rightMatchedByPlayer"), TOTAL_ITEMS);
 
         Object cli = gs.get("currentLeftIndex");
         syncCurrentLeft = cli instanceof Long ? ((Long) cli).intValue() : 0;
@@ -376,7 +381,9 @@ public class NetworkSpojniceGame extends AppCompatActivity {
             leftBtns[i].setEnabled(false);
 
             if (matched) {
-                leftBtns[i].setBackgroundTintList(ColorStateList.valueOf(correctColor));
+                int who = syncMatchedByPlayer[i];
+                int bgColor = who == 1 ? P1_MATCH_COLOR : P2_MATCH_COLOR;
+                leftBtns[i].setBackgroundTintList(ColorStateList.valueOf(bgColor));
                 leftBtns[i].setStrokeColor(ColorStateList.valueOf(correctBorder));
             } else if (isCurrent) {
                 leftBtns[i].setBackgroundTintList(ColorStateList.valueOf(selectedColor));
@@ -391,8 +398,10 @@ public class NetworkSpojniceGame extends AppCompatActivity {
             boolean used = syncRightUsed[i];
 
             if (used) {
+                int who = syncRightMatchedByPlayer[i];
+                int bgColor = who == 1 ? P1_MATCH_COLOR : P2_MATCH_COLOR;
                 rightBtns[i].setEnabled(false);
-                rightBtns[i].setBackgroundTintList(ColorStateList.valueOf(correctColor));
+                rightBtns[i].setBackgroundTintList(ColorStateList.valueOf(bgColor));
                 rightBtns[i].setStrokeColor(ColorStateList.valueOf(correctBorder));
             } else {
                 rightBtns[i].setEnabled(isMyTurn);
@@ -435,6 +444,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         s.put("leftMatched", zeroLongs(TOTAL_ITEMS));
         s.put("rightUsed", zeroLongs(TOTAL_ITEMS));
         s.put("matchedByPlayer", zeroLongs(TOTAL_ITEMS));
+        s.put("rightMatchedByPlayer", zeroLongs(TOTAL_ITEMS));
         s.put("p1Score", 0L);
         s.put("p2Score", 0L);
         s.put("games", serializeGames(games));
@@ -462,6 +472,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
             syncLeftMatched[leftIndex] = true;
             syncRightUsed[displayedRightIndex] = true;
             syncMatchedByPlayer[leftIndex] = me;
+            syncRightMatchedByPlayer[displayedRightIndex] = me;
             if (me == 1) syncP1Score += 2;
             else syncP2Score += 2;
             localMyPts = (int) (me == 1 ? syncP1Score : syncP2Score);
@@ -480,11 +491,15 @@ public class NetworkSpojniceGame extends AppCompatActivity {
 
         if (nextLeft == -1) {
             // Phase done for the current player
+            if (timer != null) timer.cancel();
+            timerRunning = false;
             String nextPhase = determineNextPhase();
             syncCurrentLeft = -1;
             writeState();
             if (nextPhase != null) {
-                endPhase(nextPhase);
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    endPhase(nextPhase);
+                }, END_DELAY_MS);
             }
             return;
         }
@@ -569,6 +584,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
             syncLeftMatched = new boolean[TOTAL_ITEMS];
             syncRightUsed = new boolean[TOTAL_ITEMS];
             syncMatchedByPlayer = new int[TOTAL_ITEMS];
+            syncRightMatchedByPlayer = new int[TOTAL_ITEMS];
             firstLeft = 0;
         }
 
@@ -582,6 +598,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         u.put("leftMatched", toLongList(syncLeftMatched));
         u.put("rightUsed", toLongList(syncRightUsed));
         u.put("matchedByPlayer", toLongList(syncMatchedByPlayer));
+        u.put("rightMatchedByPlayer", toLongList(syncRightMatchedByPlayer));
         u.put("p1Score", syncP1Score);
         u.put("p2Score", syncP2Score);
         sm.updateGameState(u);
@@ -595,6 +612,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         u.put("leftMatched", toLongList(syncLeftMatched));
         u.put("rightUsed", toLongList(syncRightUsed));
         u.put("matchedByPlayer", toLongList(syncMatchedByPlayer));
+        u.put("rightMatchedByPlayer", toLongList(syncRightMatchedByPlayer));
         u.put("p1Score", syncP1Score);
         u.put("p2Score", syncP2Score);
         sm.updateGameState(u);
@@ -624,19 +642,25 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         boolean isPlay = PHASE_R1_PLAY.equals(syncPhase) || PHASE_R2_PLAY.equals(syncPhase);
         boolean isSteal = PHASE_R1_STEAL.equals(syncPhase) || PHASE_R2_STEAL.equals(syncPhase);
 
+        final String nextPhase;
         if (isPlay) {
             boolean hasUnmatched = false;
             for (int i = 0; i < TOTAL_ITEMS; i++) {
                 if (!syncLeftMatched[i]) { hasUnmatched = true; break; }
             }
             if (hasUnmatched) {
-                endPhase(PHASE_R1_PLAY.equals(syncPhase) ? PHASE_R1_STEAL : PHASE_R2_STEAL);
+                nextPhase = PHASE_R1_PLAY.equals(syncPhase) ? PHASE_R1_STEAL : PHASE_R2_STEAL;
             } else {
-                endPhase(PHASE_R1_PLAY.equals(syncPhase) ? PHASE_R2_PLAY : PHASE_DONE);
+                nextPhase = PHASE_R1_PLAY.equals(syncPhase) ? PHASE_R2_PLAY : PHASE_DONE;
             }
         } else if (isSteal) {
-            endPhase(PHASE_R1_STEAL.equals(syncPhase) ? PHASE_R2_PLAY : PHASE_DONE);
+            nextPhase = PHASE_R1_STEAL.equals(syncPhase) ? PHASE_R2_PLAY : PHASE_DONE;
+        } else {
+            return;
         }
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            endPhase(nextPhase);
+        }, END_DELAY_MS);
     }
 
     private void finishGame() {
@@ -700,6 +724,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         gs.put("leftMatched", zeroLongs(TOTAL_ITEMS));
         gs.put("rightUsed", zeroLongs(TOTAL_ITEMS));
         gs.put("matchedByPlayer", zeroLongs(TOTAL_ITEMS));
+        gs.put("rightMatchedByPlayer", zeroLongs(TOTAL_ITEMS));
         gs.put("currentLeftIndex", -1L);
         sm.setGameState(gs);
     }
