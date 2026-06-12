@@ -221,7 +221,6 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
     private void initRound1() {
-        iAmFinisher = true;
         round = 1;
         revealer = 1;
         game = NumbersGame.createRandom();
@@ -268,13 +267,13 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
                 if (gs == null || gs.isEmpty()) return;
                 if (gs.get("phase") == null) return;
 
-                phase = (String) gs.get("phase");
-                round = gs.containsKey("round") ? ((Long) gs.get("round")).intValue() : 1;
-                revealer = gs.containsKey("revealer") ? ((Long) gs.get("revealer")).intValue() : 1;
-
-                boolean iAmRevealer = (revealer == me);
-
                 runOnUiThread(() -> {
+                    phase = (String) gs.get("phase");
+                    round = gs.containsKey("round") ? ((Long) gs.get("round")).intValue() : 1;
+                    revealer = gs.containsKey("revealer") ? ((Long) gs.get("revealer")).intValue() : 1;
+                    iAmFinisher = (revealer == me);
+                    boolean iAmRevealer = (revealer == me);
+
                     switch (phase) {
                         case "reveal_target":
                             handleRevealTarget(iAmRevealer);
@@ -289,7 +288,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
                             handleResult(gs);
                             break;
                         case "done":
-                            if (iAmFinisher) finishGame();
+                            finishGame();
                             break;
                     }
                 });
@@ -365,8 +364,9 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         clearBtn.setEnabled(false);
         disableNumberButtons();
         hideOperatorButtons();
+        playInitialized = false;
         exprView.setText("");
-        for (MaterialButton b : numBtns) b.setText("");
+        for (MaterialButton b : numBtns) { b.setText(""); b.setAlpha(1f); }
         if (iAmRevealer) {
             registerShakeListener();
             startStopTimer();
@@ -468,7 +468,6 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     private void startRound2() {
         round = 2;
         revealer = 2;
-        iAmFinisher = (me == 2);
         game = null;
         submitted = false;
         playInitialized = false;
@@ -571,7 +570,6 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
             return;
         }
         submitted = true;
-        if (gameTimer != null) { gameTimer.cancel(); gameTimer = null; }
         try {
             myResult = evaluate(expr);
         } catch (Exception e) {

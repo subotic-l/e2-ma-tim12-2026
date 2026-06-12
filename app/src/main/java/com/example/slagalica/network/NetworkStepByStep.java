@@ -53,8 +53,11 @@ public class NetworkStepByStep extends AppCompatActivity {
 
     private List<String> clues = new ArrayList<>();
     private String answer = "";
+    private List<String> round2Clues = new ArrayList<>();
+    private String round2Answer = "";
 
     private boolean isTimerRunning = false;
+    private boolean roundEnding = false;
     private String myName, myAvatar;
 
     @Override
@@ -167,10 +170,18 @@ public class NetworkStepByStep extends AppCompatActivity {
                 if (fbAnswer != null && !fbAnswer.isEmpty()) {
                     answer = fbAnswer;
                 }
+                List<String> fbClues2 = (List<String>) gs.get("clues2");
+                if (fbClues2 != null && !fbClues2.isEmpty()) {
+                    round2Clues = fbClues2;
+                }
+                String fbAnswer2 = (String) gs.get("answer2");
+                if (fbAnswer2 != null && !fbAnswer2.isEmpty()) {
+                    round2Answer = fbAnswer2;
+                }
 
                 runOnUiThread(() -> updateUI());
 
-                if (myTurn && !"finished".equals(phase)) {
+                if (myTurn && !"finished".equals(phase) && !roundEnding) {
                     if (!isTimerRunning) {
                         startTimer();
                     }
@@ -217,13 +228,21 @@ public class NetworkStepByStep extends AppCompatActivity {
     }
 
     private void loadGameFromFirebase() {
-        repo.getRandomGame()
-                .addOnSuccessListener(game -> {
-                    clues = game.getClues();
-                    answer = game.getAnswer();
+        repo.getTwoRandomGames()
+                .addOnSuccessListener(games -> {
+                    StepByStepGame game1 = games.get(0);
+                    StepByStepGame game2 = games.get(1);
+                    clues = game1.getClues();
+                    answer = game1.getAnswer();
+                    round2Clues = game2.getClues();
+                    round2Answer = game2.getAnswer();
                     Map<String, Object> up = new HashMap<>();
-                    up.put("clues", clues);
-                    up.put("answer", answer);
+                    up.put("clues", game1.getClues());
+                    up.put("answer", game1.getAnswer());
+                    up.put("clues1", game1.getClues());
+                    up.put("answer1", game1.getAnswer());
+                    up.put("clues2", game2.getClues());
+                    up.put("answer2", game2.getAnswer());
                     up.put("phase", "play");
                     sm.updateGameState(up);
                     runOnUiThread(this::updateUI);
@@ -242,15 +261,23 @@ public class NetworkStepByStep extends AppCompatActivity {
             else cluesView[i].setText("(zatvoreno)");
         }
 
-        if (stealPhase) {
-            pointsView.setText("Steal: 5 poena");
+        if (roundEnding) {
+            pointsView.setText("Ta\u010Dno! +" + (stealPhase ? 5 : Math.max(0, 20 - step * 2)) + " poena");
         } else if (myTurn) {
-            int pts = Math.max(0, 20 - step * 2);
-            pointsView.setText("Bodovi: " + pts);
+            if (stealPhase) {
+                pointsView.setText("Tvoj poku\u0161aj: 5 poena");
+            } else {
+                int pts = Math.max(0, 20 - step * 2);
+                pointsView.setText("Ti si na potezu - " + pts + " poena");
+            }
+        } else if (stealPhase) {
+            pointsView.setText("Uzmi poene: 5 poena - Na potezu: " + oppNameView.getText());
+        } else {
+            pointsView.setText("Na potezu: " + oppNameView.getText());
         }
 
-        input.setEnabled(myTurn);
-        btn.setEnabled(myTurn);
+        input.setEnabled(myTurn && !roundEnding);
+        btn.setEnabled(myTurn && !roundEnding);
 
         int totalMy = previousP1Score + (me == 1 ? myScore : oppScore);
         int totalOpp = previousP2Score + (me == 1 ? oppScore : myScore);
@@ -289,7 +316,14 @@ public class NetworkStepByStep extends AppCompatActivity {
         if (g.equalsIgnoreCase(answer)) {
             int pts = stealPhase ? 5 : Math.max(0, 20 - step * 2);
             addScore(pts);
-            advanceRound();
+            roundEnding = true;
+            stopTimer();
+            sm.updateField("gameState.step", 6L);
+            input.setEnabled(false);
+            btn.setEnabled(false);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                advanceRound();
+            }, 2500);
         } else {
             input.setText("");
         }
@@ -304,7 +338,6 @@ public class NetworkStepByStep extends AppCompatActivity {
         } else {
             Map<String, Object> up = new HashMap<>();
             up.put("phase", "steal");
-            up.put("step", 0L);
             up.put("currentPlayer", (long) opp);
             sm.updateGameState(up);
         }
@@ -317,12 +350,15 @@ public class NetworkStepByStep extends AppCompatActivity {
     }
 
     private void advanceRound() {
+        roundEnding = false;
         if (round == 0) {
             Map<String, Object> up = new HashMap<>();
             up.put("round", 1L);
             up.put("step", 0L);
             up.put("phase", "play");
             up.put("currentPlayer", 2L);
+            if (!round2Clues.isEmpty()) up.put("clues", round2Clues);
+            if (!round2Answer.isEmpty()) up.put("answer", round2Answer);
             sm.updateGameState(up);
         } else {
             sm.updateField("gameState.phase", "finished");

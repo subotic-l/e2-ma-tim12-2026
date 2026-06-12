@@ -48,4 +48,32 @@ public class StepByStepRepository {
                     return games.get(0);
                 });
     }
+
+    public Task<List<StepByStepGame>> getTwoRandomGames() {
+        return db.collection(COLLECTION)
+                .get()
+                .continueWith(task -> {
+                    if (!task.isSuccessful() || task.getResult() == null) {
+                        throw task.getException();
+                    }
+
+                    List<StepByStepGame> games = new ArrayList<>();
+
+                    for (QueryDocumentSnapshot doc : task.getResult()) {
+                        String answer = doc.getString("answer");
+                        List<String> clues = (List<String>) doc.get("clues");
+
+                        if (answer != null && clues != null) {
+                            games.add(new StepByStepGame(clues, answer));
+                        }
+                    }
+
+                    if (games.size() < 2) {
+                        throw new IllegalStateException("Need at least 2 StepByStep games in Firestore");
+                    }
+
+                    Collections.shuffle(games);
+                    return games.subList(0, 2);
+                });
+    }
 }
