@@ -16,10 +16,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.slagalica.data.QuestionRepository;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class WhoKnowsKnows extends AppCompatActivity {
@@ -37,6 +37,7 @@ public class WhoKnowsKnows extends AppCompatActivity {
     private int basePlayerTwoScore = 0;
     private TextView playerOneScoreView;
     private TextView playerTwoScoreView;
+    private QuestionRepository questionRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,28 +73,26 @@ public class WhoKnowsKnows extends AppCompatActivity {
             answerButtons[i].setOnClickListener(v -> onAnswerSelected(index));
         }
 
-        loadQuestions();
-        displayQuestion();
-        startTimer();
+        questionRepository = new QuestionRepository();
+        loadQuestionsFromFirestore();
     }
 
-    private void loadQuestions() {
-        questions = new ArrayList<>();
-        questions.add(new Question(
-                "U kom veku je vođena bitka kod Vučijeg dola?",
-                Arrays.asList("X", "XVI", "XVII", "XIX"), 3));
-        questions.add(new Question(
-                "Pored kog grada se nalazi aerodrom 'Marko Polo'?",
-                Arrays.asList("Venecija", "Skoplje", "Atina", "Đenova"), 0));
-        questions.add(new Question(
-                "Na kojem instrumentu je svirao Džon Koltrejn?",
-                Arrays.asList("gitara", "bubnjevi", "saksofon", "klavir"), 2));
-        questions.add(new Question(
-                "Šta je bedeker?",
-                Arrays.asList("kolač", "vodič za turiste", "građevinska mešalica", "rekvizit u karlingu"), 1));
-        questions.add(new Question(
-                "Na zastavi koje države se nalazi stablo kedra?",
-                Arrays.asList("Libije", "Sirije", "Izraela", "Libana"), 3));
+    private void loadQuestionsFromFirestore() {
+        questionTextView.setText("Učitavanje pitanja...");
+        disableAnswerButtons();
+        questionRepository.getRandomQuestions()
+                .addOnSuccessListener(loaded -> {
+                    questions = loaded;
+                    if (questions.isEmpty()) {
+                        questionTextView.setText("Greška: nema pitanja u bazi");
+                        return;
+                    }
+                    displayQuestion();
+                    startTimer();
+                })
+                .addOnFailureListener(e -> {
+                    questionTextView.setText("Greška pri učitavanju pitanja");
+                });
     }
 
     private void displayQuestion() {
