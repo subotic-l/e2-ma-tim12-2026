@@ -9,6 +9,8 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.slagalica.R;
 import com.example.slagalica.data.GameSessionManager;
 import com.example.slagalica.data.StepByStepRepository;
@@ -20,7 +22,6 @@ import java.util.*;
 public class NetworkStepByStep extends AppCompatActivity {
 
     private static final int STEP_TIME = 10000;
-    private static final int MAX_STEPS = 7;
 
     private GameSessionManager sm;
     private int me, opp, gameIdx;
@@ -31,24 +32,30 @@ public class NetworkStepByStep extends AppCompatActivity {
     private TextInputEditText input;
     private MaterialButton btn;
 
+    private TextView myNameView, oppNameView, myScoreView, oppScoreView;
+    private android.widget.ImageView myAvatarView, oppAvatarView;
+
     private CountDownTimer timer;
 
     private int step = 0;
     private int round = 0;
     private boolean myTurn = false;
     private boolean stealPhase = false;
-    private boolean iAmFinisher = false;
-
-    private int myScore = 0, oppScore = 0;
-
     private boolean done = false;
+
+    private int myScore = 0;
+    private int oppScore = 0;
+
     private StepByStepRepository repo;
     private int totalGames;
     private int previousP1Score = 0;
     private int previousP2Score = 0;
 
     private List<String> clues = new ArrayList<>();
-    private String answer;
+    private String answer = "";
+
+    private boolean isTimerRunning = false;
+    private String myName, myAvatar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +75,18 @@ public class NetworkStepByStep extends AppCompatActivity {
         pointsView = findViewById(R.id.pointsTextView);
         input = findViewById(R.id.guessInput);
         btn = findViewById(R.id.submitGuessButton);
+
+        myNameView = findViewById(R.id.playerOneName);
+        oppNameView = findViewById(R.id.playerTwoName);
+        myScoreView = findViewById(R.id.playerOneScore);
+        oppScoreView = findViewById(R.id.playerTwoScore);
+        myAvatarView = findViewById(R.id.playerOneAvatar);
+        oppAvatarView = findViewById(R.id.playerTwoAvatar);
+
+        myName = i.getStringExtra("myPlayerName");
+        if (myName == null || myName.isEmpty()) myName = "Igra\u010D 1";
+        myAvatar = i.getStringExtra("myAvatarUrl");
+
         repo = new StepByStepRepository();
 
         cluesView = new TextView[]{
@@ -95,135 +114,200 @@ public class NetworkStepByStep extends AppCompatActivity {
         return new GameSessionManager.StateListener() {
             @Override
             public void onStateChanged(Map<String, Object> full) {
-
                 if (done) return;
+
+                String p1n = (String) full.get("player1Name");
+                String p2n = (String) full.get("player2Name");
+                String p1a = (String) full.get("player1Avatar");
+                String p2a = (String) full.get("player2Avatar");
+
+                runOnUiThread(() -> {
+                    if (me == 1) {
+                        myNameView.setText(p1n != null ? p1n : myName);
+                        myNameView.setTextColor(0xFF1565C0);
+                        oppNameView.setText(p2n != null ? p2n : "Protivnik");
+                        oppNameView.setTextColor(0xFFE65100);
+                        loadAvatar(myAvatarView, myAvatar);
+                        if (p2a != null) loadAvatar(oppAvatarView, p2a);
+                    } else {
+                        myNameView.setText(p2n != null ? p2n : myName);
+                        myNameView.setTextColor(0xFFE65100);
+                        oppNameView.setText(p1n != null ? p1n : "Protivnik");
+                        oppNameView.setTextColor(0xFF1565C0);
+                        loadAvatar(myAvatarView, myAvatar);
+                        if (p1a != null) loadAvatar(oppAvatarView, p1a);
+                    }
+                });
 
                 Map<String, Object> gs = (Map<String, Object>) full.get("gameState");
                 if (gs == null) return;
 
+                String phase = (String) gs.getOrDefault("phase", "init");
+
+                if ("init".equals(phase)) {
+                    runOnUiThread(() -> showWaiting());
+                    return;
+                }
+
                 step = ((Long) gs.getOrDefault("step", 0L)).intValue();
                 round = ((Long) gs.getOrDefault("round", 0L)).intValue();
-                String phase = (String) gs.getOrDefault("phase", "PLAY");
+                stealPhase = "steal".equals(phase);
 
                 int currentPlayer = ((Long) gs.getOrDefault("currentPlayer", 1L)).intValue();
-
                 myTurn = currentPlayer == me;
-                stealPhase = "STEAL".equals(phase);
 
                 myScore = ((Long) gs.getOrDefault(me == 1 ? "p1Score" : "p2Score", 0L)).intValue();
                 oppScore = ((Long) gs.getOrDefault(me == 1 ? "p2Score" : "p1Score", 0L)).intValue();
 
+                List<String> fbClues = (List<String>) gs.get("clues");
+                if (fbClues != null && !fbClues.isEmpty()) {
+                    clues = fbClues;
+                }
+                String fbAnswer = (String) gs.get("answer");
+                if (fbAnswer != null && !fbAnswer.isEmpty()) {
+                    answer = fbAnswer;
+                }
+
                 runOnUiThread(() -> updateUI());
 
-                if (myTurn && !"FINISHED".equals(phase)) {
-                    startTimer();
+                if (myTurn && !"finished".equals(phase)) {
+                    if (!isTimerRunning) {
+                        startTimer();
+                    }
                 } else {
                     stopTimer();
                 }
 
-                if ("FINISHED".equals(phase)) {
+                if ("finished".equals(phase)) {
                     finishGame();
                 }
             }
 
-            @Override public void onMatchEnded(Map<String, Object> f) {}
+            @Override public void onMatchEnded(Map<String, Object> f) {
+                if (done) return;
+                done = true;
+                stopTimer();
+                if (sm != null) sm.cleanup();
+                setResult(RESULT_OK);
+                finish();
+            }
+
             @Override public void onError(String e) {}
         };
     }
 
+    private void showWaiting() {
+        for (int i = 0; i < 7; i++) cluesView[i].setText("(\u010Dekanje)");
+        pointsView.setText("Bodovi: 0");
+        timerView.setText("Vreme: --");
+        input.setEnabled(false);
+        btn.setEnabled(false);
+    }
+
     private void initGame() {
-        iAmFinisher = true;
-        loadGameFromFirebase();
         Map<String, Object> gs = new HashMap<>();
-        gs.put("step", 0L);
+        gs.put("phase", "init");
         gs.put("round", 0L);
-        gs.put("phase", "PLAY");
+        gs.put("step", 0L);
         gs.put("currentPlayer", 1L);
         gs.put("p1Score", 0L);
         gs.put("p2Score", 0L);
-
         sm.setGameState(gs);
+        loadGameFromFirebase();
     }
 
     private void loadGameFromFirebase() {
         repo.getRandomGame()
                 .addOnSuccessListener(game -> {
-
                     clues = game.getClues();
                     answer = game.getAnswer();
-
+                    Map<String, Object> up = new HashMap<>();
+                    up.put("clues", clues);
+                    up.put("answer", answer);
+                    up.put("phase", "play");
+                    sm.updateGameState(up);
                     runOnUiThread(this::updateUI);
                 })
-                .addOnFailureListener(e -> {
-                    e.printStackTrace();
-                });
+                .addOnFailureListener(e -> e.printStackTrace());
     }
 
     private void updateUI() {
+        if (clues.size() < 7) {
+            showWaiting();
+            return;
+        }
 
-        for (int i = 0; i < MAX_STEPS; i++) {
+        for (int i = 0; i < 7; i++) {
             if (i <= step) cluesView[i].setText(clues.get(i));
             else cluesView[i].setText("(zatvoreno)");
         }
 
-        int points = Math.max(0, 20 - step * 2);
-        pointsView.setText("Bodovi: " + points);
+        if (stealPhase) {
+            pointsView.setText("Steal: 5 poena");
+        } else if (myTurn) {
+            int pts = Math.max(0, 20 - step * 2);
+            pointsView.setText("Bodovi: " + pts);
+        }
 
+        input.setEnabled(myTurn);
+        btn.setEnabled(myTurn);
+
+        int totalMy = previousP1Score + (me == 1 ? myScore : oppScore);
+        int totalOpp = previousP2Score + (me == 1 ? oppScore : myScore);
+        myScoreView.setText(String.valueOf(totalMy));
+        oppScoreView.setText(String.valueOf(totalOpp));
     }
 
     private void startTimer() {
         if (timer != null) timer.cancel();
-
+        isTimerRunning = true;
         timer = new CountDownTimer(STEP_TIME, 1000) {
             public void onTick(long ms) {
                 timerView.setText("Vreme: " + (ms / 1000 + 1));
+                timerView.setTextColor(ms <= 3000 ? 0xFFFF0000 : 0xFFFFFFFF);
             }
-
             public void onFinish() {
-                next();
+                isTimerRunning = false;
+                timerView.setText("Vreme: 0");
+                timerView.setTextColor(0xFFFF0000);
+                runOnUiThread(() -> next());
             }
         }.start();
     }
 
     private void stopTimer() {
-        if (timer != null) timer.cancel();
+        isTimerRunning = false;
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
     }
 
     private void submit() {
+        if (!myTurn) return;
         String g = input.getText() != null ? input.getText().toString().trim() : "";
-
         if (g.equalsIgnoreCase(answer)) {
-
             int pts = stealPhase ? 5 : Math.max(0, 20 - step * 2);
-
             addScore(pts);
-            finishRound();
-
+            advanceRound();
         } else {
             input.setText("");
         }
     }
 
     private void next() {
-
         if (!myTurn) return;
-
-        if (step < 6) {
+        if (stealPhase) {
+            advanceRound();
+        } else if (step < 6) {
             sm.updateField("gameState.step", (long) (step + 1));
         } else {
-
-            if (!stealPhase) {
-                sm.updateField("gameState.phase", "STEAL");
-                switchPlayer();
-            } else {
-                finishRound();
-            }
+            Map<String, Object> up = new HashMap<>();
+            up.put("phase", "steal");
+            up.put("step", 0L);
+            up.put("currentPlayer", (long) opp);
+            sm.updateGameState(up);
         }
-    }
-
-    private void switchPlayer() {
-        int next = (me == 1) ? 2 : 1;
-        sm.updateField("gameState.currentPlayer", (long) next);
     }
 
     private void addScore(int pts) {
@@ -232,33 +316,44 @@ public class NetworkStepByStep extends AppCompatActivity {
         sm.updateField("gameState." + key, (long) newScore);
     }
 
-    private void finishRound() {
-
+    private void advanceRound() {
         if (round == 0) {
             Map<String, Object> up = new HashMap<>();
             up.put("round", 1L);
             up.put("step", 0L);
-            up.put("phase", "PLAY");
-            up.put("currentPlayer", (long) opp);
+            up.put("phase", "play");
+            up.put("currentPlayer", 2L);
             sm.updateGameState(up);
         } else {
-            sm.updateField("gameState.phase", "FINISHED");
+            sm.updateField("gameState.phase", "finished");
         }
     }
 
     private void finishGame() {
         if (done) return;
         done = true;
+        stopTimer();
 
-        int totalP1 = previousP1Score + myScore;
-        int totalP2 = previousP2Score + oppScore;
-        sm.finishCurrentGame(gameIdx, myScore, oppScore, totalP1, totalP2, totalGames);
+        int totalP1 = previousP1Score + (me == 1 ? myScore : oppScore);
+        int totalP2 = previousP2Score + (me == 1 ? oppScore : myScore);
+        int gameP1 = me == 1 ? myScore : oppScore;
+        int gameP2 = me == 1 ? oppScore : myScore;
+        sm.finishCurrentGame(gameIdx, gameP1, gameP2, totalP1, totalP2, totalGames);
         sm.cleanup();
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             setResult(RESULT_OK);
             finish();
         }, 1500);
+    }
+
+    private void loadAvatar(android.widget.ImageView iv, String url) {
+        Glide.with(this)
+                .load(url != null && !url.isEmpty() ? url : R.drawable.default_profile)
+                .apply(RequestOptions.circleCropTransform())
+                .placeholder(R.drawable.default_profile)
+                .error(R.drawable.default_profile)
+                .into(iv);
     }
 
     @Override

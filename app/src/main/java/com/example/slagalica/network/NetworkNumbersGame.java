@@ -58,10 +58,12 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     private int round1Score = 0, round2Score = 0;
 
     private TextView timerView, targetView, exprView, myNameView, oppNameView, myScoreView, oppScoreView;
+    private android.widget.ImageView myAvatarView, oppAvatarView;
     private TextView stopTimerView, instrView;
     private LinearLayout stopTimerRow;
     private MaterialButton stopBtn, confirmBtn, clearBtn;
     private MaterialButton[] numBtns;
+    private MaterialButton[] opBtns;
 
     private CountDownTimer stopTimer, gameTimer;
 
@@ -320,17 +322,25 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     // --- Phase Handlers ---
 
     private void handleRevealTarget(boolean iAmRevealer) {
+        game = null;
+        submitted = false;
+        playInitialized = false;
+        phaseCompleted = false;
+        tokens.clear();
+        openParensCount = 0;
+        usedNumberButtons.clear();
         targetView.setText("?");
         instrView.setText(iAmRevealer
                 ? "Klikni STOP ili protresi za otkrivanje broja"
                 : "Čekanje da protivnik otkrije broj...");
         stopBtn.setVisibility(iAmRevealer ? View.VISIBLE : View.GONE);
-        stopTimerRow.setVisibility(View.VISIBLE);
+        stopTimerRow.setVisibility(iAmRevealer ? View.VISIBLE : View.GONE);
         confirmBtn.setEnabled(false);
         clearBtn.setEnabled(false);
         disableNumberButtons();
         hideOperatorButtons();
         exprView.setText("");
+        for (MaterialButton b : numBtns) { b.setText(""); b.setAlpha(1f); }
         if (iAmRevealer) {
             if (game == null) {
                 game = NumbersGame.createRandom();
@@ -350,12 +360,13 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
                 ? "Klikni STOP ili protresi za otkrivanje brojeva"
                 : "Čekanje da protivnik otkrije brojeve...");
         stopBtn.setVisibility(iAmRevealer ? View.VISIBLE : View.GONE);
-        stopTimerRow.setVisibility(View.VISIBLE);
+        stopTimerRow.setVisibility(iAmRevealer ? View.VISIBLE : View.GONE);
         confirmBtn.setEnabled(false);
         clearBtn.setEnabled(false);
         disableNumberButtons();
         hideOperatorButtons();
         exprView.setText("");
+        for (MaterialButton b : numBtns) b.setText("");
         if (iAmRevealer) {
             registerShakeListener();
             startStopTimer();
@@ -386,6 +397,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
             confirmBtn.setEnabled(true);
             clearBtn.setEnabled(true);
             showOperatorButtons();
+            if (opBtns != null) for (MaterialButton b : opBtns) b.setEnabled(true);
             timerView.setVisibility(View.VISIBLE);
             startPlayTimer();
         }
@@ -416,8 +428,20 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         myScoreView.setText(String.valueOf(totalMy));
         oppScoreView.setText(String.valueOf(totalOpp));
 
-        String msg = round == 1 ? "Runda 1 završena!" : (r1Score > r2Score ? "Pobednik: Igrač 1" :
-                (r2Score > r1Score ? "Pobednik: Igrač 2" : "Nerešeno!"));
+        int target = gs.containsKey("target") ? ((Long) gs.get("target")).intValue() : 0;
+        double p1r = gs.containsKey("p1Result") ? ((Number) gs.get("p1Result")).doubleValue() : 0;
+        double p2r = gs.containsKey("p2Result") ? ((Number) gs.get("p2Result")).doubleValue() : 0;
+        boolean p1sub = gs.containsKey("p1Submitted") && (Long) gs.get("p1Submitted") == 1;
+        boolean p2sub = gs.containsKey("p2Submitted") && (Long) gs.get("p2Submitted") == 1;
+
+        String myRes = formatResult(me == 1 ? p1r : p2r, target, me == 1 ? p1sub : p2sub);
+        String oppRes = formatResult(me == 1 ? p2r : p1r, target, me == 1 ? p2sub : p1sub);
+        int myScore = me == 1 ? r1Score : r2Score;
+        int oppScorePts = me == 1 ? r2Score : r1Score;
+
+        String msg = "Runda " + round + " - Cilj: " + target + "\n"
+                + "Ti: " + myRes + " (" + myScore + " poena)\n"
+                + "Protivnik: " + oppRes + " (" + oppScorePts + " poena)";
         instrView.setText(msg);
 
         if (iAmFinisher) {
@@ -428,8 +452,15 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
                 } else {
                     finishGameState();
                 }
-            }, 3000);
+            }, 4000);
         }
+    }
+
+    private String formatResult(double result, int target, boolean submitted) {
+        if (!submitted) return "nije uneo";
+        boolean exact = Math.abs(result - target) < 0.0001;
+        if (exact) return String.format("%.0f (ta\u010Dno!)", result);
+        return String.format("%.0f (razlika %.0f)", result, Math.abs(result - target));
     }
 
     // --- Round Management ---
@@ -438,7 +469,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         round = 2;
         revealer = 2;
         iAmFinisher = (me == 2);
-        game = NumbersGame.createRandom();
+        game = null;
         submitted = false;
         playInitialized = false;
         phaseCompleted = false;
@@ -455,7 +486,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         gs.put("p1Result", 0.0);
         gs.put("p2Result", 0.0);
         gs.put("round1Score", (long) round1Score);
-        gs.put("round2Score", 0L);
+        gs.put("round2Score", (long) round2Score);
         sm.setGameState(gs);
     }
 
@@ -463,9 +494,10 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         if (done) return;
         Map<String, Object> ns = new HashMap<>();
         ns.put("phase", "done");
+        ns.put("round", (long) round);
         ns.put("round1Score", (long) round1Score);
         ns.put("round2Score", (long) round2Score);
-        sm.setGameState(ns);
+        sm.updateGameState(ns);
     }
 
     // --- STOP Mechanism ---
@@ -569,17 +601,18 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
 
             int[] scores = calculateRoundScore(p1r, p2r, targetVal, revealer,
                     p1s != 0, p2s != 0);
-            int r1s = round == 1 ? scores[0] : round1Score;
-            int r2s = round == 1 ? scores[1] : scores[0];
+            int r1s = round == 1 ? scores[0] : round1Score + scores[0];
+            int r2s = round == 1 ? scores[1] : round2Score + scores[1];
             round1Score = r1s;
             round2Score = r2s;
 
             phaseCompleted = true;
             Map<String, Object> res = new HashMap<>();
             res.put("phase", "result");
+            res.put("round", (long) round);
             res.put("round1Score", (long) r1s);
             res.put("round2Score", (long) r2s);
-            sm.setGameState(res);
+            sm.updateGameState(res);
         }
     }
 
@@ -618,6 +651,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
 
     private void disableAllInputs() {
         for (MaterialButton b : numBtns) b.setEnabled(false);
+        if (opBtns != null) for (MaterialButton b : opBtns) b.setEnabled(false);
         confirmBtn.setEnabled(false);
         clearBtn.setEnabled(false);
     }
@@ -659,8 +693,10 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
 
     private void setupOperatorButtons() {
         int[] ids = { R.id.btnOpen, R.id.btnClose, R.id.btnPlus, R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide };
-        for (int id : ids) {
-            MaterialButton b = findViewById(id);
+        opBtns = new MaterialButton[ids.length];
+        for (int i = 0; i < ids.length; i++) {
+            MaterialButton b = findViewById(ids[i]);
+            opBtns[i] = b;
             b.setOnClickListener(v -> handleOperator(b.getText().toString()));
         }
     }
