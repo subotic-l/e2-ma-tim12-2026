@@ -11,7 +11,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.slagalica.data.GameSessionManager;
+import com.example.slagalica.network.NetworkNumbersGame;
 import com.example.slagalica.network.NetworkSpojniceGame;
+import com.example.slagalica.network.NetworkStepByStep;
 import com.example.slagalica.network.NetworkWhoKnowsKnows;
 
 import java.util.Arrays;
@@ -22,7 +24,9 @@ public class NetworkMatchActivity extends AppCompatActivity {
 
     private final List<Class<?>> gameOrder = Arrays.asList(
             NetworkWhoKnowsKnows.class,
-            NetworkSpojniceGame.class
+            NetworkSpojniceGame.class,
+            NetworkNumbersGame.class,
+            NetworkStepByStep.class
     );
 
     private GameSessionManager sessionManager;
@@ -123,6 +127,7 @@ public class NetworkMatchActivity extends AppCompatActivity {
         intent.putExtra("myPlayerName", myPlayerName);
         intent.putExtra("myAvatarUrl", getIntent().getStringExtra("myAvatarUrl"));
         intent.putExtra("gameIndex", gameIndex);
+        intent.putExtra("totalGames", gameOrder.size());
         if (state != null) {
             long p1 = state.containsKey("player1Score") ? (long) state.get("player1Score") : 0;
             long p2 = state.containsKey("player2Score") ? (long) state.get("player2Score") : 0;

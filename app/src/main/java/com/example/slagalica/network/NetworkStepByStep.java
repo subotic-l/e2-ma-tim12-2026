@@ -43,6 +43,9 @@ public class NetworkStepByStep extends AppCompatActivity {
 
     private boolean done = false;
     private StepByStepRepository repo;
+    private int totalGames;
+    private int previousP1Score = 0;
+    private int previousP2Score = 0;
 
     private List<String> clues = new ArrayList<>();
     private String answer;
@@ -56,6 +59,9 @@ public class NetworkStepByStep extends AppCompatActivity {
         matchId = i.getStringExtra("matchId");
         me = i.getIntExtra("myPlayerNumber", 1);
         gameIdx = i.getIntExtra("gameIndex", 0);
+        totalGames = i.getIntExtra("totalGames", 3);
+        previousP1Score = i.getIntExtra("previousPlayer1Score", 0);
+        previousP2Score = i.getIntExtra("previousPlayer2Score", 0);
         opp = me == 1 ? 2 : 1;
 
         timerView = findViewById(R.id.timerTextView);
@@ -244,7 +250,9 @@ public class NetworkStepByStep extends AppCompatActivity {
         if (done) return;
         done = true;
 
-        sm.finishCurrentGame(gameIdx, myScore, oppScore, myScore, oppScore);
+        int totalP1 = previousP1Score + myScore;
+        int totalP2 = previousP2Score + oppScore;
+        sm.finishCurrentGame(gameIdx, myScore, oppScore, totalP1, totalP2, totalGames);
         sm.cleanup();
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
