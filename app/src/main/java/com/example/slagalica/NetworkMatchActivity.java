@@ -147,12 +147,22 @@ public class NetworkMatchActivity extends AppCompatActivity {
         String p2Name = state.containsKey("player2Name") ? (String) state.get("player2Name") : "Igrač 2";
         String winner = p1Score > p2Score ? p1Name : (p2Score > p1Score ? p2Name : "Nerešeno");
 
+        String p1Id = state.containsKey("player1Id") ? (String) state.get("player1Id") : "";
+        String p2Id = state.containsKey("player2Id") ? (String) state.get("player2Id") : "";
+        String matchStatus = state.containsKey("status") ? (String) state.get("status") : "finished";
+
         Intent intent = new Intent(this, NetworkMatchSummaryActivity.class);
         intent.putExtra("player1Name", p1Name);
         intent.putExtra("player2Name", p2Name);
         intent.putExtra("player1Score", (int) p1Score);
         intent.putExtra("player2Score", (int) p2Score);
         intent.putExtra("winner", winner);
+        intent.putExtra("myPlayerNumber", myPlayerNumber);
+        intent.putExtra("myPlayerId", myPlayerId);
+        intent.putExtra("matchId", matchId);
+        intent.putExtra("matchStatus", matchStatus);
+        intent.putExtra("player1Id", p1Id);
+        intent.putExtra("player2Id", p2Id);
         startActivity(intent);
         finish();
     }

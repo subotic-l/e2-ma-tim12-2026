@@ -56,4 +56,57 @@ public class UserService {
                             .continueWith(t -> url);
                 });
     }
+
+    // ------------------------------------------------------------- Tokens / Stars
+
+    /** Deducts 1 token from the authenticated user's balance. */
+    public Task<Void> deductToken() {
+        FirebaseUser user = repository.getCurrentUser();
+        if (user == null) {
+            return Tasks.forException(new IllegalStateException("No authenticated user"));
+        }
+        return repository.deductToken(user.getUid());
+    }
+
+    /** Fetches a user profile document by uid directly. */
+    public Task<DocumentSnapshot> getProfileByUid(String uid) {
+        return repository.getUserProfile(uid);
+    }
+
+    /**
+     * Calculates the stars delta for a match outcome.
+     * @return positive delta for winner, negative for loser
+     */
+    public static int calculateStarsDelta(int score, boolean iWon) {
+        int base = iWon ? 10 : -10;
+        int bonus = score / 40;
+        return base + bonus;
+    }
+
+    /**
+     * Processes match rewards for the authenticated user.
+     * Should only be called once per match (idempotency handled by caller).
+     */
+    public Task<Void> processMatchRewards(int myScore, boolean iWon) {
+        FirebaseUser user = repository.getCurrentUser();
+        if (user == null) {
+            return Tasks.forException(new IllegalStateException("No authenticated user"));
+        }
+        int delta = calculateStarsDelta(myScore, iWon);
+        return repository.applyMatchRewards(user.getUid(), delta);
+    }
+
+    /** Returns true if the authenticated user has at least 1 token. */
+    public Task<Boolean> hasEnoughTokens() {
+        FirebaseUser user = repository.getCurrentUser();
+        if (user == null) {
+            return Tasks.forResult(false);
+        }
+        return repository.getUserProfile(user.getUid())
+                .continueWith(task -> {
+                    if (!task.isSuccessful() || task.getResult() == null) return false;
+                    Long tokens = task.getResult().getLong("tokens");
+                    return tokens != null && tokens >= 1;
+                });
+    }
 }

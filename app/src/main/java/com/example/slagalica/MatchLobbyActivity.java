@@ -2,6 +2,7 @@ package com.example.slagalica;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Button;
@@ -15,6 +16,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.slagalica.data.GameSessionManager;
+import com.example.slagalica.service.UserService;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.Map;
@@ -29,6 +31,7 @@ public class MatchLobbyActivity extends AppCompatActivity {
     private boolean activityActive = false;
 
     private GameSessionManager sessionManager;
+    private UserService userService;
     private String myPlayerId;
     private String myPlayerName;
     private String myAvatarUrl;
@@ -75,6 +78,7 @@ public class MatchLobbyActivity extends AppCompatActivity {
         if (myAvatarUrl == null) myAvatarUrl = "";
 
         sessionManager = new GameSessionManager();
+        userService = new UserService();
         activityActive = true;
         searchHandler = new Handler(Looper.getMainLooper());
 
@@ -199,6 +203,10 @@ public class MatchLobbyActivity extends AppCompatActivity {
         isSearching = false;
         stopPolling();
         sessionManager.cleanup();
+
+        // Deduct 1 token for this match
+        userService.deductToken().addOnFailureListener(e ->
+                Log.w("MatchLobby", "Token deduction failed", e));
 
         Intent intent = new Intent(this, NetworkMatchActivity.class);
         intent.putExtra("matchId", sessionManager.getMatchId());
