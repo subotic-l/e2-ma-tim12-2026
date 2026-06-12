@@ -420,10 +420,8 @@ public class NetworkSpojniceGame extends AppCompatActivity {
             shuffleOrder = shuffleOrder0;
         }
 
-        // Only active player starts a timer on phase start
-        if (isMyTurn) {
-            startTimer(ROUND_TIME);
-        }
+        // Both players start the timer so they see the same countdown
+        startTimer(ROUND_TIME);
     }
 
     private void startRound1() {

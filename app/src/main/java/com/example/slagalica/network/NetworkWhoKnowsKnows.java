@@ -241,7 +241,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
                     ContextCompat.getColorStateList(this, R.color.button_default_border));
         }
         timerView.setText("5");
-        timerView.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        timerView.setTextColor(0xFFFFFFFF);
         startQTimer();
     }
 
@@ -253,12 +253,12 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
                 remain = m;
                 int sec = (int) (m / 1000) + 1;
                 timerView.setText(String.valueOf(sec));
-                if (sec <= 2) timerView.setBackgroundColor(0x66FF4444);
-                else timerView.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                if (sec <= 2) timerView.setTextColor(0xFFFF0000);
+                else timerView.setTextColor(0xFFFFFFFF);
             }
             public void onFinish() {
                 timerView.setText("0");
-                timerView.setBackgroundColor(0x66FF4444);
+                timerView.setTextColor(0xFFFF0000);
                 if (!answered) {
                     answered = true; myAns = -1; myTime = Q_TIME_MS;
                     writeAns();
