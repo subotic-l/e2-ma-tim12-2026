@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.slagalica.R;
 import com.example.slagalica.data.GameSessionManager;
+import com.example.slagalica.data.StepByStepRepository;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -41,18 +42,10 @@ public class NetworkStepByStep extends AppCompatActivity {
     private int myScore = 0, oppScore = 0;
 
     private boolean done = false;
+    private StepByStepRepository repo;
 
-    private List<String> clues = Arrays.asList(
-            "Najpoznatiji srpski naučnik",
-            "Rođen u Smiljanu",
-            "Radio u SAD",
-            "Poznat po izmeničnoj struji",
-            "Ima jedinicu mere po njemu",
-            "Ime mu je Nikola",
-            "Prezime mu je Tesla"
-    );
-
-    private String answer = "Tesla";
+    private List<String> clues = new ArrayList<>();
+    private String answer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +62,7 @@ public class NetworkStepByStep extends AppCompatActivity {
         pointsView = findViewById(R.id.pointsTextView);
         input = findViewById(R.id.guessInput);
         btn = findViewById(R.id.submitGuessButton);
+        repo = new StepByStepRepository();
 
         cluesView = new TextView[]{
                 findViewById(R.id.clue1),
@@ -133,7 +127,7 @@ public class NetworkStepByStep extends AppCompatActivity {
 
     private void initGame() {
         iAmFinisher = true;
-
+        loadGameFromFirebase();
         Map<String, Object> gs = new HashMap<>();
         gs.put("step", 0L);
         gs.put("round", 0L);
@@ -143,6 +137,20 @@ public class NetworkStepByStep extends AppCompatActivity {
         gs.put("p2Score", 0L);
 
         sm.setGameState(gs);
+    }
+
+    private void loadGameFromFirebase() {
+        repo.getRandomGame()
+                .addOnSuccessListener(game -> {
+
+                    clues = game.getClues();
+                    answer = game.getAnswer();
+
+                    runOnUiThread(this::updateUI);
+                })
+                .addOnFailureListener(e -> {
+                    e.printStackTrace();
+                });
     }
 
     private void updateUI() {
