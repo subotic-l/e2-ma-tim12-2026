@@ -11,18 +11,26 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.slagalica.data.GameSessionManager;
+import com.example.slagalica.network.NetworkSpojniceGame;
 import com.example.slagalica.network.NetworkWhoKnowsKnows;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class NetworkMatchActivity extends AppCompatActivity {
+
+    private final List<Class<?>> gameOrder = Arrays.asList(
+            NetworkWhoKnowsKnows.class,
+            NetworkSpojniceGame.class
+    );
 
     private GameSessionManager sessionManager;
     private int myPlayerNumber;
     private String myPlayerId;
     private String myPlayerName;
     private String matchId;
-    private boolean gameLaunched = false;
+    private int currentGameIndex = -1;
 
     private TextView networkStatusText;
     private ProgressBar waitingProgressBar;
@@ -60,7 +68,6 @@ public class NetworkMatchActivity extends AppCompatActivity {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (isFinishing()) return;
-                    // Game returned, wait for finished status
                     sessionManager.listenToMatch(createStateListener());
                 }
         );
@@ -95,22 +102,33 @@ public class NetworkMatchActivity extends AppCompatActivity {
             return;
         }
 
-        if (!gameLaunched && "playing".equals(status)) {
-            gameLaunched = true;
-            waitingProgressBar.setVisibility(android.view.View.GONE);
-            networkStatusText.setText("Igra 1/1");
-            launchGame();
+        if ("playing".equals(status)) {
+            long idx = state.containsKey("currentGameIndex") ? (long) state.get("currentGameIndex") : 0;
+            int nextGame = (int) idx;
+                if (nextGame > currentGameIndex) {
+                    currentGameIndex = nextGame;
+                    waitingProgressBar.setVisibility(android.view.View.GONE);
+                    networkStatusText.setText("Igra " + (currentGameIndex + 1) + "/" + gameOrder.size());
+                    launchGame(currentGameIndex, state);
+                }
         }
     }
 
-    private void launchGame() {
-        Intent intent = new Intent(this, NetworkWhoKnowsKnows.class);
+    private void launchGame(int gameIndex, Map<String, Object> state) {
+        if (gameIndex >= gameOrder.size()) return;
+        Intent intent = new Intent(this, gameOrder.get(gameIndex));
         intent.putExtra("matchId", matchId);
         intent.putExtra("myPlayerNumber", myPlayerNumber);
         intent.putExtra("myPlayerId", myPlayerId);
         intent.putExtra("myPlayerName", myPlayerName);
         intent.putExtra("myAvatarUrl", getIntent().getStringExtra("myAvatarUrl"));
-        intent.putExtra("gameIndex", 0);
+        intent.putExtra("gameIndex", gameIndex);
+        if (state != null) {
+            long p1 = state.containsKey("player1Score") ? (long) state.get("player1Score") : 0;
+            long p2 = state.containsKey("player2Score") ? (long) state.get("player2Score") : 0;
+            intent.putExtra("previousPlayer1Score", (int) p1);
+            intent.putExtra("previousPlayer2Score", (int) p2);
+        }
         gameLauncher.launch(intent);
     }
 

@@ -187,6 +187,12 @@ public class GameSessionManager {
 
     public void finishCurrentGame(int gameIndex, int player1GameScore, int player2GameScore,
                                    int totalPlayer1Score, int totalPlayer2Score) {
+        finishCurrentGame(gameIndex, player1GameScore, player2GameScore,
+                totalPlayer1Score, totalPlayer2Score, 1);
+    }
+
+    public void finishCurrentGame(int gameIndex, int player1GameScore, int player2GameScore,
+                                   int totalPlayer1Score, int totalPlayer2Score, int totalGames) {
         if (matchDocRef == null) return;
 
         Map<String, Object> resultEntry = new HashMap<>();
@@ -195,7 +201,7 @@ public class GameSessionManager {
         resultEntry.put("player2Score", player2GameScore);
 
         int nextGameIndex = gameIndex + 1;
-        boolean isLastGame = true;
+        boolean isLastGame = (nextGameIndex >= totalGames);
 
         Map<String, Object> updates = new HashMap<>();
         updates.put("gameState", new HashMap<>());
@@ -203,6 +209,7 @@ public class GameSessionManager {
         if (isLastGame) {
             updates.put("status", "finished");
         } else {
+            updates.put("status", "playing");
             updates.put("currentGameIndex", nextGameIndex);
         }
         updates.put("player1Score", totalPlayer1Score);
