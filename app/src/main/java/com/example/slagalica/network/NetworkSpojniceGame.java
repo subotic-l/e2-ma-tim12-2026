@@ -326,17 +326,28 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         }
 
         timerView.setVisibility(View.VISIBLE);
-        timerView.setText(String.valueOf(timerRunning ? remainingSec : ROUND_TIME));
+        int sec = timerRunning ? remainingSec : ROUND_TIME;
+        timerView.setText(String.valueOf(sec));
+        timerView.setTextColor(sec <= 5 ? 0xFFFF0000 : 0xFFFFFFFF);
 
-        // Instructions
+        // Instructions: game context + round info
+        String roundInfo;
         if (isR1Play) {
-            instrView.setText(isMyTurn ? "Runda 1 - Tvoj potez" : "Runda 1 - Čekanje da protivnik odigra...");
+            roundInfo = isMyTurn ? "Runda 1 - Tvoj potez" : "Runda 1 - Čekanje da protivnik odigra...";
         } else if (isR1Steal) {
-            instrView.setText(isMyTurn ? "Runda 1 - Pokušaj ti!" : "Runda 1 - Čekanje da protivnik pokuša...");
+            roundInfo = isMyTurn ? "Runda 1 - Pokušaj ti!" : "Runda 1 - Čekanje da protivnik pokuša...";
         } else if (isR2Play) {
-            instrView.setText(isMyTurn ? "Runda 2 - Tvoj potez" : "Runda 2 - Čekanje da protivnik odigra...");
+            roundInfo = isMyTurn ? "Runda 2 - Tvoj potez" : "Runda 2 - Čekanje da protivnik odigra...";
         } else if (isR2Steal) {
-            instrView.setText(isMyTurn ? "Runda 2 - Pokušaj ti!" : "Runda 2 - Čekanje da protivnik pokuša...");
+            roundInfo = isMyTurn ? "Runda 2 - Pokušaj ti!" : "Runda 2 - Čekanje da protivnik pokuša...";
+        } else {
+            roundInfo = "";
+        }
+        String instructions = currentGame != null ? currentGame.instructions : "";
+        if (!instructions.isEmpty()) {
+            instrView.setText(instructions + "\n" + roundInfo);
+        } else {
+            instrView.setText(roundInfo);
         }
 
         // Make buttons visible
@@ -599,10 +610,12 @@ public class NetworkSpojniceGame extends AppCompatActivity {
             public void onTick(long m) {
                 remainingSec = (int) (m / 1000) + 1;
                 timerView.setText(String.valueOf(remainingSec));
+                timerView.setTextColor(remainingSec <= 5 ? 0xFFFF0000 : 0xFFFFFFFF);
             }
             public void onFinish() {
                 timerRunning = false;
                 timerView.setText("0");
+                timerView.setTextColor(0xFFFF0000);
                 if (!isMyTurn || finished) return;
                 handleTimerExpiry();
             }
