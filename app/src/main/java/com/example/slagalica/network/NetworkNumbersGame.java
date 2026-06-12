@@ -1,11 +1,16 @@
 package com.example.slagalica.network;
 
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.view.View;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,39 +33,48 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-public class NetworkNumbersGame extends AppCompatActivity {
+public class NetworkNumbersGame extends AppCompatActivity implements SensorEventListener {
 
+    private static final int STOP_TIME_MS = 5000;
     private static final int GAME_TIME_MS = 60000;
 
     private GameSessionManager sm;
     private int me, opp, gameIdx, totalGames;
     private String matchId;
+    private int previousP1Score = 0, previousP2Score = 0;
+
     private NumbersGame game;
-    private boolean gameStarted = false;
-    private boolean submitted = false;
-    private String myExpression = "";
-    private double myResult = 0;
-    private boolean myCorrect = false;
-    private long myTime = -1;
-    private boolean waitReveal = false;
-    private int localMyPts = 0, localOppPts = 0;
-    private boolean done = false;
+    private int round = 1;
+    private String phase = "";
+    private int revealer = 1;
     private boolean iAmFinisher = false;
+    private boolean done = false;
+
+    private boolean submitted = false;
+    private boolean playInitialized = false;
+    private boolean phaseCompleted = false;
+    private double myResult = 0;
+
+    private int round1Score = 0, round2Score = 0;
 
     private TextView timerView, targetView, exprView, myNameView, oppNameView, myScoreView, oppScoreView;
-    private android.widget.ImageView myAvatarView, oppAvatarView;
-    private MaterialButton[] numBtns;
-    private MaterialButton confirmBtn, clearBtn, stopBtn;
+    private TextView stopTimerView, instrView;
     private LinearLayout stopTimerRow;
-    private CountDownTimer gameTimer;
-    private long gameRemain = GAME_TIME_MS;
+    private MaterialButton stopBtn, confirmBtn, clearBtn;
+    private MaterialButton[] numBtns;
 
-    private String myName, myAvatar;
+    private CountDownTimer stopTimer, gameTimer;
 
-    // Expression building state
     private final Stack<MaterialButton> usedNumberButtons = new Stack<>();
     private final List<Token> tokens = new ArrayList<>();
     private int openParensCount = 0;
+
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private long lastShakeTime = 0;
+    private static final float SHAKE_THRESHOLD = 15.0f;
+
+    private String myName, myAvatar;
 
     private enum TokenType { NUMBER, OPERATOR, OPEN_PAREN, CLOSE_PAREN }
 
@@ -91,6 +105,8 @@ public class NetworkNumbersGame extends AppCompatActivity {
         me = i.getIntExtra("myPlayerNumber", 1);
         gameIdx = i.getIntExtra("gameIndex", 0);
         totalGames = i.getIntExtra("totalGames", 3);
+        previousP1Score = i.getIntExtra("previousPlayer1Score", 0);
+        previousP2Score = i.getIntExtra("previousPlayer2Score", 0);
         opp = me == 1 ? 2 : 1;
 
         timerView = findViewById(R.id.gameTimerTextView);
@@ -107,9 +123,7 @@ public class NetworkNumbersGame extends AppCompatActivity {
         clearBtn = findViewById(R.id.clearButton);
         stopBtn = findViewById(R.id.stopButton);
         stopTimerRow = findViewById(R.id.stopTimerRow);
-
-        stopBtn.setVisibility(View.GONE);
-        stopTimerRow.setVisibility(View.GONE);
+        stopTimerView = findViewById(R.id.stopTimerTextView);
 
         myNameView = findViewById(R.id.playerOneName);
         oppNameView = findViewById(R.id.playerTwoName);
@@ -122,30 +136,104 @@ public class NetworkNumbersGame extends AppCompatActivity {
         if (myName == null || myName.isEmpty()) myName = "Igrač 1";
         myAvatar = i.getStringExtra("myAvatarUrl");
 
+        instrView = findViewById(R.id.instructionsTextView);
+        if (instrView != null) {
+            instrView.setVisibility(View.VISIBLE);
+            instrView.setText("Priprema...");
+        }
+
         setupNumberButtons();
         setupOperatorButtons();
         confirmBtn.setOnClickListener(v -> submit());
         clearBtn.setOnClickListener(v -> removeLastToken());
+        stopBtn.setOnClickListener(v -> onStopClick());
 
-        targetView.setText("?");
-        exprView.setText("");
-        timerView.setText("60");
-        confirmBtn.setEnabled(false);
-        clearBtn.setEnabled(false);
-        disableNumberButtons();
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager != null) {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+
+        showWaitingState();
 
         sm = new GameSessionManager();
         sm.attachToMatch(matchId, me);
 
         if (me == 1) {
-            initGame();
+            initRound1();
         }
 
         sm.listenToMatch(createL());
     }
 
-    private void disableNumberButtons() {
-        for (MaterialButton b : numBtns) b.setEnabled(false);
+    private void showWaitingState() {
+        targetView.setText("?");
+        exprView.setText("");
+        timerView.setVisibility(View.GONE);
+        stopBtn.setVisibility(View.GONE);
+        stopTimerRow.setVisibility(View.GONE);
+        confirmBtn.setEnabled(false);
+        clearBtn.setEnabled(false);
+        disableNumberButtons();
+        hideOperatorButtons();
+    }
+
+    private void hideOperatorButtons() {
+        int[] ids = { R.id.btnOpen, R.id.btnClose, R.id.btnPlus, R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide };
+        for (int id : ids) findViewById(id).setVisibility(View.GONE);
+    }
+
+    private void showOperatorButtons() {
+        int[] ids = { R.id.btnOpen, R.id.btnClose, R.id.btnPlus, R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide };
+        for (int id : ids) findViewById(id).setVisibility(View.VISIBLE);
+    }
+
+    private void registerShakeListener() {
+        if (sensorManager != null && accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+        }
+    }
+
+    private void unregisterShakeListener() {
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(this);
+        }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER) return;
+        float x = event.values[0];
+        float y = event.values[1];
+        float z = event.values[2];
+        double magnitude = Math.sqrt(x * x + y * y + z * z);
+        if (magnitude > SHAKE_THRESHOLD) {
+            long now = System.currentTimeMillis();
+            if (now - lastShakeTime > 1000) {
+                lastShakeTime = now;
+                runOnUiThread(this::onStopClick);
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+
+    private void initRound1() {
+        iAmFinisher = true;
+        round = 1;
+        revealer = 1;
+        game = NumbersGame.createRandom();
+        Map<String, Object> gs = new HashMap<>();
+        gs.put("phase", "reveal_target");
+        gs.put("round", 1L);
+        gs.put("revealer", 1L);
+        gs.put("p1Submitted", 0L);
+        gs.put("p2Submitted", 0L);
+        gs.put("p1Result", 0.0);
+        gs.put("p2Result", 0.0);
+        gs.put("round1Score", 0L);
+        gs.put("round2Score", 0L);
+        sm.setGameState(gs);
     }
 
     private GameSessionManager.StateListener createL() {
@@ -176,46 +264,41 @@ public class NetworkNumbersGame extends AppCompatActivity {
 
                 Map<String, Object> gs = (Map<String, Object>) full.get("gameState");
                 if (gs == null || gs.isEmpty()) return;
+                if (gs.get("phase") == null) return;
 
-                if (game == null) {
-                    if (gs.containsKey("target") && gs.containsKey("numbers")) {
-                        int target = ((Long) gs.get("target")).intValue();
-                        List<Long> numsRaw = (List<Long>) gs.get("numbers");
-                        List<Integer> nums = new ArrayList<>();
-                        for (Long v : numsRaw) nums.add(v.intValue());
-                        game = new NumbersGame(target, nums);
-                        if (me == 2) {
-                            sm.updateField("gameState.player2Ready", true);
-                        }
+                phase = (String) gs.get("phase");
+                round = gs.containsKey("round") ? ((Long) gs.get("round")).intValue() : 1;
+                revealer = gs.containsKey("revealer") ? ((Long) gs.get("revealer")).intValue() : 1;
+
+                boolean iAmRevealer = (revealer == me);
+
+                runOnUiThread(() -> {
+                    switch (phase) {
+                        case "reveal_target":
+                            handleRevealTarget(iAmRevealer);
+                            break;
+                        case "reveal_numbers":
+                            handleRevealNumbers(gs, iAmRevealer);
+                            break;
+                        case "play":
+                            handlePlay(gs);
+                            break;
+                        case "result":
+                            handleResult(gs);
+                            break;
+                        case "done":
+                            if (iAmFinisher) finishGame();
+                            break;
                     }
-                    return;
-                }
-
-                String phase = (String) gs.get("phase");
-                if ("loading".equals(phase)) {
-                    boolean p1r = Boolean.TRUE.equals(gs.get("player1Ready"));
-                    boolean p2r = Boolean.TRUE.equals(gs.get("player2Ready"));
-                    if (me == 1 && p1r && p2r) {
-                        Map<String, Object> updates = new HashMap<>();
-                        updates.put("phase", "play");
-                        sm.updateGameState(updates);
-                        runOnUiThread(() -> startPlay());
-                    }
-                    return;
-                }
-
-                if ("play".equals(phase) && !gameStarted) {
-                    runOnUiThread(() -> startPlay());
-                    return;
-                }
-
-                runOnUiThread(() -> process(gs));
+                });
             }
 
             public void onMatchEnded(Map<String, Object> f) {
                 if (done) return;
                 done = true;
                 if (gameTimer != null) gameTimer.cancel();
+                if (stopTimer != null) stopTimer.cancel();
+                unregisterShakeListener();
                 sm.cleanup();
                 setResult(RESULT_OK);
                 finish();
@@ -234,70 +317,216 @@ public class NetworkNumbersGame extends AppCompatActivity {
                 .into(iv);
     }
 
-    private void process(Map<String, Object> gs) {
-        if (done) return;
+    // --- Phase Handlers ---
 
-        long p1Pts = gs.containsKey("p1Pts") ? (long) gs.get("p1Pts") : 0;
-        long p2Pts = gs.containsKey("p2Pts") ? (long) gs.get("p2Pts") : 0;
-        localMyPts = (int) (me == 1 ? p1Pts : p2Pts);
-        localOppPts = (int) (me == 1 ? p2Pts : p1Pts);
-        updateScoreDisplay();
-
-        String phase = (String) gs.get("phase");
-        if ("done".equals(phase)) {
-            if (iAmFinisher) finishGame();
-            return;
-        }
-        if ("reveal".equals(phase) && !waitReveal) {
-            showReveal(gs);
-            return;
-        }
-        if ("play".equals(phase)) {
-            long p1s = gs.containsKey("p1Submitted") ? (long) gs.get("p1Submitted") : 0;
-            long p2s = gs.containsKey("p2Submitted") ? (long) gs.get("p2Submitted") : 0;
-            if (p1s != 0 && p2s != 0 && iAmFinisher) {
-                sm.updateField("gameState.phase", "reveal");
+    private void handleRevealTarget(boolean iAmRevealer) {
+        targetView.setText("?");
+        instrView.setText(iAmRevealer
+                ? "Klikni STOP ili protresi za otkrivanje broja"
+                : "Čekanje da protivnik otkrije broj...");
+        stopBtn.setVisibility(iAmRevealer ? View.VISIBLE : View.GONE);
+        stopTimerRow.setVisibility(View.VISIBLE);
+        confirmBtn.setEnabled(false);
+        clearBtn.setEnabled(false);
+        disableNumberButtons();
+        hideOperatorButtons();
+        exprView.setText("");
+        if (iAmRevealer) {
+            if (game == null) {
+                game = NumbersGame.createRandom();
             }
+            registerShakeListener();
+            startStopTimer();
+        } else {
+            unregisterShakeListener();
         }
     }
 
-    private void startPlay() {
-        if (gameStarted) return;
-        gameStarted = true;
-
-        targetView.setText(String.valueOf(game.targetNumber));
-        for (int i = 0; i < numBtns.length; i++) {
-            numBtns[i].setText(String.valueOf(game.numbers.get(i)));
-            numBtns[i].setEnabled(true);
-            numBtns[i].setAlpha(1f);
+    private void handleRevealNumbers(Map<String, Object> gs, boolean iAmRevealer) {
+        if (gs.containsKey("target")) {
+            targetView.setText(String.valueOf((long) gs.get("target")));
         }
-        confirmBtn.setEnabled(true);
-        clearBtn.setEnabled(true);
-
-        startGameTimer();
+        instrView.setText(iAmRevealer
+                ? "Klikni STOP ili protresi za otkrivanje brojeva"
+                : "Čekanje da protivnik otkrije brojeve...");
+        stopBtn.setVisibility(iAmRevealer ? View.VISIBLE : View.GONE);
+        stopTimerRow.setVisibility(View.VISIBLE);
+        confirmBtn.setEnabled(false);
+        clearBtn.setEnabled(false);
+        disableNumberButtons();
+        hideOperatorButtons();
+        exprView.setText("");
+        if (iAmRevealer) {
+            registerShakeListener();
+            startStopTimer();
+        } else {
+            unregisterShakeListener();
+        }
     }
 
-    private void startGameTimer() {
+    private void handlePlay(Map<String, Object> gs) {
+        unregisterShakeListener();
+        stopBtn.setVisibility(View.GONE);
+        stopTimerRow.setVisibility(View.GONE);
+
+        if (!playInitialized) {
+            playInitialized = true;
+            if (gs.containsKey("target")) {
+                targetView.setText(String.valueOf((long) gs.get("target")));
+            }
+            if (gs.containsKey("numbers")) {
+                List<Long> numsRaw = (List<Long>) gs.get("numbers");
+                for (int i = 0; i < numBtns.length && i < numsRaw.size(); i++) {
+                    numBtns[i].setText(String.valueOf(numsRaw.get(i)));
+                    numBtns[i].setEnabled(true);
+                    numBtns[i].setAlpha(1f);
+                }
+            }
+            instrView.setText("Kreiraj izraz i potvrdi!");
+            confirmBtn.setEnabled(true);
+            clearBtn.setEnabled(true);
+            showOperatorButtons();
+            timerView.setVisibility(View.VISIBLE);
+            startPlayTimer();
+        }
+
+        if (phaseCompleted) return;
+        checkAndScore(gs);
+    }
+
+    private void handleResult(Map<String, Object> gs) {
+        unregisterShakeListener();
+        if (gameTimer != null) { gameTimer.cancel(); gameTimer = null; }
+        if (stopTimer != null) { stopTimer.cancel(); stopTimer = null; }
+
+        stopBtn.setVisibility(View.GONE);
+        stopTimerRow.setVisibility(View.GONE);
+        confirmBtn.setEnabled(false);
+        clearBtn.setEnabled(false);
+        disableNumberButtons();
+        hideOperatorButtons();
+
+        int r1Score = gs.containsKey("round1Score") ? ((Long) gs.get("round1Score")).intValue() : 0;
+        int r2Score = gs.containsKey("round2Score") ? ((Long) gs.get("round2Score")).intValue() : 0;
+        round1Score = r1Score;
+        round2Score = r2Score;
+
+        int totalMy = previousP1Score + (me == 1 ? r1Score : r2Score);
+        int totalOpp = previousP2Score + (me == 1 ? r2Score : r1Score);
+        myScoreView.setText(String.valueOf(totalMy));
+        oppScoreView.setText(String.valueOf(totalOpp));
+
+        String msg = round == 1 ? "Runda 1 završena!" : (r1Score > r2Score ? "Pobednik: Igrač 1" :
+                (r2Score > r1Score ? "Pobednik: Igrač 2" : "Nerešeno!"));
+        instrView.setText(msg);
+
+        if (iAmFinisher) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (done) return;
+                if (round == 1) {
+                    startRound2();
+                } else {
+                    finishGameState();
+                }
+            }, 3000);
+        }
+    }
+
+    // --- Round Management ---
+
+    private void startRound2() {
+        round = 2;
+        revealer = 2;
+        iAmFinisher = (me == 2);
+        game = NumbersGame.createRandom();
+        submitted = false;
+        playInitialized = false;
+        phaseCompleted = false;
+        tokens.clear();
+        openParensCount = 0;
+        usedNumberButtons.clear();
+
+        Map<String, Object> gs = new HashMap<>();
+        gs.put("phase", "reveal_target");
+        gs.put("round", 2L);
+        gs.put("revealer", 2L);
+        gs.put("p1Submitted", 0L);
+        gs.put("p2Submitted", 0L);
+        gs.put("p1Result", 0.0);
+        gs.put("p2Result", 0.0);
+        gs.put("round1Score", (long) round1Score);
+        gs.put("round2Score", 0L);
+        sm.setGameState(gs);
+    }
+
+    private void finishGameState() {
+        if (done) return;
+        Map<String, Object> ns = new HashMap<>();
+        ns.put("phase", "done");
+        ns.put("round1Score", (long) round1Score);
+        ns.put("round2Score", (long) round2Score);
+        sm.setGameState(ns);
+    }
+
+    // --- STOP Mechanism ---
+
+    private void onStopClick() {
+        if ("reveal_target".equals(phase) && revealer == me) {
+            if (stopTimer != null) stopTimer.cancel();
+            unregisterShakeListener();
+            Map<String, Object> up = new HashMap<>();
+            up.put("phase", "reveal_numbers");
+            if (game != null) up.put("target", (long) game.targetNumber);
+            sm.updateGameState(up);
+        } else if ("reveal_numbers".equals(phase) && revealer == me) {
+            if (stopTimer != null) stopTimer.cancel();
+            unregisterShakeListener();
+            Map<String, Object> up = new HashMap<>();
+            up.put("phase", "play");
+            if (game != null) {
+                up.put("target", (long) game.targetNumber);
+                List<Long> nums = new ArrayList<>();
+                for (Integer v : game.numbers) nums.add(v.longValue());
+                up.put("numbers", nums);
+            }
+            sm.updateGameState(up);
+        }
+    }
+
+    private void startStopTimer() {
+        if (stopTimer != null) stopTimer.cancel();
+        stopTimerView.setText("5");
+        stopTimer = new CountDownTimer(STOP_TIME_MS, 100) {
+            public void onTick(long m) {
+                stopTimerView.setText(String.valueOf((int) (m / 1000) + 1));
+            }
+            public void onFinish() {
+                stopTimerView.setText("0");
+                runOnUiThread(() -> onStopClick());
+            }
+        }.start();
+    }
+
+    // --- Play Phase ---
+
+    private void startPlayTimer() {
         if (gameTimer != null) gameTimer.cancel();
-        gameRemain = GAME_TIME_MS;
         gameTimer = new CountDownTimer(GAME_TIME_MS, 100) {
             public void onTick(long m) {
-                gameRemain = m;
                 int sec = (int) (m / 1000) + 1;
                 timerView.setText(String.valueOf(sec));
-                if (sec <= 5) timerView.setTextColor(0xFFFF0000);
-                else timerView.setTextColor(0xFFFFFFFF);
+                timerView.setTextColor(sec <= 5 ? 0xFFFF0000 : 0xFFFFFFFF);
             }
             public void onFinish() {
                 timerView.setText("0");
                 timerView.setTextColor(0xFFFF0000);
-                if (!submitted) {
-                    submitted = true;
-                    myExpression = "";
-                    myCorrect = false;
-                    myTime = GAME_TIME_MS;
-                    writeSubmission();
-                }
+                runOnUiThread(() -> {
+                    if (!submitted && !done) {
+                        submitted = true;
+                        myResult = 0;
+                        writeSubmission();
+                    }
+                });
             }
         }.start();
     }
@@ -310,19 +539,82 @@ public class NetworkNumbersGame extends AppCompatActivity {
             return;
         }
         submitted = true;
-        myExpression = expr;
-        myTime = GAME_TIME_MS - gameRemain;
         if (gameTimer != null) { gameTimer.cancel(); gameTimer = null; }
         try {
-            double result = evaluate(expr);
-            myResult = result;
-            myCorrect = Math.abs(result - game.targetNumber) < 0.0001;
+            myResult = evaluate(expr);
         } catch (Exception e) {
-            myCorrect = false;
+            myResult = 0;
         }
         disableAllInputs();
         writeSubmission();
+        if (iAmFinisher) {
+            checkBothSubmitted();
+        }
     }
+
+    private void writeSubmission() {
+        String p = me == 1 ? "p1" : "p2";
+        sm.updateField("gameState." + p + "Submitted", 1L);
+        sm.updateField("gameState." + p + "Result", myResult);
+    }
+
+    private void checkAndScore(Map<String, Object> gs) {
+        long p1s = gs.containsKey("p1Submitted") ? (long) gs.get("p1Submitted") : 0;
+        long p2s = gs.containsKey("p2Submitted") ? (long) gs.get("p2Submitted") : 0;
+
+        if (p1s != 0 && p2s != 0 && iAmFinisher) {
+            double p1r = gs.containsKey("p1Result") ? ((Number) gs.get("p1Result")).doubleValue() : 0;
+            double p2r = gs.containsKey("p2Result") ? ((Number) gs.get("p2Result")).doubleValue() : 0;
+            int targetVal = gs.containsKey("target") ? ((Long) gs.get("target")).intValue() : 0;
+
+            int[] scores = calculateRoundScore(p1r, p2r, targetVal, revealer,
+                    p1s != 0, p2s != 0);
+            int r1s = round == 1 ? scores[0] : round1Score;
+            int r2s = round == 1 ? scores[1] : scores[0];
+            round1Score = r1s;
+            round2Score = r2s;
+
+            phaseCompleted = true;
+            Map<String, Object> res = new HashMap<>();
+            res.put("phase", "result");
+            res.put("round1Score", (long) r1s);
+            res.put("round2Score", (long) r2s);
+            sm.setGameState(res);
+        }
+    }
+
+    private void checkBothSubmitted() {
+        // Called by finisher after submitting locally.
+        // The next onStateChanged will trigger checkAndScore.
+    }
+
+    private int[] calculateRoundScore(double p1r, double p2r, int target,
+                                       int roundRevealer, boolean p1sub, boolean p2sub) {
+        boolean p1Hit = p1sub && Math.abs(p1r - target) < 0.0001;
+        boolean p2Hit = p2sub && Math.abs(p2r - target) < 0.0001;
+
+        if (roundRevealer == 1) {
+            if (p1Hit) return new int[]{10, 0};
+            if (p2Hit) return new int[]{0, 10};
+        } else {
+            if (p2Hit) return new int[]{0, 10};
+            if (p1Hit) return new int[]{10, 0};
+        }
+
+        if (!p1sub && !p2sub) return new int[]{0, 0};
+        if (!p1sub) return new int[]{0, 5};
+        if (!p2sub) return new int[]{5, 0};
+
+        double d1 = Math.abs(p1r - target);
+        double d2 = Math.abs(p2r - target);
+
+        if (d1 < d2) return new int[]{5, 0};
+        if (d2 < d1) return new int[]{0, 5};
+
+        return roundRevealer == 1 ? new int[]{5, 0} : new int[]{0, 5};
+    }
+
+    // --- UI Helpers ---
 
     private void disableAllInputs() {
         for (MaterialButton b : numBtns) b.setEnabled(false);
@@ -330,107 +622,32 @@ public class NetworkNumbersGame extends AppCompatActivity {
         clearBtn.setEnabled(false);
     }
 
-    private void writeSubmission() {
-        String p = me == 1 ? "p1" : "p2";
-        Map<String, Object> gs = new HashMap<>();
-        gs.put(p + "Submitted", 1L);
-        gs.put(p + "Expression", myExpression);
-        gs.put(p + "Correct", myCorrect);
-        gs.put(p + "Time", myTime);
-        sm.updateGameState(gs);
-    }
-
-    private void showReveal(Map<String, Object> gs) {
-        waitReveal = true;
-        if (gameTimer != null) { gameTimer.cancel(); gameTimer = null; }
-        disableAllInputs();
-
-        boolean p1c = Boolean.TRUE.equals(gs.get("p1Correct"));
-        boolean p2c = Boolean.TRUE.equals(gs.get("p2Correct"));
-        long p1t = gs.containsKey("p1Time") ? (long) gs.get("p1Time") : -1;
-        long p2t = gs.containsKey("p2Time") ? (long) gs.get("p2Time") : -1;
-
-        int p1pts = calcPts(p1c, p2c, p1t, p2t);
-        int p2pts = calcPts(p2c, p1c, p2t, p1t);
-        localMyPts += (me == 1 ? p1pts : p2pts);
-        localOppPts += (me == 1 ? p2pts : p1pts);
-        updateScoreDisplay();
-
-        String msg;
-        if (p1c && p2c) {
-            msg = "Oboje tačno!";
-        } else if (p1c) {
-            msg = "Igrač 1 je tačno pogodio!";
-        } else if (p2c) {
-            msg = "Igrač 2 je tačno pogodio!";
-        } else {
-            msg = "Niko nije pogodio.";
-        }
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (done) return;
-            if (iAmFinisher) {
-                Map<String, Object> ns = new HashMap<>();
-                ns.put("phase", "done");
-                ns.put("p1Pts", (long) localMyPts);
-                ns.put("p2Pts", (long) localOppPts);
-                sm.setGameState(ns);
-            }
-        }, 3000);
-    }
-
-    private int calcPts(boolean myCorrect, boolean oppCorrect, long myTime, long oppTime) {
-        if (myCorrect && oppCorrect) return myTime <= oppTime ? 10 : 0;
-        if (myCorrect) return 10;
-        if (!myCorrect && submitted) return -5;
-        return 0;
-    }
-
-    private void initGame() {
-        iAmFinisher = true;
-        game = NumbersGame.createRandom();
-        Map<String, Object> gs = new HashMap<>();
-        gs.put("target", (long) game.targetNumber);
-        List<Long> nums = new ArrayList<>();
-        for (Integer v : game.numbers) nums.add(v.longValue());
-        gs.put("numbers", nums);
-        gs.put("phase", "loading");
-        gs.put("player1Ready", true);
-        gs.put("p1Submitted", 0L);
-        gs.put("p2Submitted", 0L);
-        gs.put("p1Correct", false);
-        gs.put("p2Correct", false);
-        gs.put("p1Time", -1L);
-        gs.put("p2Time", -1L);
-        gs.put("p1Pts", 0L);
-        gs.put("p2Pts", 0L);
-        sm.setGameState(gs);
+    private void disableNumberButtons() {
+        for (MaterialButton b : numBtns) b.setEnabled(false);
     }
 
     private void finishGame() {
         if (done) return;
         done = true;
         if (gameTimer != null) { gameTimer.cancel(); gameTimer = null; }
-        sm.finishCurrentGame(gameIdx, localMyPts, localOppPts, localMyPts, localOppPts, totalGames);
+        if (stopTimer != null) { stopTimer.cancel(); stopTimer = null; }
+        unregisterShakeListener();
+
+        int totalP1 = previousP1Score + round1Score;
+        int totalP2 = previousP2Score + round2Score;
+        sm.finishCurrentGame(gameIdx, round1Score, round2Score, totalP1, totalP2, totalGames);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();
     }
 
-    private void updateScoreDisplay() {
-        myScoreView.setText(String.valueOf(localMyPts));
-        oppScoreView.setText(String.valueOf(localOppPts));
-    }
-
-    // --- Expression building (mirrored from NumbersGameActivity) ---
+    // --- Expression Building ---
 
     private void setupNumberButtons() {
         for (MaterialButton b : numBtns) {
             b.setOnClickListener(v -> {
                 if (b.isEnabled() && canAddNumber()) {
-                    String value = b.getText().toString();
-                    tokens.add(new Token(value, TokenType.NUMBER, b));
+                    tokens.add(new Token(b.getText().toString(), TokenType.NUMBER, b));
                     appendExpressionText();
                     b.setEnabled(false);
                     b.setAlpha(0.5f);
@@ -441,21 +658,15 @@ public class NetworkNumbersGame extends AppCompatActivity {
     }
 
     private void setupOperatorButtons() {
-        int[] ids = {
-                R.id.btnOpen, R.id.btnClose, R.id.btnPlus,
-                R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide
-        };
+        int[] ids = { R.id.btnOpen, R.id.btnClose, R.id.btnPlus, R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide };
         for (int id : ids) {
             MaterialButton b = findViewById(id);
-            b.setOnClickListener(v -> {
-                String op = b.getText().toString();
-                handleOperator(op);
-            });
+            b.setOnClickListener(v -> handleOperator(b.getText().toString()));
         }
     }
 
     private void handleOperator(String op) {
-        if (op.equals("(")) {
+        if ("(".equals(op)) {
             if (canAddOpenParen()) {
                 tokens.add(new Token(op, TokenType.OPEN_PAREN, null));
                 openParensCount++;
@@ -463,7 +674,7 @@ public class NetworkNumbersGame extends AppCompatActivity {
             }
             return;
         }
-        if (op.equals(")")) {
+        if (")".equals(op)) {
             if (canAddCloseParen()) {
                 tokens.add(new Token(op, TokenType.CLOSE_PAREN, null));
                 openParensCount--;
@@ -481,11 +692,8 @@ public class NetworkNumbersGame extends AppCompatActivity {
     private void removeLastToken() {
         if (tokens.isEmpty()) return;
         Token removed = tokens.remove(tokens.size() - 1);
-        if (removed.type == TokenType.OPEN_PAREN) {
-            openParensCount = Math.max(0, openParensCount - 1);
-        } else if (removed.type == TokenType.CLOSE_PAREN) {
-            openParensCount++;
-        }
+        if (removed.type == TokenType.OPEN_PAREN) openParensCount = Math.max(0, openParensCount - 1);
+        else if (removed.type == TokenType.CLOSE_PAREN) openParensCount++;
         if (removed.type == TokenType.NUMBER && removed.button != null) {
             removed.button.setEnabled(true);
             removed.button.setAlpha(1f);
@@ -515,21 +723,16 @@ public class NetworkNumbersGame extends AppCompatActivity {
     }
 
     private boolean canAddCloseParen() {
-        if (openParensCount <= 0) return false;
-        if (tokens.isEmpty()) return false;
-        TokenType last = tokens.get(tokens.size() - 1).type;
-        return last == TokenType.NUMBER || last == TokenType.CLOSE_PAREN;
+        return openParensCount > 0 && !tokens.isEmpty()
+                && (tokens.get(tokens.size() - 1).type == TokenType.NUMBER
+                || tokens.get(tokens.size() - 1).type == TokenType.CLOSE_PAREN);
     }
 
     private void appendExpressionText() {
         StringBuilder sb = new StringBuilder();
         for (Token t : tokens) {
             if (sb.length() > 0) sb.append(" ");
-            if (t.type == TokenType.OPERATOR && t.text.equals("/")) {
-                sb.append("÷");
-            } else {
-                sb.append(t.text);
-            }
+            sb.append(t.type == TokenType.OPERATOR && t.text.equals("/") ? "÷" : t.text);
         }
         exprView.setText(sb.toString());
     }
@@ -537,16 +740,11 @@ public class NetworkNumbersGame extends AppCompatActivity {
     private String buildEvalExpression() {
         StringBuilder sb = new StringBuilder();
         for (Token t : tokens) {
-            if (t.type == TokenType.OPERATOR && t.text.equals("÷")) {
-                sb.append("/");
-            } else {
-                sb.append(t.text);
-            }
+            sb.append(t.type == TokenType.OPERATOR && t.text.equals("÷") ? "/" : t.text);
         }
         return sb.toString();
     }
 
-    // Expression evaluator
     private double evaluate(String expression) {
         Stack<Double> values = new Stack<>();
         Stack<Character> ops = new Stack<>();
@@ -555,35 +753,25 @@ public class NetworkNumbersGame extends AppCompatActivity {
             if (Character.isWhitespace(c)) continue;
             if (Character.isDigit(c)) {
                 StringBuilder sb = new StringBuilder();
-                while (i < expression.length() && Character.isDigit(expression.charAt(i))) {
-                    sb.append(expression.charAt(i++));
-                }
+                while (i < expression.length() && Character.isDigit(expression.charAt(i))) sb.append(expression.charAt(i++));
                 i--;
                 values.push(Double.parseDouble(sb.toString()));
-            } else if (c == '(') {
-                ops.push(c);
-            } else if (c == ')') {
-                while (ops.peek() != '(') {
-                    values.push(applyOp(ops.pop(), values.pop(), values.pop()));
-                }
+            } else if (c == '(') ops.push(c);
+            else if (c == ')') {
+                while (ops.peek() != '(') values.push(applyOp(ops.pop(), values.pop(), values.pop()));
                 ops.pop();
             } else if (c == '+' || c == '-' || c == '*' || c == '/') {
-                while (!ops.empty() && hasPrecedence(c, ops.peek())) {
-                    values.push(applyOp(ops.pop(), values.pop(), values.pop()));
-                }
+                while (!ops.empty() && hasPrecedence(c, ops.peek())) values.push(applyOp(ops.pop(), values.pop(), values.pop()));
                 ops.push(c);
             }
         }
-        while (!ops.empty()) {
-            values.push(applyOp(ops.pop(), values.pop(), values.pop()));
-        }
+        while (!ops.empty()) values.push(applyOp(ops.pop(), values.pop(), values.pop()));
         return values.pop();
     }
 
     private boolean hasPrecedence(char op1, char op2) {
         if (op2 == '(' || op2 == ')') return false;
-        if ((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-')) return false;
-        return true;
+        return !((op1 == '*' || op1 == '/') && (op2 == '+' || op2 == '-'));
     }
 
     private double applyOp(char op, double b, double a) {
@@ -600,6 +788,8 @@ public class NetworkNumbersGame extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (gameTimer != null) gameTimer.cancel();
+        if (stopTimer != null) stopTimer.cancel();
+        unregisterShakeListener();
         if (sm != null) sm.cleanup();
     }
 }
