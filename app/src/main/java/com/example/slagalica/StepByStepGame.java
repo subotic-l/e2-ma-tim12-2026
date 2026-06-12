@@ -11,6 +11,14 @@ public class StepByStepGame {
         this.answer = answer;
     }
 
+    public String getAnswer() {
+        return answer;
+    }
+
+    public List<String> getClues() {
+        return clues;
+    }
+
     public int maxSteps() {
         return clues.size();
     }
