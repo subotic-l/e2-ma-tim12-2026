@@ -75,6 +75,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
     private List<Long> syncR2SF = new ArrayList<>();
     private boolean syncR2SDone, syncR2SWon;
     private long syncP1, syncP2;
+    private long syncR1Attempt = -1, syncR2Attempt = -1;
 
     private boolean loaded;
     private boolean iAmFinisher;
@@ -303,6 +304,10 @@ public class NetworkSkockoGame extends AppCompatActivity {
         syncR2SWon = bool(gs.get("r2StealWon"));
         syncP1 = gs.get("p1Score") instanceof Long ? (Long) gs.get("p1Score") : 0;
         syncP2 = gs.get("p2Score") instanceof Long ? (Long) gs.get("p2Score") : 0;
+        syncR1Attempt = gs.get("r1Attempt") instanceof Long ? (Long) gs.get("r1Attempt") : -1L;
+        syncR2Attempt = gs.get("r2Attempt") instanceof Long ? (Long) gs.get("r2Attempt") : -1L;
+        syncR1SWon = bool(gs.get("r1StealWon"));
+        syncR2SWon = bool(gs.get("r2StealWon"));
         myPts = (int) (me == 1 ? syncP1 : syncP2);
         oppPts = (int) (me == 1 ? syncP2 : syncP1);
 
@@ -809,7 +814,15 @@ public class NetworkSkockoGame extends AppCompatActivity {
         if (timer != null) { timer.cancel(); timer = null; }
         int tP1 = prevP1 + (int) syncP1;
         int tP2 = prevP2 + (int) syncP2;
-        sm.finishCurrentGame(gameIdx, (int) syncP1, (int) syncP2, tP1, tP2, 6);
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("gameType", GameSessionManager.GAME_TYPE_SKOCKO);
+        stats.put("p1Attempt", syncR1Attempt);
+        stats.put("p2Attempt", syncR2Attempt);
+        stats.put("p1StealWon", syncR1SWon);
+        stats.put("p2StealWon", syncR2SWon);
+        stats.put("player1Score", (long) syncP1);
+        stats.put("player2Score", (long) syncP2);
+        sm.finishCurrentGame(gameIdx, (int) syncP1, (int) syncP2, tP1, tP2, 6, stats);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();

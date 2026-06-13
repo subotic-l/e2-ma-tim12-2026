@@ -80,6 +80,8 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     private String lastPhase = "";
     private boolean isMyTurn;
     private int myPts, oppPts;
+    private long p1SolvedGroups = 0, p2SolvedGroups = 0;
+    private long p1FinalSolved = 0, p2FinalSolved = 0;
 
     private CountDownTimer timer;
     private boolean timerRun;
@@ -234,6 +236,10 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         syncP2 = gs.get("p2Score") instanceof Long ? (Long) gs.get("p2Score") : 0;
         myPts  = (int)(me == 1 ? syncP1 : syncP2);
         oppPts = (int)(me == 1 ? syncP2 : syncP1);
+        p1SolvedGroups = gs.get("p1SolvedGroups") instanceof Long ? (Long) gs.get("p1SolvedGroups") : 0;
+        p2SolvedGroups = gs.get("p2SolvedGroups") instanceof Long ? (Long) gs.get("p2SolvedGroups") : 0;
+        p1FinalSolved = gs.get("p1FinalSolved") instanceof Long ? (Long) gs.get("p1FinalSolved") : 0;
+        p2FinalSolved = gs.get("p2FinalSolved") instanceof Long ? (Long) gs.get("p2FinalSolved") : 0;
         curSet = PHASE_R2.equals(syncPhase) || PHASE_R2_REVEAL.equals(syncPhase) ? 1 : 0;
     }
 
@@ -502,15 +508,22 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
             if (guess.equals(ALL_FINAL[curSet])) {
                 int pts = calcFinalScore();
                 if (me == 1) syncP1 += pts; else syncP2 += pts;
-                myPts           = (int)(me == 1 ? syncP1 : syncP2);
+                myPts       = (int)(me == 1 ? syncP1 : syncP2);
                 syncFinalSolved = me;
+                int remainingGroups = 0;
                 for (int g = 0; g < GROUPS; g++)
-                    if (syncSolved[g] == 0) syncSolved[g] = me;
+                    if (syncSolved[g] == 0) { syncSolved[g] = me; remainingGroups++; }
+                if (me == 1) { p1SolvedGroups += remainingGroups; p1FinalSolved++; }
+                else         { p2SolvedGroups += remainingGroups; p2FinalSolved++; }
                 Map<String, Object> u = new HashMap<>();
-                u.put("p1Score",      syncP1);
-                u.put("p2Score",      syncP2);
-                u.put("finalSolved",  (long) syncFinalSolved);
-                u.put("solvedGroups", toLongArray(syncSolved));
+                u.put("p1Score",        syncP1);
+                u.put("p2Score",        syncP2);
+                u.put("finalSolved",    (long) syncFinalSolved);
+                u.put("solvedGroups",   toLongArray(syncSolved));
+                u.put("p1SolvedGroups", p1SolvedGroups);
+                u.put("p2SolvedGroups", p2SolvedGroups);
+                u.put("p1FinalSolved",  p1FinalSolved);
+                u.put("p2FinalSolved",  p2FinalSolved);
                 sm.updateGameState(u);
                 Toast.makeText(this, "Konačno rešenje tačno! +" + pts, Toast.LENGTH_LONG).show();
                 updateUI();
@@ -525,14 +538,18 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
                 int oc  = openedCount(col);
                 int pts = 2 + (FIELDS - oc);
                 if (me == 1) syncP1 += pts; else syncP2 += pts;
-                myPts        = (int)(me == 1 ? syncP1 : syncP2);
+                myPts = (int)(me == 1 ? syncP1 : syncP2);
+                if (me == 1) p1SolvedGroups++;
+                else         p2SolvedGroups++;
                 syncSolved[col] = me;
                 for (int f = 0; f < FIELDS; f++) syncOpened[col][f] = true;
                 Map<String, Object> u = new HashMap<>();
-                u.put("solvedGroups", toLongArray(syncSolved));
-                u.put("openedFields", toLongMatrix(syncOpened));
-                u.put("p1Score",      syncP1);
-                u.put("p2Score",      syncP2);
+                u.put("solvedGroups",   toLongArray(syncSolved));
+                u.put("openedFields",   toLongMatrix(syncOpened));
+                u.put("p1Score",        syncP1);
+                u.put("p2Score",        syncP2);
+                u.put("p1SolvedGroups", p1SolvedGroups);
+                u.put("p2SolvedGroups", p2SolvedGroups);
                 sm.updateGameState(u);
                 Toast.makeText(this, "Tačno! +" + pts, Toast.LENGTH_SHORT).show();
                 updateUI();
@@ -575,28 +592,36 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
 
     private void writeInit() {
         Map<String, Object> s = new HashMap<>();
-        s.put("phase",        PHASE_INIT);
-        s.put("activePlayer", 1L);
-        s.put("sets",         "loaded");
-        s.put("openedFields", zeroMatrix());
-        s.put("solvedGroups", zeroArray());
-        s.put("p1Score",      0L);
-        s.put("p2Score",      0L);
-        s.put("finalSolved",  0L);
-        s.put("playerReady",  1L);
+        s.put("phase",          PHASE_INIT);
+        s.put("activePlayer",   1L);
+        s.put("sets",           "loaded");
+        s.put("openedFields",   zeroMatrix());
+        s.put("solvedGroups",   zeroArray());
+        s.put("p1Score",        0L);
+        s.put("p2Score",        0L);
+        s.put("finalSolved",    0L);
+        s.put("playerReady",    1L);
+        s.put("p1SolvedGroups", 0L);
+        s.put("p2SolvedGroups", 0L);
+        s.put("p1FinalSolved",  0L);
+        s.put("p2FinalSolved",  0L);
         sm.setGameState(s);
     }
 
     private void startR1() {
         Map<String, Object> s = new HashMap<>();
-        s.put("phase",        PHASE_R1);
-        s.put("activePlayer", 1L);
-        s.put("openedFields", zeroMatrix());
-        s.put("solvedGroups", zeroArray());
-        s.put("p1Score",      0L);
-        s.put("p2Score",      0L);
-        s.put("finalSolved",  0L);
-        s.put("playerReady",  3L);
+        s.put("phase",          PHASE_R1);
+        s.put("activePlayer",   1L);
+        s.put("openedFields",   zeroMatrix());
+        s.put("solvedGroups",   zeroArray());
+        s.put("p1Score",        0L);
+        s.put("p2Score",        0L);
+        s.put("finalSolved",    0L);
+        s.put("playerReady",    3L);
+        s.put("p1SolvedGroups", 0L);
+        s.put("p2SolvedGroups", 0L);
+        s.put("p1FinalSolved",  0L);
+        s.put("p2FinalSolved",  0L);
         sm.setGameState(s);
     }
 
@@ -606,7 +631,16 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         if (timer != null) { timer.cancel(); timer = null; }
         int tP1 = prevP1 + (int) syncP1;
         int tP2 = prevP2 + (int) syncP2;
-        sm.finishCurrentGame(gameIdx, (int) syncP1, (int) syncP2, tP1, tP2, 6);
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("gameType", GameSessionManager.GAME_TYPE_ASOCIJACIJE);
+        stats.put("p1SolvedGroups", p1SolvedGroups);
+        stats.put("p2SolvedGroups", p2SolvedGroups);
+        stats.put("p1FinalSolved", p1FinalSolved);
+        stats.put("p2FinalSolved", p2FinalSolved);
+        stats.put("totalGroups", (long) (GROUPS * 2));
+        stats.put("player1Score", (long) syncP1);
+        stats.put("player2Score", (long) syncP2);
+        sm.finishCurrentGame(gameIdx, (int) syncP1, (int) syncP2, tP1, tP2, 6, stats);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();
