@@ -3,12 +3,27 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+def loadLocalProperties() {
+    def propsFile = rootProject.file('local.properties')
+    def props = new Properties()
+    if (propsFile.exists()) {
+        propsFile.withInputStream { props.load(it) }
+    }
+    return props
+}
+
+def localProps = loadLocalProperties()
+
 android {
     namespace 'com.example.slagalica'
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
         }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     defaultConfig {
@@ -19,6 +34,13 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "CLOUDINARY_CLOUD_NAME",
+                "\"${localProps.getProperty('cloudinary.cloud_name', '')}\""
+        buildConfigField "String", "CLOUDINARY_API_KEY",
+                "\"${localProps.getProperty('cloudinary.api_key', '')}\""
+        buildConfigField "String", "CLOUDINARY_API_SECRET",
+                "\"${localProps.getProperty('cloudinary.api_secret', '')}\""
     }
 
     buildTypes {
@@ -46,6 +68,10 @@ dependencies {
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.auth
     implementation libs.firebase.firestore
+    implementation libs.glide
+    implementation ("com.cloudinary:cloudinary-android:3.0.2") {
+        exclude group: "com.facebook.fresco"
+    }
 
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit

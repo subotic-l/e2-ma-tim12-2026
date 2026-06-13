@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".SlagalicaApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -68,6 +69,16 @@
         <activity android:name=".AsocijacijeGameActivity" />
 
         <activity android:name=".NotificationsActivity" />
+        <activity android:name=".MatchLobbyActivity" android:exported="false" />
+        <activity android:name=".NetworkMatchActivity" android:exported="false" />
+        <activity android:name=".NetworkMatchSummaryActivity" android:exported="false" />
+        <activity android:name=".network.NetworkWhoKnowsKnows" android:exported="false" />
+        <activity android:name=".network.NetworkSpojniceGame" android:exported="false" />
+        <activity android:name=".network.NetworkMatchingGame" android:exported="false" />
+        <activity android:name=".network.NetworkAsocijacijeGame" android:exported="false" />
+        <activity android:name=".network.NetworkSkockoGame" android:exported="false" />
+        <activity android:name=".network.NetworkStepByStep" android:exported="false" />
+        <activity android:name=".network.NetworkNumbersGame" android:exported="false" />
     </application>
 
 </manifest>

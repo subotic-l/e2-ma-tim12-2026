@@ -68,12 +68,4 @@
         app:cornerRadius="12dp"
         android:elevation="6dp"/>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_forgot_password"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Zaboravljena lozinka?"
-        android:textColor="@color/button_default_color"
-        android:layout_marginTop="4dp"/>
 </LinearLayout>

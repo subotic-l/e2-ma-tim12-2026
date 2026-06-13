@@ -63,16 +63,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:hint="Region"
-            app:boxBackgroundMode="outline"
-            app:boxStrokeColor="@color/button_default_border"
-            app:hintTextColor="@color/button_default_border"
-            android:textColor="@color/white">
+            app:boxBackgroundMode="outline">
 
-            <com.google.android.material.textfield.TextInputEditText
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
                 android:id="@+id/register_region"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="text" />
+                android:minHeight="56dp"
+                android:inputType="none"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout

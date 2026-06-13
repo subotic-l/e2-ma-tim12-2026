@@ -1,0 +1,88 @@
+package com.example.slagalica;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+
+import androidx.fragment.app.Fragment;
+
+public class HomeFragment extends Fragment {
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_home, container, false);
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        Button startMatchButton = view.findViewById(R.id.buttonStartMatch);
+        startMatchButton.setOnClickListener(v -> {
+            Intent intent = new Intent(requireActivity(), MatchPlayActivity.class);
+            intent.putExtra(MatchConstants.EXTRA_PLAYER_ONE_NAME, MatchConstants.DEFAULT_PLAYER_ONE_NAME);
+            intent.putExtra(MatchConstants.EXTRA_PLAYER_TWO_NAME, MatchConstants.DEFAULT_PLAYER_TWO_NAME);
+            startActivity(intent);
+        });
+
+        Button onlineMatchButton = view.findViewById(R.id.buttonOnlineMatch);
+        onlineMatchButton.setOnClickListener(v -> {
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(requireActivity());
+            builder.setTitle("Ime igrača");
+            builder.setMessage("Unesite ime koje će protivnik videti:");
+            final android.widget.EditText input = new android.widget.EditText(requireActivity());
+            input.setHint("Ime");
+            com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            final String[] avatarHolder = {""};
+            if (user != null) {
+                com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("users").document(user.getUid()).get()
+                        .addOnSuccessListener(doc -> {
+                            if (doc.exists() && doc.getString("username") != null) {
+                                input.setText(doc.getString("username"));
+                            }
+                            if (doc.exists() && doc.getString("avatarUrl") != null) {
+                                avatarHolder[0] = doc.getString("avatarUrl");
+                            }
+                        });
+            } else {
+                input.setText("Igrač");
+            }
+            builder.setView(input);
+            builder.setPositiveButton("Potvrdi", (dialog, which) -> {
+                String name = input.getText().toString().trim();
+                if (name.isEmpty()) name = "Igrač";
+                Intent intent = new Intent(requireActivity(), MatchLobbyActivity.class);
+                intent.putExtra("playerName", name);
+                if (user != null) {
+                    intent.putExtra("playerId", user.getUid());
+                    intent.putExtra("avatarUrl", avatarHolder[0]);
+                }
+                startActivity(intent);
+            });
+            builder.setNegativeButton("Otkaži", null);
+            builder.show();
+        });
+
+        view.findViewById(R.id.buttonStartWhoKnows).setOnClickListener(v ->
+                startActivity(new Intent(requireActivity(), WhoKnowsKnows.class)));
+
+        view.findViewById(R.id.buttonStartMatchingGame).setOnClickListener(v ->
+                startActivity(new Intent(requireActivity(), MatchingGameActivity.class)));
+
+        view.findViewById(R.id.buttonStartStepByStep).setOnClickListener(v ->
+                startActivity(new Intent(requireActivity(), StepByStepActivity.class)));
+
+        view.findViewById(R.id.buttonStartNumbersGame).setOnClickListener(v ->
+                startActivity(new Intent(requireActivity(), NumbersGameActivity.class)));
+
+        view.findViewById(R.id.buttonStartSkocko).setOnClickListener(v ->
+                startActivity(new Intent(requireActivity(), SkockoGameActivity.class)));
+
+        view.findViewById(R.id.buttonStartAsocijacije).setOnClickListener(v ->
+                startActivity(new Intent(requireActivity(), AsocijacijeGameActivity.class)));
+    }
+}

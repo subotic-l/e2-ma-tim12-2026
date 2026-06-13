@@ -11,4 +11,8 @@
     <color name="button_selected_color">#3F64B0</color>
     <color name="button_selected_border">#2F4F8C</color>
     <color name="background">#529DCC</color>
+    <color name="performance_medium">#FFC107</color>
+    <color name="stats_track">#33FFFFFF</color>
+    <color name="win_color">#4CAF50</color>
+    <color name="loss_color">#F44336</color>
 </resources>
