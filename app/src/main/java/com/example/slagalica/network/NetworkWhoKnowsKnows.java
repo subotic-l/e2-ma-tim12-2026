@@ -371,7 +371,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     private void finishGame() {
         if (done) return; done = true;
         if (timer != null) { timer.cancel(); timer = null; }
-        sm.finishCurrentGame(gameIdx, localMyPts, localOppPts, localMyPts, localOppPts, 2);
+        sm.finishCurrentGame(gameIdx, localMyPts, localOppPts, localMyPts, localOppPts, 4);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();

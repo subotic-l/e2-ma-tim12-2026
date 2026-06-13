@@ -64,7 +64,7 @@ public class GameSessionManager {
         matchData.put("status", "waiting");
         matchData.put("createdAt", FieldValue.serverTimestamp());
         matchData.put("currentGameIndex", 0);
-        matchData.put("totalGames", 1);
+        matchData.put("totalGames", 4);
         matchData.put("player1Score", 0);
         matchData.put("player2Score", 0);
         matchData.put("gameState", new HashMap<>());

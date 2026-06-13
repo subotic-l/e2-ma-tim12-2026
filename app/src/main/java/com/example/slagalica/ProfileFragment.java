@@ -83,6 +83,13 @@ public class ProfileFragment extends Fragment {
             startActivity(intent);
         });
 
+        Button notificationsButton = view.findViewById(R.id.buttonNotifications);
+
+        notificationsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(requireActivity(), NotificationsActivity.class);
+            startActivity(intent);
+        });
+
         loadProfile();
 
         view.findViewById(R.id.buttonLogout).setOnClickListener(v -> {
