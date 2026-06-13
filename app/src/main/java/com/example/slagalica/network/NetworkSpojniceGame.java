@@ -671,7 +671,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         if (timer != null) { timer.cancel(); timer = null; }
         int totalP1 = previousP1Score + (int) syncP1Score;
         int totalP2 = previousP2Score + (int) syncP2Score;
-        sm.finishCurrentGame(gameIdx, (int) syncP1Score, (int) syncP2Score, totalP1, totalP2, totalGames);
+        sm.finishCurrentGame(gameIdx, (int) syncP1Score, (int) syncP2Score, totalP1, totalP2, 6);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();

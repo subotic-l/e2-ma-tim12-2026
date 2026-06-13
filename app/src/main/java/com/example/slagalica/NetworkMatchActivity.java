@@ -11,12 +11,17 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.slagalica.data.GameSessionManager;
+import com.example.slagalica.network.NetworkAsocijacijeGame;
+import com.example.slagalica.network.NetworkSkockoGame;
 import com.example.slagalica.network.NetworkNumbersGame;
 import com.example.slagalica.network.NetworkSpojniceGame;
 import com.example.slagalica.network.NetworkStepByStep;
 import com.example.slagalica.network.NetworkWhoKnowsKnows;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +31,9 @@ public class NetworkMatchActivity extends AppCompatActivity {
             NetworkWhoKnowsKnows.class,
             NetworkSpojniceGame.class,
             NetworkNumbersGame.class,
-            NetworkStepByStep.class
+            NetworkStepByStep.class,
+            NetworkAsocijacijeGame.class,
+            NetworkSkockoGame.class
     );
 
     private GameSessionManager sessionManager;
@@ -137,9 +144,39 @@ public class NetworkMatchActivity extends AppCompatActivity {
         gameLauncher.launch(intent);
     }
 
+    private boolean notificationWritten = false;
+
+    private void writeMatchNotification(Map<String, Object> state) {
+        String p1Id = (String) state.get("player1Id");
+        String p2Id = (String) state.get("player2Id");
+        String p1Name = (String) state.get("player1Name");
+        String p2Name = (String) state.get("player2Name");
+        if (p1Id == null || p2Id == null || p1Name == null || p2Name == null) return;
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        Map<String, Object> notif1 = new HashMap<>();
+        notif1.put("message", "Igrali ste sa " + p2Name);
+        notif1.put("createdAt", FieldValue.serverTimestamp());
+        notif1.put("read", false);
+
+        Map<String, Object> notif2 = new HashMap<>();
+        notif2.put("message", "Igrali ste sa " + p1Name);
+        notif2.put("createdAt", FieldValue.serverTimestamp());
+        notif2.put("read", false);
+
+        db.collection("users").document(p1Id).collection("notifications").add(notif1);
+        db.collection("users").document(p2Id).collection("notifications").add(notif2);
+    }
+
     private void showFinalSummary(Map<String, Object> state) {
         if (isFinishing()) return;
         sessionManager.cleanup();
+
+        if (!notificationWritten && myPlayerNumber == 1) {
+            notificationWritten = true;
+            writeMatchNotification(state);
+        }
 
         long p1Score = state.containsKey("player1Score") ? (long) state.get("player1Score") : 0;
         long p2Score = state.containsKey("player2Score") ? (long) state.get("player2Score") : 0;

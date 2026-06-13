@@ -55,7 +55,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     private long remain = Q_TIME_MS;
 
     private String myName, myAvatar;
-    private int totalGames;
+    //private int totalGames;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +72,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         matchId = i.getStringExtra("matchId");
         me = i.getIntExtra("myPlayerNumber", 1);
         gameIdx = i.getIntExtra("gameIndex", 0);
-        totalGames = i.getIntExtra("totalGames", 3);
+        //totalGames = i.getIntExtra("totalGames", 3);
         opp = me == 1 ? 2 : 1;
 
         timerView = findViewById(R.id.timerTextView);
@@ -373,7 +373,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     private void finishGame() {
         if (done) return; done = true;
         if (timer != null) { timer.cancel(); timer = null; }
-        sm.finishCurrentGame(gameIdx, localMyPts, localOppPts, localMyPts, localOppPts, totalGames);
+        sm.finishCurrentGame(gameIdx, localMyPts, localOppPts, localMyPts, localOppPts, 6);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();

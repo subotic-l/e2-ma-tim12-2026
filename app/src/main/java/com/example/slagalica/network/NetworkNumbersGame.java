@@ -39,7 +39,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     private static final int GAME_TIME_MS = 60000;
 
     private GameSessionManager sm;
-    private int me, opp, gameIdx, totalGames;
+    private int me, opp, gameIdx;//, totalGames;
     private String matchId;
     private int previousP1Score = 0, previousP2Score = 0;
 
@@ -106,7 +106,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         matchId = i.getStringExtra("matchId");
         me = i.getIntExtra("myPlayerNumber", 1);
         gameIdx = i.getIntExtra("gameIndex", 0);
-        totalGames = i.getIntExtra("totalGames", 3);
+        //totalGames = i.getIntExtra("totalGames", 3);
         previousP1Score = i.getIntExtra("previousPlayer1Score", 0);
         previousP2Score = i.getIntExtra("previousPlayer2Score", 0);
         opp = me == 1 ? 2 : 1;
@@ -667,7 +667,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
 
         int totalP1 = previousP1Score + round1Score;
         int totalP2 = previousP2Score + round2Score;
-        sm.finishCurrentGame(gameIdx, round1Score, round2Score, totalP1, totalP2, totalGames);
+        sm.finishCurrentGame(gameIdx, round1Score, round2Score, totalP1, totalP2, 6);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();

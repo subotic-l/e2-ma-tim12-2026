@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.slagalica.R;
+import com.example.slagalica.StepByStepGame;
 import com.example.slagalica.data.GameSessionManager;
 import com.example.slagalica.data.StepByStepRepository;
 import com.google.android.material.button.MaterialButton;
@@ -47,7 +48,7 @@ public class NetworkStepByStep extends AppCompatActivity {
     private int oppScore = 0;
 
     private StepByStepRepository repo;
-    private int totalGames;
+    //private int totalGames;
     private int previousP1Score = 0;
     private int previousP2Score = 0;
 
@@ -69,7 +70,7 @@ public class NetworkStepByStep extends AppCompatActivity {
         matchId = i.getStringExtra("matchId");
         me = i.getIntExtra("myPlayerNumber", 1);
         gameIdx = i.getIntExtra("gameIndex", 0);
-        totalGames = i.getIntExtra("totalGames", 3);
+        //totalGames = i.getIntExtra("totalGames", 3);
         previousP1Score = i.getIntExtra("previousPlayer1Score", 0);
         previousP2Score = i.getIntExtra("previousPlayer2Score", 0);
         opp = me == 1 ? 2 : 1;
@@ -374,7 +375,7 @@ public class NetworkStepByStep extends AppCompatActivity {
         int totalP2 = previousP2Score + (me == 1 ? oppScore : myScore);
         int gameP1 = me == 1 ? myScore : oppScore;
         int gameP2 = me == 1 ? oppScore : myScore;
-        sm.finishCurrentGame(gameIdx, gameP1, gameP2, totalP1, totalP2, totalGames);
+        sm.finishCurrentGame(gameIdx, gameP1, gameP2, totalP1, totalP2, 6);
         sm.cleanup();
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
