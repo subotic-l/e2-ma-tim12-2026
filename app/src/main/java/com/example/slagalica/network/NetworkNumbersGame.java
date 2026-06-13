@@ -56,6 +56,8 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     private double myResult = 0;
 
     private int round1Score = 0, round2Score = 0;
+    private int p1FoundExactCount = 0;
+    private int p2FoundExactCount = 0;
 
     private TextView timerView, targetView, exprView, myNameView, oppNameView, myScoreView, oppScoreView;
     private android.widget.ImageView myAvatarView, oppAvatarView;
@@ -434,6 +436,11 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         boolean p1sub = gs.containsKey("p1Submitted") && (Long) gs.get("p1Submitted") == 1;
         boolean p2sub = gs.containsKey("p2Submitted") && (Long) gs.get("p2Submitted") == 1;
 
+        boolean p1Exact = p1sub && Math.abs(p1r - target) < 0.0001;
+        boolean p2Exact = p2sub && Math.abs(p2r - target) < 0.0001;
+        if (p1Exact) p1FoundExactCount++;
+        if (p2Exact) p2FoundExactCount++;
+
         String myRes = formatResult(me == 1 ? p1r : p2r, target, me == 1 ? p1sub : p2sub);
         String oppRes = formatResult(me == 1 ? p2r : p1r, target, me == 1 ? p2sub : p1sub);
         int myScore = me == 1 ? r1Score : r2Score;
@@ -667,7 +674,14 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
 
         int totalP1 = previousP1Score + round1Score;
         int totalP2 = previousP2Score + round2Score;
-        sm.finishCurrentGame(gameIdx, round1Score, round2Score, totalP1, totalP2, 6);
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("gameType", GameSessionManager.GAME_TYPE_MOJ_BROJ);
+        stats.put("p1FoundExact", (long) p1FoundExactCount);
+        stats.put("p2FoundExact", (long) p2FoundExactCount);
+        stats.put("totalRounds", 2L);
+        stats.put("player1Score", (long) round1Score);
+        stats.put("player2Score", (long) round2Score);
+        sm.finishCurrentGame(gameIdx, round1Score, round2Score, totalP1, totalP2, 6, stats);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();

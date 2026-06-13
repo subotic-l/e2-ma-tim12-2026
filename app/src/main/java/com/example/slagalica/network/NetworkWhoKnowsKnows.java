@@ -44,6 +44,8 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     private long myTime = -1;
     private boolean waitReveal = false;
     private int localMyPts = 0, localOppPts = 0;
+    private int p1Correct = 0, p1Wrong = 0;
+    private int p2Correct = 0, p2Wrong = 0;
     private boolean done = false;
     private boolean iAmFinisher = false;
     private QuestionRepository questionRepository;
@@ -310,6 +312,11 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         localOppPts += (me == 1 ? p2pts : p1pts);
         updateScoreDisplay();
 
+        if ((int) p1a == correct) p1Correct++;
+        else if ((int) p1a >= 0) p1Wrong++;
+        if ((int) p2a == correct) p2Correct++;
+        else if ((int) p2a >= 0) p2Wrong++;
+
         int cBdr = ContextCompat.getColor(this, R.color.correct_answer_border);
         int wBdr = ContextCompat.getColor(this, R.color.wrong_answer_border);
 
@@ -373,7 +380,17 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     private void finishGame() {
         if (done) return; done = true;
         if (timer != null) { timer.cancel(); timer = null; }
-        sm.finishCurrentGame(gameIdx, localMyPts, localOppPts, localMyPts, localOppPts, 6);
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("gameType", GameSessionManager.GAME_TYPE_WHO_KNOWS);
+        stats.put("p1Correct", (long) p1Correct);
+        stats.put("p1Wrong", (long) p1Wrong);
+        stats.put("p1Total", (long) TOTAL_Q);
+        stats.put("p2Correct", (long) p2Correct);
+        stats.put("p2Wrong", (long) p2Wrong);
+        stats.put("p2Total", (long) TOTAL_Q);
+        stats.put("player1Score", (long) localMyPts);
+        stats.put("player2Score", (long) localOppPts);
+        sm.finishCurrentGame(gameIdx, localMyPts, localOppPts, localMyPts, localOppPts, 6, stats);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();
