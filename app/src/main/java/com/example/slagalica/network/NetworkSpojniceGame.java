@@ -81,6 +81,8 @@ public class NetworkSpojniceGame extends AppCompatActivity {
 
     private long syncP1ConnectedTotal = 0;
     private long syncP2ConnectedTotal = 0;
+    private long syncP1Opportunities = 0;
+    private long syncP2Opportunities = 0;
 
     private int localMyPts = 0;
     private int localOppPts = 0;
@@ -302,6 +304,8 @@ public class NetworkSpojniceGame extends AppCompatActivity {
 
         syncP1ConnectedTotal = gs.get("p1ConnectedTotal") instanceof Long ? (Long) gs.get("p1ConnectedTotal") : 0;
         syncP2ConnectedTotal = gs.get("p2ConnectedTotal") instanceof Long ? (Long) gs.get("p2ConnectedTotal") : 0;
+        syncP1Opportunities = gs.get("p1Opportunities") instanceof Long ? (Long) gs.get("p1Opportunities") : 0;
+        syncP2Opportunities = gs.get("p2Opportunities") instanceof Long ? (Long) gs.get("p2Opportunities") : 0;
 
         localMyPts = (int) (me == 1 ? syncP1Score : syncP2Score);
         localOppPts = (int) (me == 1 ? syncP2Score : syncP1Score);
@@ -457,6 +461,8 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         s.put("p2Score", 0L);
         s.put("p1ConnectedTotal", 0L);
         s.put("p2ConnectedTotal", 0L);
+        s.put("p1Opportunities", (long) TOTAL_ITEMS);
+        s.put("p2Opportunities", 0L);
         s.put("games", serializeGames(games));
         s.put("shuffleOrder0", toLongList(shuffleOrder0));
         s.put("shuffleOrder1", toLongList(shuffleOrder1));
@@ -565,6 +571,10 @@ public class NetworkSpojniceGame extends AppCompatActivity {
             u.put("phase", PHASE_DONE);
             u.put("p1Score", syncP1Score);
             u.put("p2Score", syncP2Score);
+            u.put("p1ConnectedTotal", syncP1ConnectedTotal);
+            u.put("p2ConnectedTotal", syncP2ConnectedTotal);
+            u.put("p1Opportunities", syncP1Opportunities);
+            u.put("p2Opportunities", syncP2Opportunities);
             sm.updateGameState(u);
             iAmFinisher = true;
             return;
@@ -601,6 +611,22 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         syncActivePlayer = nextActive;
         syncCurrentLeft = firstLeft;
 
+        if (PHASE_R1_STEAL.equals(nextPhase)) {
+            int remaining = 0;
+            for (int i = 0; i < TOTAL_ITEMS; i++) {
+                if (!syncLeftMatched[i]) remaining++;
+            }
+            syncP2Opportunities += remaining;
+        } else if (PHASE_R2_PLAY.equals(nextPhase)) {
+            syncP2Opportunities += TOTAL_ITEMS;
+        } else if (PHASE_R2_STEAL.equals(nextPhase)) {
+            int remaining = 0;
+            for (int i = 0; i < TOTAL_ITEMS; i++) {
+                if (!syncLeftMatched[i]) remaining++;
+            }
+            syncP1Opportunities += remaining;
+        }
+
         Map<String, Object> u = new HashMap<>();
         u.put("phase", nextPhase);
         u.put("activePlayer", (long) nextActive);
@@ -613,6 +639,8 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         u.put("p2Score", syncP2Score);
         u.put("p1ConnectedTotal", syncP1ConnectedTotal);
         u.put("p2ConnectedTotal", syncP2ConnectedTotal);
+        u.put("p1Opportunities", syncP1Opportunities);
+        u.put("p2Opportunities", syncP2Opportunities);
         sm.updateGameState(u);
     }
 
@@ -629,6 +657,8 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         u.put("p2Score", syncP2Score);
         u.put("p1ConnectedTotal", syncP1ConnectedTotal);
         u.put("p2ConnectedTotal", syncP2ConnectedTotal);
+        u.put("p1Opportunities", syncP1Opportunities);
+        u.put("p2Opportunities", syncP2Opportunities);
         sm.updateGameState(u);
     }
 
@@ -687,7 +717,8 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         stats.put("gameType", GameSessionManager.GAME_TYPE_SPOJNICE);
         stats.put("p1Connected", syncP1ConnectedTotal);
         stats.put("p2Connected", syncP2ConnectedTotal);
-        stats.put("totalItems", (long) TOTAL_ITEMS);
+        stats.put("p1Opportunities", syncP1Opportunities);
+        stats.put("p2Opportunities", syncP2Opportunities);
         stats.put("player1Score", (long) syncP1Score);
         stats.put("player2Score", (long) syncP2Score);
         sm.finishCurrentGame(gameIdx, (int) syncP1Score, (int) syncP2Score, totalP1, totalP2, 6, stats);
@@ -744,6 +775,8 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         gs.put("p2Score", 0L);
         gs.put("p1ConnectedTotal", 0L);
         gs.put("p2ConnectedTotal", 0L);
+        gs.put("p1Opportunities", 0L);
+        gs.put("p2Opportunities", 0L);
         gs.put("leftMatched", zeroLongs(TOTAL_ITEMS));
         gs.put("rightUsed", zeroLongs(TOTAL_ITEMS));
         gs.put("matchedByPlayer", zeroLongs(TOTAL_ITEMS));

@@ -141,9 +141,11 @@ public class StatsRepository {
                         long connected = iAmPlayer1
                                 ? (game.get("p1Connected") instanceof Long ? (Long) game.get("p1Connected") : 0)
                                 : (game.get("p2Connected") instanceof Long ? (Long) game.get("p2Connected") : 0);
-                        long totalItems = game.get("totalItems") instanceof Long ? (Long) game.get("totalItems") : 5;
+                        long opportunities = iAmPlayer1
+                                ? (game.get("p1Opportunities") instanceof Long ? (Long) game.get("p1Opportunities") : 0)
+                                : (game.get("p2Opportunities") instanceof Long ? (Long) game.get("p2Opportunities") : 0);
                         stats.spojniceConnected += (int) connected;
-                        stats.spojniceTotal += (int) totalItems;
+                        stats.spojniceTotal += (int) opportunities;
                         stats.spojniceScoreSum += (int) myGameScore;
                         stats.spojniceMaxScore = Math.max(stats.spojniceMaxScore, (int) myGameScore);
                         stats.spojniceGames++;

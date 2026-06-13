@@ -63,6 +63,7 @@ public class ProfileFragment extends Fragment {
     private LinearProgressIndicator associationsAvgProgress;
     private LinearProgressIndicator skockoAvgProgress;
     private LinearProgressIndicator connectionsRatioProgress;
+    private LinearProgressIndicator connectionsAvgProgress;
     private TextView WhoKnowsRatio;
     private TextView textGameStatKoZnaZna;
     private TextView NumbersGameRatio;
@@ -289,6 +290,7 @@ public class ProfileFragment extends Fragment {
         associationsAvgProgress = root.findViewById(R.id.associationsAvgProgress);
         skockoAvgProgress = root.findViewById(R.id.skockoAvgProgress);
         connectionsRatioProgress = root.findViewById(R.id.connectionsRatioProgress);
+        connectionsAvgProgress = root.findViewById(R.id.connectionsAvgProgress);
         WhoKnowsRatio = root.findViewById(R.id.WhoKnowsRatio);
         textGameStatKoZnaZna = root.findViewById(R.id.textGameStatKoZnaZna);
         NumbersGameRatio = root.findViewById(R.id.NumbersGameRatio);
@@ -347,14 +349,14 @@ public class ProfileFragment extends Fragment {
 
         int stepByStepPct = stats.korakTotal > 0 ? stats.korakFound * 100 / stats.korakTotal : 0;
         StringBuilder sb = new StringBuilder();
-        sb.append(stepByStepPct).append("%");
+        sb.append("Pronadjeno: ").append(stepByStepPct).append("%\n");
         for (int i = 0; i < 7; i++) {
             int stepPct = stats.korakGames > 0 ? stats.korakStepCounts[i] * 100 / stats.korakGames : 0;
-            sb.append("  K").append(i+1).append(":").append(stepPct).append("%");
+            sb.append("K").append(i+1).append(":").append(stepPct).append("% ");
         }
         StepByStepRatio.setText(sb.toString());
         int stepByStepAvg = stats.korakGames > 0 ? stats.korakScoreSum / stats.korakGames : 0;
-        int stepByStepMx = Math.max(stats.korakMaxScore, 40);
+        int stepByStepMx = Math.max(stats.korakMaxScore, 25);
         StepByStepPoints.setText(stepByStepAvg + " / " + stepByStepMx);
         stepByStepAvgProgress.setProgress(Math.min(stepByStepAvg * 100 / Math.max(stepByStepMx, 1), 100));
         stepByStepAvgProgress.setIndicatorColor(getPerformanceColor(stepByStepPct, goodColor, mediumColor, badColor));
@@ -372,14 +374,14 @@ public class ProfileFragment extends Fragment {
 
         int skockoPct = stats.skockoTotal > 0 ? stats.skockoFound * 100 / stats.skockoTotal : 0;
         StringBuilder sb2 = new StringBuilder();
-        sb2.append(skockoPct).append("%");
+        sb2.append("Pronadjeno: ").append(skockoPct).append("%\n");
         for (int i = 1; i <= 6; i++) {
             int attPct = stats.skockoGames > 0 ? stats.skockoAttemptCounts[i] * 100 / stats.skockoGames : 0;
-            sb2.append("  P").append(i).append(":").append(attPct).append("%");
+            sb2.append("P").append(i).append(":").append(attPct).append("% ");
         }
         SkockoRatio.setText(sb2.toString());
         int skockoAvg = stats.skockoGames > 0 ? stats.skockoScoreSum / stats.skockoGames : 0;
-        int skockoMx = Math.max(stats.skockoMaxScore, 40);
+        int skockoMx = Math.max(stats.skockoMaxScore, 30);
         SkockoPoints.setText(skockoAvg + " / " + skockoMx);
         skockoAvgProgress.setProgress(Math.min(skockoAvg * 100 / Math.max(skockoMx, 1), 100));
         skockoAvgProgress.setIndicatorColor(getPerformanceColor(skockoPct, goodColor, mediumColor, badColor));
@@ -392,6 +394,8 @@ public class ProfileFragment extends Fragment {
         int spojAvg = stats.spojniceGames > 0 ? stats.spojniceScoreSum / stats.spojniceGames : 0;
         int spojMx = Math.max(stats.spojniceMaxScore, 20);
         ConnectionsPoints.setText(spojAvg + " / " + spojMx);
+        connectionsAvgProgress.setProgress(Math.min(spojAvg * 100 / Math.max(spojMx, 1), 100));
+        connectionsAvgProgress.setIndicatorColor(getPerformanceColor(spojAvg * 100 / Math.max(spojMx, 1), goodColor, mediumColor, badColor));
     }
 
     private void displayEmptyStats() {
@@ -406,7 +410,7 @@ public class ProfileFragment extends Fragment {
         NumbersGamePoints.setText("0 / 20");
         numbersAvgProgress.setProgress(0);
         StepByStepRatio.setText("0%");
-        StepByStepPoints.setText("0 / 40");
+        StepByStepPoints.setText("0 / 25");
         SkockoRatio.setText("0%");
         stepByStepAvgProgress.setProgress(0);
         AssociationsRatio.setText("0% / 0%");
@@ -414,11 +418,12 @@ public class ProfileFragment extends Fragment {
         AssociationsPoints.setText("0 / 60");
         associationsAvgProgress.setProgress(0);
         SkockoRatio.setText("0%");
-        SkockoPoints.setText("0 / 40");
+        SkockoPoints.setText("0 / 30");
         skockoAvgProgress.setProgress(0);
         ConnectionsRatio.setText("0%");
         connectionsRatioProgress.setProgress(0);
         ConnectionsPoints.setText("0 / 20");
+        connectionsAvgProgress.setProgress(0);
     }
 
     private int getPerformanceColor(int percentage, int goodColor, int mediumColor, int badColor) {
