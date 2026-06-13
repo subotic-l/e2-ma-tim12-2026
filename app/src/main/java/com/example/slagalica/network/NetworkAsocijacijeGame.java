@@ -65,7 +65,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     private static final String[] ALL_FINAL = {"IGLA", "GODISNJE DOBA"};
 
     private GameSessionManager sm;
-    private int me, opp, gameIdx, prevP1, prevP2;
+    private int me, opp, gameIdx, prevP1, prevP2, totalGames;
     private boolean finished, loaded;
     private boolean pendingGuess;
 
@@ -109,6 +109,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         gameIdx  = i.getIntExtra("gameIndex", 0);
         prevP1   = i.getIntExtra("previousPlayer1Score", 0);
         prevP2   = i.getIntExtra("previousPlayer2Score", 0);
+        totalGames = i.getIntExtra("totalGames", 6);
 
         tvTimer  = findViewById(R.id.timerText);
         tvMyName = findViewById(R.id.playerOneName);
@@ -605,7 +606,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         if (timer != null) { timer.cancel(); timer = null; }
         int tP1 = prevP1 + (int) syncP1;
         int tP2 = prevP2 + (int) syncP2;
-        sm.finishCurrentGame(gameIdx, (int) syncP1, (int) syncP2, tP1, tP2, 4);
+        sm.finishCurrentGame(gameIdx, (int) syncP1, (int) syncP2, tP1, tP2, 6);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();

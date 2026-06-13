@@ -13,7 +13,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.slagalica.data.GameSessionManager;
 import com.example.slagalica.network.NetworkAsocijacijeGame;
 import com.example.slagalica.network.NetworkSkockoGame;
+import com.example.slagalica.network.NetworkNumbersGame;
 import com.example.slagalica.network.NetworkSpojniceGame;
+import com.example.slagalica.network.NetworkStepByStep;
 import com.example.slagalica.network.NetworkWhoKnowsKnows;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -28,6 +30,8 @@ public class NetworkMatchActivity extends AppCompatActivity {
     private final List<Class<?>> gameOrder = Arrays.asList(
             NetworkWhoKnowsKnows.class,
             NetworkSpojniceGame.class,
+            NetworkNumbersGame.class,
+            NetworkStepByStep.class,
             NetworkAsocijacijeGame.class,
             NetworkSkockoGame.class
     );
@@ -130,6 +134,7 @@ public class NetworkMatchActivity extends AppCompatActivity {
         intent.putExtra("myPlayerName", myPlayerName);
         intent.putExtra("myAvatarUrl", getIntent().getStringExtra("myAvatarUrl"));
         intent.putExtra("gameIndex", gameIndex);
+        intent.putExtra("totalGames", gameOrder.size());
         if (state != null) {
             long p1 = state.containsKey("player1Score") ? (long) state.get("player1Score") : 0;
             long p2 = state.containsKey("player2Score") ? (long) state.get("player2Score") : 0;

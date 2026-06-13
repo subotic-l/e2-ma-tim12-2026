@@ -95,6 +95,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
     private int correctColor, correctBorder, wrongColor, wrongBorder;
 
     private String myName, myAvatar;
+    private int totalGames;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,6 +112,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         matchId = i.getStringExtra("matchId");
         me = i.getIntExtra("myPlayerNumber", 1);
         gameIdx = i.getIntExtra("gameIndex", 0);
+        totalGames = i.getIntExtra("totalGames", 3);
         previousP1Score = i.getIntExtra("previousPlayer1Score", 0);
         previousP2Score = i.getIntExtra("previousPlayer2Score", 0);
         opp = me == 1 ? 2 : 1;
@@ -669,7 +671,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         if (timer != null) { timer.cancel(); timer = null; }
         int totalP1 = previousP1Score + (int) syncP1Score;
         int totalP2 = previousP2Score + (int) syncP2Score;
-        sm.finishCurrentGame(gameIdx, (int) syncP1Score, (int) syncP2Score, totalP1, totalP2, 4);
+        sm.finishCurrentGame(gameIdx, (int) syncP1Score, (int) syncP2Score, totalP1, totalP2, 6);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();
