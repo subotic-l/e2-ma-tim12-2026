@@ -146,31 +146,6 @@ public class NetworkMatchActivity extends AppCompatActivity {
         gameLauncher.launch(intent);
     }
 
-    private boolean notificationWritten = false;
-
-    private void writeMatchNotification(Map<String, Object> state) {
-        String p1Id = (String) state.get("player1Id");
-        String p2Id = (String) state.get("player2Id");
-        String p1Name = (String) state.get("player1Name");
-        String p2Name = (String) state.get("player2Name");
-        if (p1Id == null || p2Id == null || p1Name == null || p2Name == null) return;
-
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        Map<String, Object> notif1 = new HashMap<>();
-        notif1.put("message", "Igrali ste sa " + p2Name);
-        notif1.put("createdAt", FieldValue.serverTimestamp());
-        notif1.put("read", false);
-
-        Map<String, Object> notif2 = new HashMap<>();
-        notif2.put("message", "Igrali ste sa " + p1Name);
-        notif2.put("createdAt", FieldValue.serverTimestamp());
-        notif2.put("read", false);
-
-        db.collection("users").document(p1Id).collection("notifications").add(notif1);
-        db.collection("users").document(p2Id).collection("notifications").add(notif2);
-    }
-
     private void showFinalSummary(Map<String, Object> state) {
         if (isFinishing()) return;
         sessionManager.cleanup();
@@ -181,46 +156,48 @@ public class NetworkMatchActivity extends AppCompatActivity {
         String p2Name = state.containsKey("player2Name") ? (String) state.get("player2Name") : "Igrač 2";
         String winner = p1Score > p2Score ? p1Name : (p2Score > p1Score ? p2Name : "Nerešeno");
 
-        if (!notificationWritten && myPlayerNumber == 1) {
-            notificationWritten = true;
-            writeMatchNotification(state);
+        String opponentName = myPlayerNumber == 1 ? p2Name : p1Name;
+        String result = (p1Score == p2Score) ? "Nerešeno" :
+                (myPlayerNumber == 1 && p1Score > p2Score) || (myPlayerNumber == 2 && p2Score > p1Score)
+                        ? "Pobedili ste" : "Izgubili ste";
+        NotificationHelper.show(this, SlagalicaApp.CHANNEL_GENERAL, "Partija završena",
+                result + " protiv " + opponentName + " (" + p1Score + ":" + p2Score + ")", myPlayerId);
 
-            String p1Id = (String) state.get("player1Id");
-            String p2Id = (String) state.get("player2Id");
-            if (p1Id != null && p2Id != null) {
-                Map<String, Object> matchHistory1 = new HashMap<>();
-                matchHistory1.put("matchId", matchId);
-                matchHistory1.put("player1Id", p1Id);
-                matchHistory1.put("player2Id", p2Id);
-                matchHistory1.put("opponentName", p2Name);
-                matchHistory1.put("opponentId", p2Id);
-                matchHistory1.put("timestamp", FieldValue.serverTimestamp());
-                matchHistory1.put("won", p1Score > p2Score);
-                matchHistory1.put("draw", p1Score == p2Score);
-                matchHistory1.put("myScore", (int) p1Score);
-                matchHistory1.put("opponentScore", (int) p2Score);
+        String p1Id = (String) state.get("player1Id");
+        String p2Id = (String) state.get("player2Id");
+        if (p1Id != null && p2Id != null && myPlayerNumber == 1) {
+            Map<String, Object> matchHistory1 = new HashMap<>();
+            matchHistory1.put("matchId", matchId);
+            matchHistory1.put("player1Id", p1Id);
+            matchHistory1.put("player2Id", p2Id);
+            matchHistory1.put("opponentName", p2Name);
+            matchHistory1.put("opponentId", p2Id);
+            matchHistory1.put("timestamp", FieldValue.serverTimestamp());
+            matchHistory1.put("won", p1Score > p2Score);
+            matchHistory1.put("draw", p1Score == p2Score);
+            matchHistory1.put("myScore", (int) p1Score);
+            matchHistory1.put("opponentScore", (int) p2Score);
 
-                Map<String, Object> matchHistory2 = new HashMap<>();
-                matchHistory2.put("matchId", matchId);
-                matchHistory2.put("player1Id", p1Id);
-                matchHistory2.put("player2Id", p2Id);
-                matchHistory2.put("opponentName", p1Name);
-                matchHistory2.put("opponentId", p1Id);
-                matchHistory2.put("timestamp", FieldValue.serverTimestamp());
-                matchHistory2.put("won", p2Score > p1Score);
-                matchHistory2.put("draw", p1Score == p2Score);
-                matchHistory2.put("myScore", (int) p2Score);
-                matchHistory2.put("opponentScore", (int) p1Score);
+            Map<String, Object> matchHistory2 = new HashMap<>();
+            matchHistory2.put("matchId", matchId);
+            matchHistory2.put("player1Id", p1Id);
+            matchHistory2.put("player2Id", p2Id);
+            matchHistory2.put("opponentName", p1Name);
+            matchHistory2.put("opponentId", p1Id);
+            matchHistory2.put("timestamp", FieldValue.serverTimestamp());
+            matchHistory2.put("won", p2Score > p1Score);
+            matchHistory2.put("draw", p1Score == p2Score);
+            matchHistory2.put("myScore", (int) p2Score);
+            matchHistory2.put("opponentScore", (int) p1Score);
 
-                Object gamesStatsObj = state.get("gamesStats");
-                if (gamesStatsObj instanceof Map) {
-                    matchHistory1.put("games", gamesStatsObj);
-                    matchHistory2.put("games", gamesStatsObj);
-                }
-
-                GameSessionManager.saveMatchHistoryToUser(p1Id, matchHistory1);
-                GameSessionManager.saveMatchHistoryToUser(p2Id, matchHistory2);
+            Object gamesStatsObj = state.get("gamesStats");
+            if (gamesStatsObj instanceof Map) {
+                matchHistory1.put("games", gamesStatsObj);
+                matchHistory2.put("games", gamesStatsObj);
             }
+
+            GameSessionManager.saveMatchHistoryToUser(p1Id, matchHistory1);
+            GameSessionManager.saveMatchHistoryToUser(p2Id, matchHistory2);
         }
 
         Intent intent = new Intent(this, NetworkMatchSummaryActivity.class);

@@ -922,7 +922,7 @@
             app:strokeWidth="2dp"
             android:textColor="@color/white"
             android:backgroundTint="#2196F3"
-            android:text="Notifications" />
+            android:text="Notifikacije" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonLogout"

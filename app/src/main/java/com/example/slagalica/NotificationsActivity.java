@@ -47,8 +47,21 @@ public class NotificationsActivity extends AppCompatActivity {
         btnAll.setOnClickListener(v -> { currentFilter = "all"; updateButtonStyles(); renderNotifications(); });
         btnUnread.setOnClickListener(v -> { currentFilter = "unread"; updateButtonStyles(); renderNotifications(); });
 
+        findViewById(R.id.btnTestNotification).setOnClickListener(v -> sendTestNotification());
+
         updateButtonStyles();
         loadNotifications();
+    }
+
+    private void sendTestNotification() {
+        NotificationHelper.show(this, SlagalicaApp.CHANNEL_CHAT, "Čet",
+                "Imate novu poruku od Marka", uid);
+        NotificationHelper.show(this, SlagalicaApp.CHANNEL_RANKING, "Rang lista",
+                "Napredovali ste na 3. mesto!", uid);
+        NotificationHelper.show(this, SlagalicaApp.CHANNEL_REWARDS, "Nagrade",
+                "Osvojili ste 100 poena!", uid);
+        NotificationHelper.show(this, SlagalicaApp.CHANNEL_GENERAL, "Ostalo",
+                "Novi poziv za prijatelja", uid);
     }
 
     private void updateButtonStyles() {
@@ -107,6 +120,14 @@ public class NotificationsActivity extends AppCompatActivity {
                 item.setOnClickListener(v -> markAsRead(docId, item));
             }
 
+            String channel = doc.getString("channel");
+
+            TextView channelView = new TextView(this);
+            channelView.setText(channel != null ? channel : "general");
+            channelView.setTextColor(0xFFB0BEC5);
+            channelView.setTextSize(11);
+            channelView.setTypeface(null, android.graphics.Typeface.ITALIC);
+
             TextView msgView = new TextView(this);
             msgView.setText(message);
             msgView.setTextColor(0xFFFFFFFF);
@@ -123,6 +144,7 @@ public class NotificationsActivity extends AppCompatActivity {
             timeView.setTextColor(0xFFB0BEC5);
             timeView.setTextSize(13);
 
+            item.addView(channelView);
             item.addView(msgView);
             item.addView(statusView);
             item.addView(timeView);
