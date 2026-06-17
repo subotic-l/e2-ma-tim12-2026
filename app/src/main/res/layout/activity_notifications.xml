@@ -53,6 +53,18 @@
 
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnTestNotification"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Testiraj sistemsku notifikaciju"
+        android:textSize="12sp"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#388E3C"
+        app:cornerRadius="16dp"
+        android:layout_marginBottom="8dp" />
+
     <TextView
         android:id="@+id/emptyText"
         android:layout_width="match_parent"
