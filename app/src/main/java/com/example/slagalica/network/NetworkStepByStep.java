@@ -76,6 +76,7 @@ public class NetworkStepByStep extends AppCompatActivity {
         previousP1Score = i.getIntExtra("previousPlayer1Score", 0);
         previousP2Score = i.getIntExtra("previousPlayer2Score", 0);
         opp = me == 1 ? 2 : 1;
+        boolean spectator = i.getBooleanExtra("isSpectator", false);
 
         timerView = findViewById(R.id.timerTextView);
         pointsView = findViewById(R.id.pointsTextView);
@@ -110,6 +111,11 @@ public class NetworkStepByStep extends AppCompatActivity {
         sm = new GameSessionManager();
         sm.attachToMatch(matchId, me);
         sm.listenToMatch(createListener());
+
+        if (spectator) {
+            input.setEnabled(false);
+            btn.setEnabled(false);
+        }
 
         if (me == 1) {
             initGame();

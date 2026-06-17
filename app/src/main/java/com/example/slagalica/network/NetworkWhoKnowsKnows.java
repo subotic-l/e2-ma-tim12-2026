@@ -76,6 +76,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         gameIdx = i.getIntExtra("gameIndex", 0);
         //totalGames = i.getIntExtra("totalGames", 3);
         opp = me == 1 ? 2 : 1;
+        boolean spectator = i.getBooleanExtra("isSpectator", false);
 
         timerView = findViewById(R.id.timerTextView);
         qView = findViewById(R.id.questionTextView);
@@ -111,6 +112,10 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         sm = new GameSessionManager();
         sm.attachToMatch(matchId, me);
         sm.listenToMatch(createL());
+
+        if (spectator) {
+            for (Button b : btns) b.setEnabled(false);
+        }
     }
 
     private GameSessionManager.StateListener createL() {
@@ -380,6 +385,8 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     private void finishGame() {
         if (done) return; done = true;
         if (timer != null) { timer.cancel(); timer = null; }
+        int p1Total = me == 1 ? localMyPts : localOppPts;
+        int p2Total = me == 1 ? localOppPts : localMyPts;
         Map<String, Object> stats = new HashMap<>();
         stats.put("gameType", GameSessionManager.GAME_TYPE_WHO_KNOWS);
         stats.put("p1Correct", (long) p1Correct);
@@ -388,9 +395,9 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         stats.put("p2Correct", (long) p2Correct);
         stats.put("p2Wrong", (long) p2Wrong);
         stats.put("p2Total", (long) TOTAL_Q);
-        stats.put("player1Score", (long) localMyPts);
-        stats.put("player2Score", (long) localOppPts);
-        sm.finishCurrentGame(gameIdx, localMyPts, localOppPts, localMyPts, localOppPts, 6, stats);
+        stats.put("player1Score", (long) p1Total);
+        stats.put("player2Score", (long) p2Total);
+        sm.finishCurrentGame(gameIdx, p1Total, p2Total, p1Total, p2Total, 6, stats);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();
