@@ -112,6 +112,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         previousP1Score = i.getIntExtra("previousPlayer1Score", 0);
         previousP2Score = i.getIntExtra("previousPlayer2Score", 0);
         opp = me == 1 ? 2 : 1;
+        boolean spectator = i.getBooleanExtra("isSpectator", false);
 
         timerView = findViewById(R.id.gameTimerTextView);
         targetView = findViewById(R.id.targetTextView);
@@ -167,6 +168,14 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         }
 
         sm.listenToMatch(createL());
+
+        if (spectator) {
+            for (MaterialButton b : numBtns) b.setEnabled(false);
+            if (opBtns != null) for (MaterialButton b : opBtns) b.setEnabled(false);
+            confirmBtn.setEnabled(false);
+            clearBtn.setEnabled(false);
+            stopBtn.setEnabled(false);
+        }
     }
 
     private void showWaitingState() {

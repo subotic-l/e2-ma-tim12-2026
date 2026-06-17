@@ -10,7 +10,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.slagalica.data.GameSessionManager;
+import com.example.slagalica.data.TournamentManager;
 import com.example.slagalica.network.NetworkAsocijacijeGame;
 import com.example.slagalica.network.NetworkSkockoGame;
 import com.example.slagalica.network.NetworkNumbersGame;
@@ -26,6 +29,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+
 
 public class NetworkMatchActivity extends AppCompatActivity {
 
@@ -44,6 +49,11 @@ public class NetworkMatchActivity extends AppCompatActivity {
     private String myPlayerName;
     private String matchId;
     private int currentGameIndex = -1;
+
+    private boolean isTournamentMatch;
+    private boolean isTournamentSpectator;
+    private String tournamentId;
+    private String tournamentRound;
 
     private TextView networkStatusText;
     private ProgressBar waitingProgressBar;
@@ -67,6 +77,11 @@ public class NetworkMatchActivity extends AppCompatActivity {
         myPlayerNumber = intent.getIntExtra("myPlayerNumber", 1);
         myPlayerId = intent.getStringExtra("myPlayerId");
         myPlayerName = intent.getStringExtra("myPlayerName");
+
+        isTournamentMatch = intent.getBooleanExtra("isTournamentMatch", false);
+        isTournamentSpectator = intent.getBooleanExtra("isTournamentSpectator", false);
+        tournamentId = intent.getStringExtra("tournamentId");
+        tournamentRound = intent.getStringExtra("tournamentRound");
 
         networkStatusText = findViewById(R.id.networkStatusText);
         waitingProgressBar = findViewById(R.id.waitingProgressBar);
@@ -137,6 +152,7 @@ public class NetworkMatchActivity extends AppCompatActivity {
         intent.putExtra("myAvatarUrl", getIntent().getStringExtra("myAvatarUrl"));
         intent.putExtra("gameIndex", gameIndex);
         intent.putExtra("totalGames", gameOrder.size());
+        intent.putExtra("isSpectator", isTournamentSpectator);
         if (state != null) {
             long p1 = state.containsKey("player1Score") ? (long) state.get("player1Score") : 0;
             long p2 = state.containsKey("player2Score") ? (long) state.get("player2Score") : 0;
@@ -144,6 +160,17 @@ public class NetworkMatchActivity extends AppCompatActivity {
             intent.putExtra("previousPlayer2Score", (int) p2);
         }
         gameLauncher.launch(intent);
+    }
+
+    public static void loadAvatarStatic(android.widget.ImageView iv, String url) {
+        if (iv == null) return;
+        android.content.Context ctx = iv.getContext();
+        Glide.with(ctx)
+                .load(url != null && !url.isEmpty() ? url : R.drawable.default_profile)
+                .apply(RequestOptions.circleCropTransform())
+                .placeholder(R.drawable.default_profile)
+                .error(R.drawable.default_profile)
+                .into(iv);
     }
 
     private void showFinalSummary(Map<String, Object> state) {
@@ -198,6 +225,31 @@ public class NetworkMatchActivity extends AppCompatActivity {
 
             GameSessionManager.saveMatchHistoryToUser(p1Id, matchHistory1);
             GameSessionManager.saveMatchHistoryToUser(p2Id, matchHistory2);
+        }
+
+        if (isTournamentMatch && tournamentId != null && tournamentRound != null) {
+            if (!isTournamentSpectator) {
+                String winnerId;
+                if (p1Score > p2Score) {
+                    winnerId = p1Id;
+                } else if (p2Score > p1Score) {
+                    winnerId = p2Id;
+                } else {
+                    winnerId = Math.random() < 0.5 ? p1Id : p2Id;
+                }
+                TournamentManager tm = new TournamentManager();
+                tm.attachToTournament(tournamentId);
+                if ("final".equals(tournamentRound)) {
+                    tm.setFinalWinner(winnerId);
+                } else {
+                    String winnerName = winnerId.equals(p1Id) ? p1Name : p2Name;
+                    String winnerAvatar = "";
+                    tm.setSemiWinner(tournamentRound, winnerId, winnerName, winnerAvatar);
+                }
+                tm.cleanup();
+            }
+            finish();
+            return;
         }
 
         Intent intent = new Intent(this, NetworkMatchSummaryActivity.class);

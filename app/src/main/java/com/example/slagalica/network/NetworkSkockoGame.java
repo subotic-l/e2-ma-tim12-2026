@@ -122,6 +122,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
             prevP1 = i.getIntExtra("previousPlayer1Score", 0);
             prevP2 = i.getIntExtra("previousPlayer2Score", 0);
             totalGames = i.getIntExtra("totalGames", 6);
+            boolean spectator = i.getBooleanExtra("isSpectator", false);
 
             tvTimer = findViewById(R.id.timerText);
             tvInstr = findViewById(R.id.instructionsTextView);
@@ -154,6 +155,13 @@ public class NetworkSkockoGame extends AppCompatActivity {
             sm = new GameSessionManager();
             sm.attachToMatch(i.getStringExtra("matchId"), me);
             sm.listenToMatch(createListener());
+
+            if (spectator) {
+                int[] symIds = {R.id.btnSkocko, R.id.btnTref, R.id.btnKaro, R.id.btnPik, R.id.btnHerc, R.id.btnZvezda};
+                for (int id : symIds) { View v = findViewById(id); if (v != null) v.setEnabled(false); }
+                for (Button b : subBtns) if (b != null) b.setEnabled(false);
+                if (stealBtn != null) stealBtn.setEnabled(false);
+            }
 
             if (me == 1) {
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
