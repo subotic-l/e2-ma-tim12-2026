@@ -51,7 +51,7 @@ public class HomeFragment extends Fragment {
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
-                showNameDialog();
+                showNameDialog(MatchLobbyActivity.class);
             }).addOnFailureListener(e -> {
                 Toast.makeText(requireContext(),
                         "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -91,7 +91,7 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void showNameDialog() {
+    private void showNameDialog(Class<?> targetActivity) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(requireActivity());
         builder.setTitle("Ime igrača");
         builder.setMessage("Unesite ime koje će protivnik videti:");
@@ -117,7 +117,7 @@ public class HomeFragment extends Fragment {
         builder.setPositiveButton("Potvrdi", (dialog, which) -> {
             String name = input.getText().toString().trim();
             if (name.isEmpty()) name = "Igrač";
-            Intent intent = new Intent(requireActivity(), MatchLobbyActivity.class);
+            Intent intent = new Intent(requireActivity(), targetActivity);
             intent.putExtra("playerName", name);
             if (user != null) {
                 intent.putExtra("playerId", user.getUid());
