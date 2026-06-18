@@ -204,6 +204,9 @@ public class MatchLobbyActivity extends AppCompatActivity {
         stopPolling();
         sessionManager.cleanup();
 
+        // Optimistically update local cache (Firestore deduction is async)
+        TopBarHelper.decrementTokenCache(this);
+
         // Deduct 1 token for this match
         userService.deductToken().addOnFailureListener(e ->
                 Log.w("MatchLobby", "Token deduction failed", e));

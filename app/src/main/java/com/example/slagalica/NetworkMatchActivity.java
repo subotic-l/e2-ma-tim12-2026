@@ -261,7 +261,6 @@ public class NetworkMatchActivity extends AppCompatActivity {
         intent.putExtra("myPlayerNumber", myPlayerNumber);
         intent.putExtra("myPlayerId", myPlayerId);
         intent.putExtra("matchId", matchId);
-        intent.putExtra("matchStatus", matchStatus);
         intent.putExtra("player1Id", p1Id);
         intent.putExtra("player2Id", p2Id);
         startActivity(intent);

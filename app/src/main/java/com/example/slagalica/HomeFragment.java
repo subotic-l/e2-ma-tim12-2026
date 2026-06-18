@@ -6,7 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
@@ -19,7 +18,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 public class HomeFragment extends Fragment {
 
     private UserService userService;
-    private TextView textTokenCount;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -31,8 +29,6 @@ public class HomeFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         userService = new UserService();
-        textTokenCount = view.findViewById(R.id.textTokenCount);
-        loadTokenCount();
 
         Button startMatchButton = view.findViewById(R.id.buttonStartMatch);
         startMatchButton.setOnClickListener(v -> {
@@ -78,17 +74,6 @@ public class HomeFragment extends Fragment {
 
         view.findViewById(R.id.buttonStartAsocijacije).setOnClickListener(v ->
                 startActivity(new Intent(requireActivity(), AsocijacijeGameActivity.class)));
-    }
-
-    private void loadTokenCount() {
-        userService.loadProfile().addOnSuccessListener(doc -> {
-            if (doc.exists()) {
-                Long tokens = doc.getLong("tokens");
-                textTokenCount.setText(String.valueOf(tokens != null ? tokens : 0));
-            }
-        }).addOnFailureListener(e -> {
-            textTokenCount.setText("?");
-        });
     }
 
     private void showNameDialog(Class<?> targetActivity) {

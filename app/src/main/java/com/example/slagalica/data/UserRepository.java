@@ -198,13 +198,54 @@ public class UserRepository {
 
     // ------------------------------------------------------------- Tokens / Stars
 
+    /**
+     * Atomically grants daily login tokens if the user hasn't collected them today.
+     * Also initializes tokens to 5 for legacy users missing the field.
+     * Daily grant: 5 (base) + league (bonus per league level).
+     */
+    public Task<Void> grantDailyTokensIfNeeded(String uid) {
+        DocumentReference ref = db.collection(USERS_COLLECTION).document(uid);
+        return db.runTransaction((Transaction.Function<Void>) transaction -> {
+            DocumentSnapshot snap = transaction.get(ref);
+            Long tokens = snap.getLong("tokens");
+            String lastLoginDate = snap.getString("lastLoginDate");
+            Long league = snap.getLong("league");
+
+            String today = new java.text.SimpleDateFormat("yyyy-MM-dd",
+                    java.util.Locale.US).format(new java.util.Date());
+
+            Map<String, Object> updates = new HashMap<>();
+
+            if (tokens == null) {
+                tokens = 0L;
+                updates.put("tokens", tokens);
+            }
+
+            if (lastLoginDate == null || !lastLoginDate.equals(today)) {
+                int leagueVal = league != null ? league.intValue() : 0;
+                tokens += 5 + leagueVal;
+                updates.put("tokens", tokens);
+                updates.put("lastLoginDate", today);
+            }
+
+            if (!updates.isEmpty()) {
+                transaction.update(ref, updates);
+            }
+            return null;
+        });
+    }
+
     /** Atomically deducts 1 token from the user's balance. */
     public Task<Void> deductToken(String uid) {
         DocumentReference ref = db.collection(USERS_COLLECTION).document(uid);
         return db.runTransaction((Transaction.Function<Void>) transaction -> {
             DocumentSnapshot snap = transaction.get(ref);
             Long tokens = snap.getLong("tokens");
-            if (tokens == null || tokens <= 0) throw new Exception("Nema dovoljno tokena");
+            if (tokens == null || tokens <= 0) try {
+                throw new Exception("Nema dovoljno tokena");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             transaction.update(ref, "tokens", tokens - 1);
             return null;
         });

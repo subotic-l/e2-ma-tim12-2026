@@ -59,6 +59,18 @@ public class UserService {
 
     // ------------------------------------------------------------- Tokens / Stars
 
+    /**
+     * Grants daily login tokens if the user hasn't collected them today.
+     * Also retroactively initializes tokens for legacy users missing the field.
+     */
+    public Task<Void> grantDailyTokensIfNeeded() {
+        FirebaseUser user = repository.getCurrentUser();
+        if (user == null) {
+            return Tasks.forException(new IllegalStateException("No authenticated user"));
+        }
+        return repository.grantDailyTokensIfNeeded(user.getUid());
+    }
+
     /** Deducts 1 token from the authenticated user's balance. */
     public Task<Void> deductToken() {
         FirebaseUser user = repository.getCurrentUser();
