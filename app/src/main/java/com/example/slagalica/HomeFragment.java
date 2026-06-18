@@ -6,10 +6,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
+import com.example.slagalica.service.UserService;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 public class HomeFragment extends Fragment {
+
+    private UserService userService;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -20,6 +28,8 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        userService = new UserService();
+
         Button startMatchButton = view.findViewById(R.id.buttonStartMatch);
         startMatchButton.setOnClickListener(v -> {
             Intent intent = new Intent(requireActivity(), MatchPlayActivity.class);
@@ -29,7 +39,20 @@ public class HomeFragment extends Fragment {
         });
 
         Button onlineMatchButton = view.findViewById(R.id.buttonOnlineMatch);
-        onlineMatchButton.setOnClickListener(v -> showNameDialog(MatchLobbyActivity.class));
+        onlineMatchButton.setOnClickListener(v -> {
+            userService.hasEnoughTokens().addOnSuccessListener(enough -> {
+                if (!enough) {
+                    Toast.makeText(requireContext(),
+                            "Nemate dovoljno tokena za online partiju.",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                showNameDialog(MatchLobbyActivity.class);
+            }).addOnFailureListener(e -> {
+                Toast.makeText(requireContext(),
+                        "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
+        });
 
         Button tournamentButton = view.findViewById(R.id.buttonTournament);
         tournamentButton.setOnClickListener(v -> showNameDialog(TournamentLobbyActivity.class));
@@ -59,10 +82,10 @@ public class HomeFragment extends Fragment {
         builder.setMessage("Unesite ime koje će protivnik videti:");
         final android.widget.EditText input = new android.widget.EditText(requireActivity());
         input.setHint("Ime");
-        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         final String[] avatarHolder = {""};
         if (user != null) {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                     .collection("users").document(user.getUid()).get()
                     .addOnSuccessListener(doc -> {
                         if (doc.exists() && doc.getString("username") != null) {

@@ -14,9 +14,11 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.Transaction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -188,8 +190,98 @@ public class UserRepository {
         profile.put("avatarUrl", "");
         profile.put("tokens", 5);
         profile.put("stars", 0);
+        profile.put("totalStarsEarned", 0);
         profile.put("league", 0);
 
         return db.collection(USERS_COLLECTION).document(uid).set(profile);
+    }
+
+    // ------------------------------------------------------------- Tokens / Stars
+
+    /**
+     * Atomically grants daily login tokens if the user hasn't collected them today.
+     * Also initializes tokens to 5 for legacy users missing the field.
+     * Daily grant: 5 (base) + league (bonus per league level).
+     */
+    public Task<Void> grantDailyTokensIfNeeded(String uid) {
+        DocumentReference ref = db.collection(USERS_COLLECTION).document(uid);
+        return db.runTransaction((Transaction.Function<Void>) transaction -> {
+            DocumentSnapshot snap = transaction.get(ref);
+            Long tokens = snap.getLong("tokens");
+            String lastLoginDate = snap.getString("lastLoginDate");
+            Long league = snap.getLong("league");
+
+            String today = new java.text.SimpleDateFormat("yyyy-MM-dd",
+                    java.util.Locale.US).format(new java.util.Date());
+
+            Map<String, Object> updates = new HashMap<>();
+
+            if (tokens == null) {
+                tokens = 0L;
+                updates.put("tokens", tokens);
+            }
+
+            if (lastLoginDate == null || !lastLoginDate.equals(today)) {
+                int leagueVal = league != null ? league.intValue() : 0;
+                tokens += 5 + leagueVal;
+                updates.put("tokens", tokens);
+                updates.put("lastLoginDate", today);
+            }
+
+            if (!updates.isEmpty()) {
+                transaction.update(ref, updates);
+            }
+            return null;
+        });
+    }
+
+    /** Atomically deducts 1 token from the user's balance. */
+    public Task<Void> deductToken(String uid) {
+        DocumentReference ref = db.collection(USERS_COLLECTION).document(uid);
+        return db.runTransaction((Transaction.Function<Void>) transaction -> {
+            DocumentSnapshot snap = transaction.get(ref);
+            Long tokens = snap.getLong("tokens");
+            if (tokens == null || tokens <= 0) try {
+                throw new Exception("Nema dovoljno tokena");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            transaction.update(ref, "tokens", tokens - 1);
+            return null;
+        });
+    }
+
+    /**
+     * Atomically applies match rewards using the given stars delta.
+     * Updates stars, totalStarsEarned, and grants token(s) for every
+     * 50 cumulative stars earned.
+     */
+    public Task<Void> applyMatchRewards(String uid, int starsDelta) {
+        DocumentReference ref = db.collection(USERS_COLLECTION).document(uid);
+        return db.runTransaction((Transaction.Function<Void>) transaction -> {
+            DocumentSnapshot snap = transaction.get(ref);
+            Long currentStars = snap.getLong("stars");
+            Long totalEarned = snap.getLong("totalStarsEarned");
+            Long currentTokens = snap.getLong("tokens");
+
+            if (currentStars == null) currentStars = 0L;
+            if (totalEarned == null) totalEarned = 0L;
+            if (currentTokens == null) currentTokens = 0L;
+
+            long newStars = Math.max(0, currentStars + starsDelta);
+            int starsGained = Math.max(0, starsDelta);
+            long newTotalEarned = totalEarned + starsGained;
+
+            long tokensBefore = totalEarned / 50;
+            long tokensAfter = newTotalEarned / 50;
+            long tokensBonus = tokensAfter - tokensBefore;
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("stars", newStars);
+            updates.put("totalStarsEarned", newTotalEarned);
+            updates.put("tokens", currentTokens + tokensBonus);
+            transaction.update(ref, updates);
+            return null;
+        });
     }
 }

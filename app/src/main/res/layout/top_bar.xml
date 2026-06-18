@@ -18,9 +18,10 @@
         android:background="@drawable/rounded_white">
 
         <TextView
+            android:id="@+id/topBarTokenCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="20"
+            android:text="0"
             android:textColor="#000000"
             android:textStyle="bold"
             android:layout_marginEnd="4dp" />
@@ -44,9 +45,10 @@
         android:background="@drawable/rounded_white">
 
         <TextView
+            android:id="@+id/topBarStarCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="12"
+            android:text="0"
             android:textColor="#000000"
             android:textStyle="bold"
             android:layout_marginEnd="4dp" />
@@ -70,9 +72,10 @@
         android:background="@drawable/rounded_white">
 
         <TextView
+            android:id="@+id/topBarLeagueText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Liga Placeholder"
+            android:text="Liga 0"
             android:textColor="#000000"
             android:textStyle="bold"
             android:gravity="center" />

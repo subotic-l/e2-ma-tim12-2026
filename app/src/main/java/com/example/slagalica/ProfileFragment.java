@@ -47,6 +47,8 @@ public class ProfileFragment extends Fragment {
     private TextView textUsername;
     private TextView textEmail;
     private TextView textRegion;
+    private TextView textStars;
+    private TextView textTokens;
     private ImageView avatarImage;
     private ImageButton buttonEditAvatar;
     private ProgressBar avatarProgressBar;
@@ -101,6 +103,8 @@ public class ProfileFragment extends Fragment {
         textUsername = view.findViewById(R.id.textUsername);
         textEmail = view.findViewById(R.id.textEmail);
         textRegion = view.findViewById(R.id.textRegion);
+        textStars = view.findViewById(R.id.textStars);
+        textTokens = view.findViewById(R.id.textTokens);
         avatarImage = view.findViewById(R.id.avatarImage);
         buttonEditAvatar = view.findViewById(R.id.buttonEditAvatar);
         avatarProgressBar = view.findViewById(R.id.avatarProgressBar);
@@ -176,10 +180,14 @@ public class ProfileFragment extends Fragment {
                 String em = document.getString("email");
                 String reg = document.getString("region");
                 String avUrl = document.getString("avatarUrl");
+                Long stars = document.getLong("stars");
+                Long tokens = document.getLong("tokens");
 
                 textUsername.setText(uname != null ? uname : "Nepoznato");
                 textEmail.setText(em != null ? em : "Nepoznato");
                 textRegion.setText(reg != null ? "Region: " + reg : "Region: Nepoznato");
+                textStars.setText("Zvezde: " + (stars != null ? stars : 0));
+                textTokens.setText("Tokeni: " + (tokens != null ? tokens : 0));
 
                 loadAvatar(avUrl);
 

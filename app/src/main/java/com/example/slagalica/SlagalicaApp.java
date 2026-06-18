@@ -1,9 +1,11 @@
 package com.example.slagalica;
 
+import android.app.Activity;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
+import android.os.Bundle;
 
 import com.cloudinary.android.MediaManager;
 
@@ -36,6 +38,20 @@ public class SlagalicaApp extends Application {
         if (!apiKey.isEmpty()) config.put("api_key", apiKey);
         if (!apiSecret.isEmpty()) config.put("api_secret", apiSecret);
         MediaManager.init(this, config);
+
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityResumed(Activity activity) {
+                TopBarHelper.updateTopBarFromCache(activity);
+            }
+
+            @Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
+            @Override public void onActivityStarted(Activity activity) {}
+            @Override public void onActivityPaused(Activity activity) {}
+            @Override public void onActivityStopped(Activity activity) {}
+            @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+            @Override public void onActivityDestroyed(Activity activity) {}
+        });
     }
 
     private void createNotificationChannels() {

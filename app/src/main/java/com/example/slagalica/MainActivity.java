@@ -8,9 +8,12 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.slagalica.service.UserService;
+
 public class MainActivity extends AppCompatActivity {
 
     private NavigationHelper navHelper;
+    private UserService userService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
             return insets;
         });
+
+        userService = new UserService();
 
         navHelper = new NavigationHelper(this, R.id.navigation_home)
                 .addFragmentTab(R.id.navigation_home, HomeFragment.class)
@@ -40,5 +45,7 @@ public class MainActivity extends AppCompatActivity {
         if (navHelper != null) {
             navHelper.onResume();
         }
+        userService.grantDailyTokensIfNeeded();
+        TopBarHelper.loadAndUpdateTopBar(this);
     }
 }
