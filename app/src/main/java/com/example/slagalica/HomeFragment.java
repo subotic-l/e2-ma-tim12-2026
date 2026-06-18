@@ -58,6 +58,9 @@ public class HomeFragment extends Fragment {
             });
         });
 
+        Button tournamentButton = view.findViewById(R.id.buttonTournament);
+        tournamentButton.setOnClickListener(v -> showNameDialog(TournamentLobbyActivity.class));
+
         view.findViewById(R.id.buttonStartWhoKnows).setOnClickListener(v ->
                 startActivity(new Intent(requireActivity(), WhoKnowsKnows.class)));
 

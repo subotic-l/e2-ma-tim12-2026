@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#0D47A1"
-    android:padding="12dp">
+    android:background="#529DCC">
+
+    <!-- Top Bar -->
+    <include layout="@layout/top_bar" />
 
     <!-- HEADER -->
     <TextView
@@ -15,143 +18,80 @@
         android:textStyle="bold"
         android:textColor="#FFFFFF"
         android:gravity="center"
-        android:layout_marginBottom="12dp" />
+        android:layout_marginBottom="16dp" />
 
-    <!-- FILTER (read / unread / all) -->
+    <!-- SIMPLE READ/UNREAD FILTER -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:weightSum="3"
-        android:layout_marginBottom="10dp">
+        android:paddingHorizontal="16dp"
+        android:layout_marginBottom="16dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAll"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Sve" />
+            android:text="Sve"
+            android:textColor="#FFFFFF"
+            app:strokeColor="#FFFFFF"
+            app:cornerRadius="20dp"
+            android:layout_marginEnd="8dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnUnread"
+            style="@style/Widget.MaterialComponents.Button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Nepročitane" />
+            android:text="Nepročitane"
+            android:backgroundTint="#1976D2"
+            app:cornerRadius="20dp"
+            android:layout_marginStart="8dp" />
 
-        <Button
-            android:id="@+id/btnRead"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Pročitane" />
     </LinearLayout>
 
-    <!-- CHANNEL FILTER -->
-    <HorizontalScrollView
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnTestNotification"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Testiraj sistemsku notifikaciju"
+        android:textSize="12sp"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#388E3C"
+        app:cornerRadius="16dp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/emptyText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp">
+        android:text="Nema notifikacija"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone" />
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/channelAll"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sve" />
-
-            <Button
-                android:id="@+id/channelRank"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Rang lista" />
-
-            <Button
-                android:id="@+id/channelRewards"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Nagrade" />
-
-            <Button
-                android:id="@+id/channelFriends"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Prijatelji" />
-
-            <Button
-                android:id="@+id/channelOther"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Ostalo" />
-        </LinearLayout>
-    </HorizontalScrollView>
-
-    <!-- LISTA NOTIFIKACIJA (placeholder) -->
+    <!-- LISTA NOTIFIKACIJA -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <LinearLayout
             android:id="@+id/notificationContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp" />
 
-            <!-- UNREAD NOTIF -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="#1976D2"
-                android:padding="12dp"
-                android:layout_marginBottom="8dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🏆 Nova rang lista!"
-                    android:textColor="#FFFFFF"
-                    android:textStyle="bold"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Pogledaj svoj plasman"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <!-- READ NOTIF -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="#1565C0"
-                android:padding="12dp"
-                android:layout_marginBottom="8dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🎁 Nagrada osvojena"
-                    android:textColor="#FFFFFF"
-                    android:textStyle="bold"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Preuzmi nagradu u profilu"
-                    android:textColor="#B0BEC5"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-        </LinearLayout>
     </ScrollView>
+
+    <!-- BOTTOM BAR -->
+    <include layout="@layout/bottom_bar" />
 
 </LinearLayout>

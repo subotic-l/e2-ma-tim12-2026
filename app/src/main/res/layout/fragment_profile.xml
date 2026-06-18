@@ -494,31 +494,23 @@
                     android:paddingBottom="8dp"
                     android:visibility="gone">
 
-                    <LinearLayout
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:layout_weight="1"
+                        android:text="Procenat pogođenog pojma u svakom koraku"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp" />
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Procenat pogođenog pojma u svakom koraku"
-                            android:textColor="@android:color/white"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/StepByStepRatio"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:paddingStart="10dp"
-                            android:text="2% / 8% / 18% / 32% / 14% / 10% / 6%"
-                            android:textColor="@android:color/white"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/StepByStepRatio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="10dp"
+                        android:text="2% / 8% / 18% / 32% / 14% / 10% / 6%"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -716,31 +708,23 @@
                     android:paddingBottom="8dp"
                     android:visibility="gone">
 
-                    <LinearLayout
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:layout_weight="1"
+                        android:text="Procenat pogođene kombinacije u svakom pokušaju"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp" />
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Procenat pogođene kombinacije u svakom pokušaju"
-                            android:textColor="@android:color/white"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/SkockoRatio"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:paddingStart="10dp"
-                            android:text="1% / 5% / 12% / 18% / 28% / 30%"
-                            android:textColor="@android:color/white"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/SkockoRatio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="10dp"
+                        android:text="1% / 5% / 12% / 18% / 28% / 30%"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -957,6 +941,19 @@
             app:strokeWidth="2dp"
             app:strokeColor="@color/correct_answer_border"
             android:layout_marginTop="4dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonNotifications"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:minHeight="50dp"
+            app:cornerRadius="16dp"
+            android:elevation="10dp"
+            app:strokeWidth="2dp"
+            android:textColor="@color/white"
+            android:backgroundTint="#2196F3"
+            android:text="Notifikacije" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonLogout"

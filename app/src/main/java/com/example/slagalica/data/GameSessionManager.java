@@ -20,6 +20,13 @@ public class GameSessionManager {
     private static final String TAG = "GameSessionManager";
     private static final String MATCHES_COLLECTION = "matches";
 
+    public static final String GAME_TYPE_WHO_KNOWS = "who_knows_knows";
+    public static final String GAME_TYPE_SPOJNICE = "spojnice";
+    public static final String GAME_TYPE_MOJ_BROJ = "moj_broj";
+    public static final String GAME_TYPE_KORAK_PO_KORAK = "korak_po_korak";
+    public static final String GAME_TYPE_ASOCIJACIJE = "asocijacije";
+    public static final String GAME_TYPE_SKOCKO = "skocko";
+
     private final FirebaseFirestore db;
     private String matchId;
     private int myPlayerNumber;
@@ -64,7 +71,7 @@ public class GameSessionManager {
         matchData.put("status", "waiting");
         matchData.put("createdAt", FieldValue.serverTimestamp());
         matchData.put("currentGameIndex", 0);
-        matchData.put("totalGames", 1);
+        matchData.put("totalGames", 6);
         matchData.put("player1Score", 0);
         matchData.put("player2Score", 0);
         matchData.put("gameState", new HashMap<>());
@@ -188,11 +195,18 @@ public class GameSessionManager {
     public void finishCurrentGame(int gameIndex, int player1GameScore, int player2GameScore,
                                    int totalPlayer1Score, int totalPlayer2Score) {
         finishCurrentGame(gameIndex, player1GameScore, player2GameScore,
-                totalPlayer1Score, totalPlayer2Score, 1);
+                totalPlayer1Score, totalPlayer2Score, 1, null);
     }
 
     public void finishCurrentGame(int gameIndex, int player1GameScore, int player2GameScore,
                                    int totalPlayer1Score, int totalPlayer2Score, int totalGames) {
+        finishCurrentGame(gameIndex, player1GameScore, player2GameScore,
+                totalPlayer1Score, totalPlayer2Score, totalGames, null);
+    }
+
+    public void finishCurrentGame(int gameIndex, int player1GameScore, int player2GameScore,
+                                   int totalPlayer1Score, int totalPlayer2Score, int totalGames,
+                                   Map<String, Object> gameStats) {
         if (matchDocRef == null) return;
 
         Map<String, Object> resultEntry = new HashMap<>();
@@ -216,8 +230,20 @@ public class GameSessionManager {
         updates.put("player2Score", totalPlayer2Score);
         updates.put("lastGameResult", resultEntry);
 
+        if (gameStats != null) {
+            updates.put("gamesStats." + gameIndex, gameStats);
+        }
+
         matchDocRef.update(updates)
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to finish game", e));
+    }
+
+    public static Task<Void> saveMatchHistoryToUser(String userId, Map<String, Object> matchData) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        return db.collection("users").document(userId)
+                .collection("match_history")
+                .add(matchData)
+                .continueWith(task -> null);
     }
 
     public void forfeitMatch() {

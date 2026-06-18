@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
+import com.example.slagalica.data.StatsRepository;
 import com.example.slagalica.service.UserService;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.firebase.auth.FirebaseAuth;
@@ -51,6 +52,32 @@ public class ProfileFragment extends Fragment {
     private ImageView avatarImage;
     private ImageButton buttonEditAvatar;
     private ProgressBar avatarProgressBar;
+    private StatsRepository statsRepository;
+
+    private TextView textTotalGames;
+    private TextView textWinLoseRatio;
+    private LinearProgressIndicator winProgress;
+    private LinearProgressIndicator whoKnowsAvgProgress;
+    private LinearProgressIndicator numbersRatioProgress;
+    private LinearProgressIndicator numbersAvgProgress;
+    private LinearProgressIndicator stepByStepAvgProgress;
+    private LinearProgressIndicator associationsRatioProgress;
+    private LinearProgressIndicator associationsAvgProgress;
+    private LinearProgressIndicator skockoAvgProgress;
+    private LinearProgressIndicator connectionsRatioProgress;
+    private LinearProgressIndicator connectionsAvgProgress;
+    private TextView WhoKnowsRatio;
+    private TextView textGameStatKoZnaZna;
+    private TextView NumbersGameRatio;
+    private TextView NumbersGamePoints;
+    private TextView StepByStepRatio;
+    private TextView StepByStepPoints;
+    private TextView AssociationsRatio;
+    private TextView AssociationsPoints;
+    private TextView SkockoRatio;
+    private TextView SkockoPoints;
+    private TextView ConnectionsRatio;
+    private TextView ConnectionsPoints;
 
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -87,6 +114,13 @@ public class ProfileFragment extends Fragment {
             startActivity(intent);
         });
 
+        Button notificationsButton = view.findViewById(R.id.buttonNotifications);
+
+        notificationsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(requireActivity(), NotificationsActivity.class);
+            startActivity(intent);
+        });
+
         loadProfile();
 
         view.findViewById(R.id.buttonLogout).setOnClickListener(v -> {
@@ -111,7 +145,9 @@ public class ProfileFragment extends Fragment {
         setupToggle(view, R.id.SkockoStatsToggleHeader, R.id.SkockoStatsExpandedContainer, R.id.SkockoStatsToggleIcon);
         setupToggle(view, R.id.ConnectionsStatsToggleHeader, R.id.ConnectionsStatsExpandedContainer, R.id.ConnectionsStatsToggleIcon);
 
-        setupStatsProgress(view);
+        initStatsViews(view);
+        statsRepository = new StatsRepository();
+        loadRealStats();
     }
 
     private void setupToggle(View root, int headerId, int containerId, int iconId) {
@@ -250,75 +286,152 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void setupStatsProgress(View root) {
-        LinearProgressIndicator winProgress = root.findViewById(R.id.winProgress);
-        LinearProgressIndicator whoKnowsAvgProgress = root.findViewById(R.id.whoKnowsAvgProgress);
-        LinearProgressIndicator numbersRatioProgress = root.findViewById(R.id.numbersRatioProgress);
-        LinearProgressIndicator numbersAvgProgress = root.findViewById(R.id.numbersAvgProgress);
-        LinearProgressIndicator stepByStepAvgProgress = root.findViewById(R.id.stepByStepAvgProgress);
-        LinearProgressIndicator associationsRatioProgress = root.findViewById(R.id.associationsRatioProgress);
-        LinearProgressIndicator associationsAvgProgress = root.findViewById(R.id.associationsAvgProgress);
-        LinearProgressIndicator skockoAvgProgress = root.findViewById(R.id.skockoAvgProgress);
-        LinearProgressIndicator connectionsRatioProgress = root.findViewById(R.id.connectionsRatioProgress);
-        LinearProgressIndicator connectionsAvgProgress = root.findViewById(R.id.connectionsAvgProgress);
+    private void initStatsViews(View root) {
+        textTotalGames = root.findViewById(R.id.textTotalGames);
+        textWinLoseRatio = root.findViewById(R.id.textWinLoseRatio);
+        winProgress = root.findViewById(R.id.winProgress);
+        whoKnowsAvgProgress = root.findViewById(R.id.whoKnowsAvgProgress);
+        numbersRatioProgress = root.findViewById(R.id.numbersRatioProgress);
+        numbersAvgProgress = root.findViewById(R.id.numbersAvgProgress);
+        stepByStepAvgProgress = root.findViewById(R.id.stepByStepAvgProgress);
+        associationsRatioProgress = root.findViewById(R.id.associationsRatioProgress);
+        associationsAvgProgress = root.findViewById(R.id.associationsAvgProgress);
+        skockoAvgProgress = root.findViewById(R.id.skockoAvgProgress);
+        connectionsRatioProgress = root.findViewById(R.id.connectionsRatioProgress);
+        connectionsAvgProgress = root.findViewById(R.id.connectionsAvgProgress);
+        WhoKnowsRatio = root.findViewById(R.id.WhoKnowsRatio);
+        textGameStatKoZnaZna = root.findViewById(R.id.textGameStatKoZnaZna);
+        NumbersGameRatio = root.findViewById(R.id.NumbersGameRatio);
+        NumbersGamePoints = root.findViewById(R.id.NumbersGamePoints);
+        StepByStepRatio = root.findViewById(R.id.StepByStepRatio);
+        StepByStepPoints = root.findViewById(R.id.StepByStepPoints);
+        AssociationsRatio = root.findViewById(R.id.AssociationsRatio);
+        AssociationsPoints = root.findViewById(R.id.AssociationsPoints);
+        SkockoRatio = root.findViewById(R.id.SkockoRatio);
+        SkockoPoints = root.findViewById(R.id.SkockoPoints);
+        ConnectionsRatio = root.findViewById(R.id.ConnectionsRatio);
+        ConnectionsPoints = root.findViewById(R.id.ConnectionsPoints);
+    }
 
+    private void loadRealStats() {
+        statsRepository.loadStats().addOnSuccessListener(stats -> {
+            displayStats(stats);
+        }).addOnFailureListener(e -> {
+            displayEmptyStats();
+        });
+    }
+
+    private void displayStats(StatsRepository.PlayerStats stats) {
         int goodColor = ContextCompat.getColor(requireContext(), R.color.correct_answer_color);
         int mediumColor = ContextCompat.getColor(requireContext(), R.color.performance_medium);
         int badColor = ContextCompat.getColor(requireContext(), R.color.wrong_answer_color);
 
-        int winPct = 76;
+        textTotalGames.setText(String.valueOf(stats.totalMatches));
+
+        int totalDecided = stats.wins + stats.losses;
+        int winPct = totalDecided > 0 ? stats.wins * 100 / totalDecided : 0;
+        int lossPct = totalDecided > 0 ? stats.losses * 100 / totalDecided : 0;
+        textWinLoseRatio.setText(winPct + "% / " + lossPct + "%");
         winProgress.setProgress(winPct);
         winProgress.setIndicatorColor(winPct >= 50 ? goodColor : badColor);
 
-        int whoKnowsCorrect = 32;
-        int whoKnowsTotal = whoKnowsCorrect + 14;
-        int whoKnowsPct = whoKnowsTotal > 0 ? (whoKnowsCorrect * 100 / whoKnowsTotal) : 0;
+        int whoKnowsPct = stats.whoKnowsTotal > 0 ? stats.whoKnowsCorrect * 100 / stats.whoKnowsTotal : 0;
+        WhoKnowsRatio.setText(stats.whoKnowsCorrect + " / " + stats.whoKnowsWrong);
 
-        int whoKnowsAvg = 12;
-        int whoKnowsMax = 50;
-        whoKnowsAvgProgress.setProgress(whoKnowsAvg * 100 / whoKnowsMax);
-        whoKnowsAvgProgress.setIndicatorColor(getPerformanceColor(whoKnowsAvg * 100 / whoKnowsMax, goodColor, mediumColor, badColor));
+        int whoKnowsAvg = stats.whoKnowsGames > 0 ? stats.whoKnowsScoreSum / stats.whoKnowsGames : 0;
+        int whoKnowsMx = Math.max(stats.whoKnowsMaxScore, 50);
+        textGameStatKoZnaZna.setText(whoKnowsAvg + " / " + whoKnowsMx);
+        whoKnowsAvgProgress.setProgress(Math.min(whoKnowsAvg * 100 / Math.max(whoKnowsMx, 1), 100));
+        whoKnowsAvgProgress.setIndicatorColor(getPerformanceColor(whoKnowsPct, goodColor, mediumColor, badColor));
 
-        int numbersPct = 54;
+        int numbersPct = stats.mojBrojTotal > 0 ? stats.mojBrojFound * 100 / stats.mojBrojTotal : 0;
+        NumbersGameRatio.setText(numbersPct + "%");
         numbersRatioProgress.setProgress(numbersPct);
         numbersRatioProgress.setIndicatorColor(getPerformanceColor(numbersPct, goodColor, mediumColor, badColor));
 
-        int numbersAvg = 12;
-        int numbersMax = 20;
-        numbersAvgProgress.setProgress(numbersAvg * 100 / numbersMax);
-        numbersAvgProgress.setIndicatorColor(getPerformanceColor(numbersAvg * 100 / numbersMax, goodColor, mediumColor, badColor));
+        int numbersAvg = stats.mojBrojGames > 0 ? stats.mojBrojScoreSum / stats.mojBrojGames : 0;
+        int numbersMx = Math.max(stats.mojBrojMaxScore, 20);
+        NumbersGamePoints.setText(numbersAvg + " / " + numbersMx);
+        numbersAvgProgress.setProgress(Math.min(numbersAvg * 100 / Math.max(numbersMx, 1), 100));
+        numbersAvgProgress.setIndicatorColor(getPerformanceColor(numbersAvg * 100 / Math.max(numbersMx, 1), goodColor, mediumColor, badColor));
 
-        int stepByStepPct = 50;
+        int stepByStepPct = stats.korakTotal > 0 ? stats.korakFound * 100 / stats.korakTotal : 0;
+        StringBuilder sb = new StringBuilder();
+        sb.append("Pronadjeno: ").append(stepByStepPct).append("%\n");
+        for (int i = 0; i < 7; i++) {
+            int stepPct = stats.korakGames > 0 ? stats.korakStepCounts[i] * 100 / stats.korakGames : 0;
+            sb.append("K").append(i+1).append(":").append(stepPct).append("% ");
+        }
+        StepByStepRatio.setText(sb.toString());
+        int stepByStepAvg = stats.korakGames > 0 ? stats.korakScoreSum / stats.korakGames : 0;
+        int stepByStepMx = Math.max(stats.korakMaxScore, 25);
+        StepByStepPoints.setText(stepByStepAvg + " / " + stepByStepMx);
+        stepByStepAvgProgress.setProgress(Math.min(stepByStepAvg * 100 / Math.max(stepByStepMx, 1), 100));
+        stepByStepAvgProgress.setIndicatorColor(getPerformanceColor(stepByStepPct, goodColor, mediumColor, badColor));
 
-        int stepByStepAvg = 18;
-        int stepByStepMax = 40;
-        stepByStepAvgProgress.setProgress(stepByStepAvg * 100 / stepByStepMax);
-        stepByStepAvgProgress.setIndicatorColor(getPerformanceColor(stepByStepAvg * 100 / stepByStepMax, goodColor, mediumColor, badColor));
+        int asocPct = stats.asocijacijeTotal > 0 ? stats.asocijacijeSolved * 100 / stats.asocijacijeTotal : 0;
+        AssociationsRatio.setText(asocPct + "% / " + (100 - asocPct) + "%");
+        associationsRatioProgress.setProgress(asocPct);
+        associationsRatioProgress.setIndicatorColor(getPerformanceColor(asocPct, goodColor, mediumColor, badColor));
 
-        int associationsCorrect = 25;
-        associationsRatioProgress.setProgress(associationsCorrect);
-        associationsRatioProgress.setIndicatorColor(getPerformanceColor(associationsCorrect, goodColor, mediumColor, badColor));
+        int asocAvg = stats.asocijacijeGames > 0 ? stats.asocijacijeScoreSum / stats.asocijacijeGames : 0;
+        int asocMx = Math.max(stats.asocijacijeMaxScore, 60);
+        AssociationsPoints.setText(asocAvg + " / " + asocMx);
+        associationsAvgProgress.setProgress(Math.min(asocAvg * 100 / Math.max(asocMx, 1), 100));
+        associationsAvgProgress.setIndicatorColor(getPerformanceColor(asocAvg * 100 / Math.max(asocMx, 1), goodColor, mediumColor, badColor));
 
-        int associationsAvg = 32;
-        int associationsMax = 60;
-        associationsAvgProgress.setProgress(associationsAvg * 100 / associationsMax);
-        associationsAvgProgress.setIndicatorColor(getPerformanceColor(associationsAvg * 100 / associationsMax, goodColor, mediumColor, badColor));
+        int skockoPct = stats.skockoTotal > 0 ? stats.skockoFound * 100 / stats.skockoTotal : 0;
+        StringBuilder sb2 = new StringBuilder();
+        sb2.append("Pronadjeno: ").append(skockoPct).append("%\n");
+        for (int i = 1; i <= 6; i++) {
+            int attPct = stats.skockoGames > 0 ? stats.skockoAttemptCounts[i] * 100 / stats.skockoGames : 0;
+            sb2.append("P").append(i).append(":").append(attPct).append("% ");
+        }
+        SkockoRatio.setText(sb2.toString());
+        int skockoAvg = stats.skockoGames > 0 ? stats.skockoScoreSum / stats.skockoGames : 0;
+        int skockoMx = Math.max(stats.skockoMaxScore, 30);
+        SkockoPoints.setText(skockoAvg + " / " + skockoMx);
+        skockoAvgProgress.setProgress(Math.min(skockoAvg * 100 / Math.max(skockoMx, 1), 100));
+        skockoAvgProgress.setIndicatorColor(getPerformanceColor(skockoPct, goodColor, mediumColor, badColor));
 
-        int skockoPct = 60;
+        int spojPct = stats.spojniceTotal > 0 ? stats.spojniceConnected * 100 / stats.spojniceTotal : 0;
+        ConnectionsRatio.setText(spojPct + "%");
+        connectionsRatioProgress.setProgress(spojPct);
+        connectionsRatioProgress.setIndicatorColor(getPerformanceColor(spojPct, goodColor, mediumColor, badColor));
 
-        int skockoAvg = 32;
-        int skockoMax = 40;
-        skockoAvgProgress.setProgress(skockoAvg * 100 / skockoMax);
-        skockoAvgProgress.setIndicatorColor(getPerformanceColor(skockoAvg * 100 / skockoMax, goodColor, mediumColor, badColor));
+        int spojAvg = stats.spojniceGames > 0 ? stats.spojniceScoreSum / stats.spojniceGames : 0;
+        int spojMx = Math.max(stats.spojniceMaxScore, 20);
+        ConnectionsPoints.setText(spojAvg + " / " + spojMx);
+        connectionsAvgProgress.setProgress(Math.min(spojAvg * 100 / Math.max(spojMx, 1), 100));
+        connectionsAvgProgress.setIndicatorColor(getPerformanceColor(spojAvg * 100 / Math.max(spojMx, 1), goodColor, mediumColor, badColor));
+    }
 
-        int connectionsPct = 78;
-        connectionsRatioProgress.setProgress(connectionsPct);
-        connectionsRatioProgress.setIndicatorColor(getPerformanceColor(connectionsPct, goodColor, mediumColor, badColor));
-
-        int connectionsAvg = 16;
-        int connectionsMax = 20;
-        connectionsAvgProgress.setProgress(connectionsAvg * 100 / connectionsMax);
-        connectionsAvgProgress.setIndicatorColor(getPerformanceColor(connectionsAvg * 100 / connectionsMax, goodColor, mediumColor, badColor));
+    private void displayEmptyStats() {
+        textTotalGames.setText("0");
+        textWinLoseRatio.setText("0% / 0%");
+        winProgress.setProgress(0);
+        WhoKnowsRatio.setText("0 / 0");
+        textGameStatKoZnaZna.setText("0 / 50");
+        whoKnowsAvgProgress.setProgress(0);
+        NumbersGameRatio.setText("0%");
+        numbersRatioProgress.setProgress(0);
+        NumbersGamePoints.setText("0 / 20");
+        numbersAvgProgress.setProgress(0);
+        StepByStepRatio.setText("0%");
+        StepByStepPoints.setText("0 / 25");
+        SkockoRatio.setText("0%");
+        stepByStepAvgProgress.setProgress(0);
+        AssociationsRatio.setText("0% / 0%");
+        associationsRatioProgress.setProgress(0);
+        AssociationsPoints.setText("0 / 60");
+        associationsAvgProgress.setProgress(0);
+        SkockoRatio.setText("0%");
+        SkockoPoints.setText("0 / 30");
+        skockoAvgProgress.setProgress(0);
+        ConnectionsRatio.setText("0%");
+        connectionsRatioProgress.setProgress(0);
+        ConnectionsPoints.setText("0 / 20");
+        connectionsAvgProgress.setProgress(0);
     }
 
     private int getPerformanceColor(int percentage, int goodColor, int mediumColor, int badColor) {

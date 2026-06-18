@@ -21,15 +21,14 @@
             android:padding="12dp">
 
             <TextView
-                android:id="@+id/timerText"
+                android:id="@+id/instructionsTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="30"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:gravity="center"
+                android:text="Priprema..."
+                android:textSize="16sp"
                 android:textColor="#FFFFFF"
-                android:padding="8dp"/>
+                android:gravity="center"
+                android:padding="4dp"/>
 
             <LinearLayout
                 android:id="@+id/solutionRow"

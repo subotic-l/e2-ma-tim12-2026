@@ -204,9 +204,7 @@ public class UserRepository {
         return db.runTransaction((Transaction.Function<Void>) transaction -> {
             DocumentSnapshot snap = transaction.get(ref);
             Long tokens = snap.getLong("tokens");
-            if (tokens == null || tokens <= 0) {
-                throw new Exception("Nema dovoljno tokena");
-            }
+            if (tokens == null || tokens <= 0) throw new Exception("Nema dovoljno tokena");
             transaction.update(ref, "tokens", tokens - 1);
             return null;
         });
