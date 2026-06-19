@@ -52,6 +52,7 @@ public class ProfileFragment extends Fragment {
     private ImageView avatarImage;
     private ImageButton buttonEditAvatar;
     private ProgressBar avatarProgressBar;
+    private View avatarFrame;
     private StatsRepository statsRepository;
 
     private TextView textTotalGames;
@@ -108,6 +109,7 @@ public class ProfileFragment extends Fragment {
         avatarImage = view.findViewById(R.id.avatarImage);
         buttonEditAvatar = view.findViewById(R.id.buttonEditAvatar);
         avatarProgressBar = view.findViewById(R.id.avatarProgressBar);
+        avatarFrame = view.findViewById(R.id.avatarFrame);
         Button forgotPasswordButton = view.findViewById(R.id.btn_forgot_password);
         forgotPasswordButton.setOnClickListener(v -> {
             Intent intent = new Intent(requireActivity(), ChangePasswordActivity.class);
@@ -182,12 +184,27 @@ public class ProfileFragment extends Fragment {
                 String avUrl = document.getString("avatarUrl");
                 Long stars = document.getLong("stars");
                 Long tokens = document.getLong("tokens");
+                Long lastMonthRegionRank = document.getLong("lastMonthRegionRank");
 
                 textUsername.setText(uname != null ? uname : "Nepoznato");
                 textEmail.setText(em != null ? em : "Nepoznato");
                 textRegion.setText(reg != null ? "Region: " + reg : "Region: Nepoznato");
                 textStars.setText("Zvezde: " + (stars != null ? stars : 0));
                 textTokens.setText("Tokeni: " + (tokens != null ? tokens : 0));
+
+                if (lastMonthRegionRank != null) {
+                    if (lastMonthRegionRank == 1) {
+                        avatarFrame.setBackgroundResource(R.drawable.profile_frame_gold);
+                    } else if (lastMonthRegionRank == 2) {
+                        avatarFrame.setBackgroundResource(R.drawable.profile_frame_silver);
+                    } else if (lastMonthRegionRank == 3) {
+                        avatarFrame.setBackgroundResource(R.drawable.profile_frame_bronze);
+                    } else {
+                        avatarFrame.setBackgroundResource(R.drawable.profile_frame);
+                    }
+                } else {
+                    avatarFrame.setBackgroundResource(R.drawable.profile_frame);
+                }
 
                 loadAvatar(avUrl);
 

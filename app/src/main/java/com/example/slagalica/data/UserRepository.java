@@ -16,11 +16,15 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Transaction;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -253,7 +257,7 @@ public class UserRepository {
 
     /**
      * Atomically applies match rewards using the given stars delta.
-     * Updates stars, totalStarsEarned, and grants token(s) for every
+     * Updates stars, totalStarsEarned, monthlyStars, and grants token(s) for every
      * 50 cumulative stars earned.
      */
     public Task<Void> applyMatchRewards(String uid, int starsDelta) {
@@ -263,14 +267,23 @@ public class UserRepository {
             Long currentStars = snap.getLong("stars");
             Long totalEarned = snap.getLong("totalStarsEarned");
             Long currentTokens = snap.getLong("tokens");
+            Long monthlyStars = snap.getLong("monthlyStars");
+            String lastMonthlyReset = snap.getString("lastMonthlyReset");
 
             if (currentStars == null) currentStars = 0L;
             if (totalEarned == null) totalEarned = 0L;
             if (currentTokens == null) currentTokens = 0L;
+            if (monthlyStars == null) monthlyStars = 0L;
+
+            String currentMonth = new SimpleDateFormat("yyyy-MM", Locale.US).format(new Date());
+            if (lastMonthlyReset == null || !lastMonthlyReset.equals(currentMonth)) {
+                monthlyStars = 0L;
+            }
 
             long newStars = Math.max(0, currentStars + starsDelta);
             int starsGained = Math.max(0, starsDelta);
             long newTotalEarned = totalEarned + starsGained;
+            long newMonthlyStars = Math.max(0, monthlyStars + starsGained);
 
             long tokensBefore = totalEarned / 50;
             long tokensAfter = newTotalEarned / 50;
@@ -279,9 +292,18 @@ public class UserRepository {
             Map<String, Object> updates = new HashMap<>();
             updates.put("stars", newStars);
             updates.put("totalStarsEarned", newTotalEarned);
+            updates.put("monthlyStars", newMonthlyStars);
+            updates.put("lastMonthlyReset", currentMonth);
             updates.put("tokens", currentTokens + tokensBonus);
             transaction.update(ref, updates);
             return null;
         });
+    }
+
+    /** Updates the lastSeen timestamp to the server time. */
+    public Task<Void> updateLastSeen(String uid) {
+        return db.collection(USERS_COLLECTION)
+                .document(uid)
+                .update("lastSeen", FieldValue.serverTimestamp());
     }
 }
