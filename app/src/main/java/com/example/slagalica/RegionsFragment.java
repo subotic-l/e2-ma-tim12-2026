@@ -60,6 +60,7 @@ public class RegionsFragment extends Fragment {
     private final Map<String, Integer> regionIcons = new HashMap<>();
     private final List<RegionEntry> regionEntries = new ArrayList<>();
     private boolean mapInitialized = false;
+    private final Map<String, List<List<GeoPoint>>> regionPolygonsCache = new HashMap<>();
 
     private static final Map<String, Integer> REGION_BORDER_RESOURCES = new HashMap<>();
 
@@ -382,7 +383,11 @@ public class RegionsFragment extends Fragment {
             Integer color = regionColors.get(entry.code);
             if (color == null) color = 0xFF888888;
 
-            List<List<GeoPoint>> polygons = loadRegionPolygons(entry.code);
+            List<List<GeoPoint>> polygons = regionPolygonsCache.get(entry.code);
+            if (polygons == null) {
+                polygons = loadRegionPolygons(entry.code);
+                regionPolygonsCache.put(entry.code, polygons);
+            }
             if (polygons.isEmpty()) continue;
 
             String regionName = entry.name;
@@ -422,14 +427,21 @@ public class RegionsFragment extends Fragment {
 
                 Integer color = regionColors.get(code);
                 if (color == null) color = 0xFF888888;
-                int dotSize = dpToPx(14);
-                android.graphics.drawable.GradientDrawable dot = new android.graphics.drawable.GradientDrawable();
-                dot.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-                dot.setBounds(0, 0, dotSize, dotSize);
-                dot.setColor(color);
-                dot.setStroke(dpToPx(2), android.graphics.Color.WHITE);
-                playerMarker.setIcon(dot);
+                int dotSize = dpToPx(16);
+                android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(dotSize, dotSize, android.graphics.Bitmap.Config.ARGB_8888);
+                android.graphics.Canvas c = new android.graphics.Canvas(bmp);
+                int half = dotSize / 2;
+                android.graphics.Paint fill = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+                fill.setColor(color);
+                c.drawCircle(half, half, half - dpToPx(1), fill);
+                android.graphics.Paint stroke = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+                stroke.setStyle(android.graphics.Paint.Style.STROKE);
+                stroke.setStrokeWidth(dpToPx(1.5f));
+                stroke.setColor(android.graphics.Color.WHITE);
+                c.drawCircle(half, half, half - dpToPx(1), stroke);
+                playerMarker.setIcon(new android.graphics.drawable.BitmapDrawable(getResources(), bmp));
                 playerMarker.setTitle(storedRegionName);
+                playerMarker.setInfoWindow(null);
                 mapView.getOverlays().add(playerMarker);
             }
             mapView.invalidate();
@@ -438,42 +450,67 @@ public class RegionsFragment extends Fragment {
         mapView.invalidate();
     }
 
-    private int dpToPx(int dp) {
+    private int dpToPx(float dp) {
         float density = getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
     }
 
     private double[] getPlayerMapCoords(String uid, String regionCode) {
         Random rng = new Random(uid.hashCode());
+
+        List<List<GeoPoint>> polygons = regionPolygonsCache.get(regionCode);
+        if (polygons == null) {
+            polygons = loadRegionPolygons(regionCode);
+            regionPolygonsCache.put(regionCode, polygons);
+        }
+        if (polygons.isEmpty()) {
+            com.example.slagalica.Region region = RegionRepository.get(regionCode);
+            return region != null ? new double[]{region.getLat(), region.getLon()} : new double[]{44.0, 20.8};
+        }
+
+        double minLat = Double.MAX_VALUE, maxLat = -Double.MAX_VALUE;
+        double minLon = Double.MAX_VALUE, maxLon = -Double.MAX_VALUE;
+        for (List<GeoPoint> ring : polygons) {
+            for (GeoPoint p : ring) {
+                if (p.getLatitude() < minLat) minLat = p.getLatitude();
+                if (p.getLatitude() > maxLat) maxLat = p.getLatitude();
+                if (p.getLongitude() < minLon) minLon = p.getLongitude();
+                if (p.getLongitude() > maxLon) maxLon = p.getLongitude();
+            }
+        }
+
+        for (int attempt = 0; attempt < 200; attempt++) {
+            double lat = minLat + rng.nextDouble() * (maxLat - minLat);
+            double lon = minLon + rng.nextDouble() * (maxLon - minLon);
+            if (isInsidePolygons(lat, lon, polygons)) {
+                return new double[]{lat, lon};
+            }
+        }
+
         com.example.slagalica.Region region = RegionRepository.get(regionCode);
-        if (region == null) {
-            return new double[]{44.0, 20.8};
-        }
+        return region != null ? new double[]{region.getLat(), region.getLon()} : new double[]{44.0, 20.8};
+    }
 
-        double latRange, lonRange;
-        switch (regionCode) {
-            case RegionRepository.VOJVODINA:
-                latRange = 1.2; lonRange = 2.3;
-                break;
-            case RegionRepository.BEOGRAD:
-                latRange = 0.25; lonRange = 0.4;
-                break;
-            case RegionRepository.SUMADIJA_ZAPAD:
-                latRange = 1.2; lonRange = 2.0;
-                break;
-            case RegionRepository.JUZNA_ISTOCNA:
-                latRange = 1.8; lonRange = 1.5;
-                break;
-            case RegionRepository.KOSOVO:
-                latRange = 0.6; lonRange = 1.0;
-                break;
-            default:
-                latRange = 0.5; lonRange = 0.5;
+    private boolean isInsidePolygons(double lat, double lon, List<List<GeoPoint>> polygons) {
+        for (List<GeoPoint> ring : polygons) {
+            if (isInsideRing(lat, lon, ring)) return true;
         }
+        return false;
+    }
 
-        double lat = region.getLat() + (rng.nextDouble() - 0.5) * latRange;
-        double lon = region.getLon() + (rng.nextDouble() - 0.5) * lonRange;
-        return new double[]{lat, lon};
+    private boolean isInsideRing(double lat, double lon, List<GeoPoint> ring) {
+        boolean inside = false;
+        int n = ring.size();
+        for (int i = 0, j = n - 1; i < n; j = i++) {
+            double xi = ring.get(i).getLongitude();
+            double yi = ring.get(i).getLatitude();
+            double xj = ring.get(j).getLongitude();
+            double yj = ring.get(j).getLatitude();
+            if ((yi > lat) != (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) {
+                inside = !inside;
+            }
+        }
+        return inside;
     }
 
     private void saveMonthlyRankingsIfNeeded(List<RegionEntry> entries) {
