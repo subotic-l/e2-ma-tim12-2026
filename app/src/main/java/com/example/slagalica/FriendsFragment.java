@@ -21,6 +21,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.slagalica.service.UserService;
+
+import java.util.ArrayList;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
@@ -431,14 +433,12 @@ public class FriendsFragment extends Fragment {
             FriendEntry entry = items.get(position);
 
             holder.usernameText.setText(entry.username != null ? entry.username : "Nepoznato");
-            holder.starsText.setText(entry.stars + " zvezda");
+            holder.starsText.setText(String.valueOf(entry.stars));
 
-            String[] leagueNames = {"Liga 0", "Liga 1", "Liga 2", "Liga 3", "Liga 4", "Liga 5"};
             int leagueIdx = (int) entry.league;
-            if (leagueIdx >= 0 && leagueIdx < leagueNames.length) {
-                holder.leagueText.setText(leagueNames[leagueIdx]);
-            } else {
-                holder.leagueText.setText("Liga " + leagueIdx);
+            holder.leagueText.setText(LeagueHelper.getLeagueNameByIndex(leagueIdx));
+            if (holder.leagueIcon != null) {
+                holder.leagueIcon.setImageResource(LeagueHelper.getLeagueIconByIndex(leagueIdx));
             }
 
             String url = entry.avatarUrl;
@@ -470,6 +470,7 @@ public class FriendsFragment extends Fragment {
             final TextView usernameText;
             final TextView starsText;
             final TextView leagueText;
+            final ImageView leagueIcon;
             final MaterialButton playButton;
 
             ViewHolder(View itemView) {
@@ -478,6 +479,7 @@ public class FriendsFragment extends Fragment {
                 usernameText = itemView.findViewById(R.id.friendUsername);
                 starsText = itemView.findViewById(R.id.friendStars);
                 leagueText = itemView.findViewById(R.id.friendLeague);
+                leagueIcon = itemView.findViewById(R.id.friendLeagueIcon);
                 playButton = itemView.findViewById(R.id.buttonPlayFriend);
             }
         }
