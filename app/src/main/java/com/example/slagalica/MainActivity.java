@@ -18,7 +18,7 @@ import com.google.firebase.firestore.ListenerRegistration;
 
 public class MainActivity extends AppCompatActivity {
 
-    private NavigationHelper navHelper;
+    NavigationHelper navHelper;
     private UserService userService;
     private ListenerRegistration invitationListener;
     private String lastShownInvitationId;

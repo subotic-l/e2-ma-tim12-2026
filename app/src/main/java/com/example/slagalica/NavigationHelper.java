@@ -117,6 +117,19 @@ public class NavigationHelper {
         });
     }
 
+    public void pushFragment(Class<? extends Fragment> fragmentClass, Bundle args) {
+        Fragment fragment = Fragment.instantiate(activity, fragmentClass.getName());
+        if (args != null) {
+            fragment.setArguments(args);
+        }
+        activity.getSupportFragmentManager().beginTransaction()
+                .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left,
+                        R.anim.slide_in_left, R.anim.slide_out_right)
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
     public void onResume() {
         navView = activity.findViewById(R.id.bottomNavigation);
         if (navView != null) {

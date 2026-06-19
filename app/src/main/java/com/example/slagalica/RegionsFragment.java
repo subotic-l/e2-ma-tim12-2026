@@ -1,6 +1,5 @@
 package com.example.slagalica;
 
-import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -344,10 +343,12 @@ public class RegionsFragment extends Fragment {
 
             final String regionCode = entry.code;
             itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(requireActivity(), RegionDetailActivity.class);
-                intent.putExtra("region_code", regionCode);
-                intent.putExtra("region_name", entry.name);
-                startActivity(intent);
+                Bundle args = new Bundle();
+                args.putString("region_code", regionCode);
+                args.putString("region_name", entry.name);
+                if (getActivity() instanceof MainActivity) {
+                    ((MainActivity) getActivity()).navHelper.pushFragment(RegionDetailFragment.class, args);
+                }
             });
 
             leaderboardList.addView(itemView);
@@ -400,10 +401,12 @@ public class RegionsFragment extends Fragment {
                 polygon.setStrokeWidth(3);
                 polygon.setTitle(entry.name);
                 polygon.setOnClickListener((poly, mapView, eventPos) -> {
-                    Intent intent = new Intent(requireActivity(), RegionDetailActivity.class);
-                    intent.putExtra("region_code", entry.code);
-                    intent.putExtra("region_name", regionName);
-                    startActivity(intent);
+                    Bundle args = new Bundle();
+                    args.putString("region_code", entry.code);
+                    args.putString("region_name", regionName);
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).navHelper.pushFragment(RegionDetailFragment.class, args);
+                    }
                     return true;
                 });
                 mapView.getOverlays().add(polygon);
