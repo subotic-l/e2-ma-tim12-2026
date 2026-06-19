@@ -9,7 +9,11 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.slagalica.data.LeaderboardManager;
 import com.example.slagalica.service.UserService;
+
+import java.util.List;
+import java.util.Map;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -44,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
                 .addFragmentTab(R.id.navigation_profile, ProfileFragment.class)
                 .addFragmentTab(R.id.navigation_stats, RegionsFragment.class)
                 .addFragmentTab(R.id.navigation_friends, FriendsFragment.class)
-                .addSoonTab(R.id.navigation_rankings);
+                .addFragmentTab(R.id.navigation_rankings, RangListaFragment.class);
 
         navHelper.setup(savedInstanceState);
     }
@@ -61,6 +65,72 @@ public class MainActivity extends AppCompatActivity {
         userService.updateLastSeen();
         TopBarHelper.loadAndUpdateTopBar(this);
         listenForFriendInvitations();
+        checkLeaderboardCycles();
+    }
+
+    private void checkLeaderboardCycles() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        android.content.SharedPreferences prefs = getSharedPreferences("leaderboard_prefs", MODE_PRIVATE);
+        String lastWeekly = prefs.getString("last_weekly_cycle", "");
+        String lastMonthly = prefs.getString("last_monthly_cycle", "");
+        String currentWeekly = LeaderboardManager.getCycleId(LeaderboardManager.Period.WEEKLY);
+        String currentMonthly = LeaderboardManager.getCycleId(LeaderboardManager.Period.MONTHLY);
+
+        if (!lastWeekly.isEmpty() && !lastWeekly.equals(currentWeekly)) {
+            LeaderboardManager lm = new LeaderboardManager();
+            lm.tryDistributeRewards(lastWeekly).addOnSuccessListener(distributed ->
+                checkUserWonReward(lastWeekly)
+            );
+        }
+
+        if (!lastMonthly.isEmpty() && !lastMonthly.equals(currentMonthly)) {
+            LeaderboardManager lm = new LeaderboardManager();
+            lm.tryDistributeRewards(lastMonthly).addOnSuccessListener(distributed ->
+                checkUserWonReward(lastMonthly)
+            );
+        }
+
+        prefs.edit()
+                .putString("last_weekly_cycle", currentWeekly)
+                .putString("last_monthly_cycle", currentMonthly)
+                .apply();
+    }
+
+    private void checkUserWonReward(String cycleId) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        String uid = user.getUid();
+        new LeaderboardManager().getCycleMetadata(cycleId)
+                .addOnSuccessListener(metadata -> {
+                    if (metadata == null) return;
+                    List<Map<String, Object>> winners =
+                            (List<Map<String, Object>>) metadata.get("winners");
+                    if (winners == null) return;
+
+                    for (Map<String, Object> w : winners) {
+                        String winnerUid = (String) w.get("uid");
+                        if (winnerUid != null && winnerUid.equals(uid)) {
+                            long rank = w.containsKey("rank") ? (long) w.get("rank") : 0;
+                            long tokenReward = w.containsKey("tokenReward") ? (long) w.get("tokenReward") : 0;
+
+                            android.content.SharedPreferences prefs = getSharedPreferences("leaderboard_prefs", MODE_PRIVATE);
+                            String claimed = prefs.getString("claimed_reward_" + cycleId, "");
+                            if (!claimed.equals(uid)) {
+                                prefs.edit().putString("claimed_reward_" + cycleId, uid).apply();
+                                String periodLabel = cycleId.startsWith("weekly") ? "nedeljnoj" : "mesečnoj";
+                                NotificationHelper.show(this, SlagalicaApp.CHANNEL_REWARDS,
+                                        "Nagrada za rang listu!",
+                                        "Osvojili ste #" + rank + ". mesto na " + periodLabel
+                                                + " rang listi! Nagrada: " + tokenReward + " tokena.",
+                                        uid);
+                            }
+                            break;
+                        }
+                    }
+                });
     }
 
     @Override

@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.slagalica.data.LeaderboardManager;
 import com.example.slagalica.service.UserService;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -77,7 +78,7 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
             userService.updateLastSeen();
             userService.processMatchRewards(myScore, iWon)
                     .addOnSuccessListener(aVoid -> {
-                        // Read updated profile to show current balance
+                        // Read updated profile to show current balance & update leaderboard
                         userService.loadProfile().addOnSuccessListener(doc -> {
                             if (doc.exists()) {
                                 Long stars = doc.getLong("stars");
@@ -91,6 +92,20 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
 
                                 tokenBonusText.setText(
                                         "Tokeni: " + (tokens != null ? tokens : 0));
+                            }
+
+                            int starsGained = starsDelta;
+                            String userName = doc != null && doc.exists()
+                                    ? doc.getString("username") : null;
+                            String avatarUrl = doc != null && doc.exists()
+                                    ? doc.getString("avatarUrl") : null;
+                            if (currentUser != null) {
+                                new LeaderboardManager().updateScore(
+                                        currentUser.getUid(),
+                                        userName != null ? userName : "Nepoznat",
+                                        avatarUrl,
+                                        starsGained
+                                );
                             }
                         });
                     })
