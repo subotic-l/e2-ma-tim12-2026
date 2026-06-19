@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center"
+    android:background="#529DCC">
+
+    <ImageView
+        android:id="@+id/rewardStar"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@android:drawable/star_big_on"
+        android:scaleType="fitCenter"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/rewardTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Čestitamo!"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#FFD700"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/rewardMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/rewardOkButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Super!"
+        style="@style/Widget.Material3.Button" />
+
+</LinearLayout>

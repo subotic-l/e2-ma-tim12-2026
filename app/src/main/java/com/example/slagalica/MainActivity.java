@@ -9,7 +9,11 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.slagalica.data.LeaderboardManager;
 import com.example.slagalica.service.UserService;
+
+import java.util.List;
+import java.util.Map;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -44,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
                 .addFragmentTab(R.id.navigation_profile, ProfileFragment.class)
                 .addFragmentTab(R.id.navigation_stats, RegionsFragment.class)
                 .addFragmentTab(R.id.navigation_friends, FriendsFragment.class)
-                .addSoonTab(R.id.navigation_rankings);
+                .addFragmentTab(R.id.navigation_rankings, RangListaFragment.class);
 
         navHelper.setup(savedInstanceState);
     }
@@ -61,6 +65,126 @@ public class MainActivity extends AppCompatActivity {
         userService.updateLastSeen();
         TopBarHelper.loadAndUpdateTopBar(this);
         listenForFriendInvitations();
+        checkLeaderboardCycles();
+    }
+
+    private void checkLeaderboardCycles() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        android.content.SharedPreferences prefs = getSharedPreferences("leaderboard_prefs", MODE_PRIVATE);
+        String lastWeekly = prefs.getString("last_weekly_cycle", "");
+        String lastMonthly = prefs.getString("last_monthly_cycle", "");
+        String currentWeekly = LeaderboardManager.getCycleId(LeaderboardManager.Period.WEEKLY);
+        String currentMonthly = LeaderboardManager.getCycleId(LeaderboardManager.Period.MONTHLY);
+
+        if (!lastWeekly.isEmpty() && !lastWeekly.equals(currentWeekly)) {
+            LeaderboardManager lm = new LeaderboardManager();
+            lm.tryDistributeRewards(lastWeekly).addOnSuccessListener(distributed ->
+                checkUserWonReward(lastWeekly)
+            );
+        }
+
+        if (!lastMonthly.isEmpty() && !lastMonthly.equals(currentMonthly)) {
+            LeaderboardManager lm = new LeaderboardManager();
+            lm.tryDistributeRewards(lastMonthly).addOnSuccessListener(distributed ->
+                checkUserWonReward(lastMonthly)
+            );
+        }
+
+        prefs.edit()
+                .putString("last_weekly_cycle", currentWeekly)
+                .putString("last_monthly_cycle", currentMonthly)
+                .apply();
+    }
+
+    private void checkUserWonReward(String cycleId) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        String uid = user.getUid();
+        new LeaderboardManager().getCycleMetadata(cycleId)
+                .addOnSuccessListener(metadata -> {
+                    if (metadata == null) return;
+                    List<Map<String, Object>> winners =
+                            (List<Map<String, Object>>) metadata.get("winners");
+                    if (winners == null) return;
+
+                    for (Map<String, Object> w : winners) {
+                        String winnerUid = (String) w.get("uid");
+                        if (winnerUid != null && winnerUid.equals(uid)) {
+                            long rank = w.containsKey("rank") ? (long) w.get("rank") : 0;
+                            long tokenReward = w.containsKey("tokenReward") ? (long) w.get("tokenReward") : 0;
+
+                            android.content.SharedPreferences prefs = getSharedPreferences("leaderboard_prefs", MODE_PRIVATE);
+                            String notified = prefs.getString("notified_reward_" + cycleId, "");
+                            if (!notified.equals(uid)) {
+                                prefs.edit().putString("notified_reward_" + cycleId, uid).apply();
+                                String periodLabel = cycleId.startsWith("weekly") ? "nedeljnoj" : "mesečnoj";
+                                NotificationHelper.show(this, SlagalicaApp.CHANNEL_REWARDS,
+                                        "Nagrada za rang listu!",
+                                        "Osvojili ste #" + rank + ". mesto na " + periodLabel
+                                                + " rang listi! Nagrada: " + tokenReward + " tokena.",
+                                        uid);
+                            }
+                            // Show reward dialog (once, independent of notification)
+                            String claimed = prefs.getString("claimed_reward_" + cycleId, "");
+                            if (!claimed.equals(uid)) {
+                                prefs.edit().putString("claimed_reward_" + cycleId, uid).apply();
+                                showRewardDialog((int) rank, (int) tokenReward, cycleId);
+                            }
+                            break;
+                        }
+                    }
+                });
+    }
+
+    private void showRewardDialog(int rank, int tokenReward, String cycleId) {
+        String periodLabel = cycleId.startsWith("weekly") ? "nedeljnoj" : "mesečnoj";
+        String message = "Osvojili ste #" + rank + ". mesto na " + periodLabel + " rang listi!\n"
+                + "Nagrada: " + tokenReward + " tokena";
+
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_reward, null);
+
+        android.widget.TextView msgView = dialogView.findViewById(R.id.rewardMessage);
+        android.widget.ImageView starView = dialogView.findViewById(R.id.rewardStar);
+        com.google.android.material.button.MaterialButton okBtn = dialogView.findViewById(R.id.rewardOkButton);
+
+        msgView.setText(message);
+
+        android.animation.ObjectAnimator scaleX = android.animation.ObjectAnimator.ofFloat(
+                starView, "scaleX", 1f, 1.4f, 1f);
+        android.animation.ObjectAnimator scaleY = android.animation.ObjectAnimator.ofFloat(
+                starView, "scaleY", 1f, 1.4f, 1f);
+        scaleX.setDuration(800);
+        scaleY.setDuration(800);
+        scaleX.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scaleY.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scaleX.start();
+        scaleY.start();
+
+        // Play sound
+        try {
+            android.net.Uri uri = android.media.RingtoneManager.getDefaultUri(
+                    android.media.RingtoneManager.TYPE_NOTIFICATION);
+            android.media.Ringtone r = android.media.RingtoneManager.getRingtone(this, uri);
+            if (r != null) r.play();
+        } catch (Exception ignored) {}
+
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .show();
+
+        okBtn.setOnClickListener(v -> {
+            scaleX.cancel();
+            scaleY.cancel();
+            dialog.dismiss();
+        });
+
+        dialog.setOnDismissListener(d -> {
+            scaleX.cancel();
+            scaleY.cancel();
+        });
     }
 
     @Override
