@@ -8,13 +8,23 @@
     android:background="#66C4FF"
     android:elevation="4dp">
 
-    <!-- Token + Star Section (left side) -->
+    <!-- Token Pill -->
     <LinearLayout
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="34dp"
         android:layout_weight="1"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:background="@drawable/pill_bg"
+        android:layout_marginEnd="6dp"
+        android:paddingStart="4dp"
+        android:paddingEnd="10dp">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_token"
+            android:contentDescription="Tokeni" />
 
         <TextView
             android:id="@+id/topBarTokenCount"
@@ -22,15 +32,29 @@
             android:layout_height="wrap_content"
             android:text="0"
             android:textColor="#FFFFFF"
-            android:textSize="17sp"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:layout_marginEnd="2dp" />
+            android:layout_marginStart="6dp" />
+    </LinearLayout>
+
+    <!-- Star Pill -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="34dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/pill_bg"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="12dp"
+        android:paddingStart="4dp"
+        android:paddingEnd="10dp">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_token"
-            android:contentDescription="Tokeni" />
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_star"
+            android:contentDescription="Zvezde" />
 
         <TextView
             android:id="@+id/topBarStarCount"
@@ -38,16 +62,9 @@
             android:layout_height="wrap_content"
             android:text="0"
             android:textColor="#FFFFFF"
-            android:textSize="17sp"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:layout_marginStart="14dp"
-            android:layout_marginEnd="2dp" />
-
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_star"
-            android:contentDescription="Zvezde" />
+            android:layout_marginStart="6dp" />
     </LinearLayout>
 
     <!-- League Section (right side) -->
