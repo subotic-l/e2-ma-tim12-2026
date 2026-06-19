@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.slagalica.data.DailyMissionManager;
 import com.example.slagalica.data.LeaderboardManager;
 import com.example.slagalica.service.UserService;
 import com.google.android.material.button.MaterialButton;
@@ -70,10 +71,11 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
         }
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        int myScore = myPlayerNumber == 1 ? player1Score : player2Score;
+        int opponentScore = myPlayerNumber == 1 ? player2Score : player1Score;
+        boolean iWon = myScore > opponentScore;
+
         if (currentUser != null && !isFriendMatch) {
-            int myScore = myPlayerNumber == 1 ? player1Score : player2Score;
-            int opponentScore = myPlayerNumber == 1 ? player2Score : player1Score;
-            boolean iWon = myScore > opponentScore;
 
             int starsDelta = UserService.calculateStarsDelta(myScore, iWon);
 
@@ -131,6 +133,18 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
                             tokenBonusText.setText("");
                         });
             });
+        }
+
+        // Daily mission tracking
+        if (currentUser != null) {
+            DailyMissionManager dmm = new DailyMissionManager();
+            String uid = currentUser.getUid();
+            if (!isFriendMatch && iWon) {
+                dmm.markMissionDone(uid, DailyMissionManager.Mission.WIN_GAME);
+            }
+            if (isFriendMatch) {
+                dmm.markMissionDone(uid, DailyMissionManager.Mission.PLAY_FRIEND);
+            }
         }
 
         backButton.setOnClickListener(v -> {

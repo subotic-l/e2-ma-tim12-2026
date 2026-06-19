@@ -243,6 +243,12 @@ public class NetworkMatchActivity extends AppCompatActivity {
                 tm.attachToTournament(tournamentId);
                 if ("final".equals(tournamentRound)) {
                     tm.setFinalWinner(winnerId);
+                    // Daily mission: tournament win
+                    String myId2 = myPlayerNumber == 1 ? p1Id : p2Id;
+                    if (winnerId.equals(myId2)) {
+                        new com.example.slagalica.data.DailyMissionManager()
+                                .markMissionDone(myId2, com.example.slagalica.data.DailyMissionManager.Mission.WIN_TOURNAMENT);
+                    }
                 } else {
                     String winnerName = winnerId.equals(p1Id) ? p1Name : p2Name;
                     String winnerAvatar = "";
