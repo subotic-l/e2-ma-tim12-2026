@@ -68,6 +68,7 @@
 
         <activity android:name=".AsocijacijeGameActivity" />
 
+        <activity android:name=".DailyChallengesActivity" android:exported="false" />
         <activity android:name=".NotificationsActivity" />
         <activity android:name=".RegionDetailActivity" android:exported="false" />
         <activity android:name=".TournamentLobbyActivity" android:exported="false" />
