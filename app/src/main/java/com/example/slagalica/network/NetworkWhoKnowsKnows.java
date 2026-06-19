@@ -397,7 +397,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         stats.put("p2Total", (long) TOTAL_Q);
         stats.put("player1Score", (long) p1Total);
         stats.put("player2Score", (long) p2Total);
-        sm.finishCurrentGame(gameIdx, p1Total, p2Total, p1Total, p2Total, 6, stats);
+        sm.finishCurrentGame(gameIdx, p1Total, p2Total, p1Total, p2Total, 1, stats);
         sm.cleanup();
         setResult(RESULT_OK);
         finish();
