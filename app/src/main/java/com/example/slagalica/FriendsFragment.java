@@ -94,20 +94,52 @@ public class FriendsFragment extends Fragment {
                 }
             });
 
-    private String decodeQrFromBitmap(Bitmap bitmap) {
-        if (bitmap == null) return null;
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int[] pixels = new int[width * height];
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
-        RGBLuminanceSource source = new RGBLuminanceSource(width, height, pixels);
-        BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
+    private String decodeQrFromBitmap(Bitmap original) {
+        if (original == null) return null;
         try {
-            Result result = new MultiFormatReader().decode(binaryBitmap);
-            return result.getText();
+            Bitmap bitmap = original;
+            int maxDimension = 1024;
+            if (bitmap.getWidth() > maxDimension || bitmap.getHeight() > maxDimension) {
+                float scale = Math.min((float) maxDimension / bitmap.getWidth(),
+                        (float) maxDimension / bitmap.getHeight());
+                bitmap = Bitmap.createScaledBitmap(original,
+                        (int) (bitmap.getWidth() * scale),
+                        (int) (bitmap.getHeight() * scale), true);
+            }
+
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            int[] pixels = new int[width * height];
+            bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+
+            for (int attempt = 0; attempt < 3; attempt++) {
+                try {
+                    int[] luminance;
+                    if (attempt == 0) {
+                        luminance = pixels;
+                    } else {
+                        luminance = new int[width * height];
+                        for (int i = 0; i < pixels.length; i++) {
+                            int r = (pixels[i] >> 16) & 0xFF;
+                            int g = (pixels[i] >> 8) & 0xFF;
+                            int b = pixels[i] & 0xFF;
+                            int gray = (r * 77 + g * 150 + b * 29) >> 8;
+                            luminance[i] = (0xFF << 24) | (gray << 16) | (gray << 8) | gray;
+                        }
+                    }
+                    RGBLuminanceSource source = new RGBLuminanceSource(width, height, luminance);
+                    BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
+                    Result result = new MultiFormatReader().decode(binaryBitmap);
+                    if (result != null && result.getText() != null) {
+                        return result.getText();
+                    }
+                } catch (Exception ignored) {
+                }
+            }
         } catch (Exception e) {
             return null;
         }
+        return null;
     }
 
     @Override

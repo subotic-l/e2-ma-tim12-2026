@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private ListenerRegistration invitationListener;
     private String lastShownInvitationId;
     private boolean isInGame;
+    private boolean isInForeground;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,20 +52,21 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        isInForeground = true;
+        isInGame = false;
         if (navHelper != null) {
             navHelper.onResume();
         }
         userService.grantDailyTokensIfNeeded();
         userService.updateLastSeen();
         TopBarHelper.loadAndUpdateTopBar(this);
-        isInGame = false;
         listenForFriendInvitations();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        removeInvitationListener();
+        isInForeground = false;
     }
 
     @Override
@@ -81,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) return;
 
-        removeInvitationListener();
+        if (invitationListener != null) return;
 
         invitationListener = FirebaseFirestore.getInstance()
                 .collection("friend_invitations")
@@ -105,7 +107,16 @@ public class MainActivity extends AppCompatActivity {
                         lastShownInvitationId = invitationId;
                         String fromName = doc.getString("fromName");
 
-                        showInvitationDialog(invitationId, fromName);
+                        if (isInForeground) {
+                            showInvitationDialog(invitationId, fromName);
+                        } else {
+                            NotificationHelper.show(MainActivity.this,
+                                    SlagalicaApp.CHANNEL_GENERAL,
+                                    "Poziv za partiju",
+                                    (fromName != null ? fromName : "Neko") +
+                                            " vas poziva na prijateljsku partiju Slagalice!",
+                                    user.getUid());
+                        }
                         break;
                     }
                 });

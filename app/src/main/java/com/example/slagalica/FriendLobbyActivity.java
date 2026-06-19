@@ -151,7 +151,13 @@ public class FriendLobbyActivity extends AppCompatActivity {
                     invitationId = doc.getId();
                     invitationStatusText.setText("Poziv poslat. Čekam odgovor...");
 
-                    storeNotification(friendId);
+                    if (myPlayerName != null) {
+                        NotificationHelper.show(FriendLobbyActivity.this,
+                                SlagalicaApp.CHANNEL_GENERAL,
+                                "Poziv za partiju",
+                                myPlayerName + " vas poziva na prijateljsku partiju Slagalice!",
+                                friendId);
+                    }
 
                     autoDeclineRunnable = () -> {
                         if (!activityActive || invitationId == null) return;
@@ -171,16 +177,6 @@ public class FriendLobbyActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT).show();
                     cleanupAndFinish();
                 });
-    }
-
-    private void storeNotification(String friendId) {
-        Map<String, Object> notif = new HashMap<>();
-        notif.put("message", "Poziv za prijateljsku partiju: " +
-                (myPlayerName != null ? myPlayerName : "Nepoznat") + " vas poziva na partiju!");
-        notif.put("createdAt", Timestamp.now());
-        notif.put("read", false);
-        notif.put("channel", SlagalicaApp.CHANNEL_GENERAL);
-        db.collection("users").document(friendId).collection("notifications").add(notif);
     }
 
     private void listenToInvitationStatus() {
