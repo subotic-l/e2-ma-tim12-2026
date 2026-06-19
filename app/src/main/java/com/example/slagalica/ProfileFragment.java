@@ -49,6 +49,8 @@ public class ProfileFragment extends Fragment {
     private TextView textRegion;
     private TextView textStars;
     private TextView textTokens;
+    private TextView textLeague;
+    private ImageView leagueIcon;
     private ImageView avatarImage;
     private ImageButton buttonEditAvatar;
     private ProgressBar avatarProgressBar;
@@ -106,6 +108,8 @@ public class ProfileFragment extends Fragment {
         textRegion = view.findViewById(R.id.textRegion);
         textStars = view.findViewById(R.id.textStars);
         textTokens = view.findViewById(R.id.textTokens);
+        textLeague = view.findViewById(R.id.textLeague);
+        leagueIcon = view.findViewById(R.id.leagueIcon);
         avatarImage = view.findViewById(R.id.avatarImage);
         buttonEditAvatar = view.findViewById(R.id.buttonEditAvatar);
         avatarProgressBar = view.findViewById(R.id.avatarProgressBar);
@@ -191,6 +195,11 @@ public class ProfileFragment extends Fragment {
                 textRegion.setText(reg != null ? "Region: " + reg : "Region: Nepoznato");
                 textStars.setText("Zvezde: " + (stars != null ? stars : 0));
                 textTokens.setText("Tokeni: " + (tokens != null ? tokens : 0));
+                if (textLeague != null && leagueIcon != null) {
+                    long l = document.getLong("league") != null ? document.getLong("league") : 0;
+                    textLeague.setText("Liga: " + LeagueHelper.getLeagueNameByIndex((int) l));
+                    leagueIcon.setImageResource(LeagueHelper.getLeagueIconByIndex((int) l));
+                }
 
                 if (lastMonthRegionRank != null) {
                     if (lastMonthRegionRank == 1) {

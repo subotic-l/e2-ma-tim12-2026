@@ -21,6 +21,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Transaction;
 
+import com.example.slagalica.LeagueHelper;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -289,12 +291,15 @@ public class UserRepository {
             long tokensAfter = newTotalEarned / 50;
             long tokensBonus = tokensAfter - tokensBefore;
 
+            long newLeague = LeagueHelper.getLeagueIndex(newStars);
+
             Map<String, Object> updates = new HashMap<>();
             updates.put("stars", newStars);
             updates.put("totalStarsEarned", newTotalEarned);
             updates.put("monthlyStars", newMonthlyStars);
             updates.put("lastMonthlyReset", currentMonth);
             updates.put("tokens", currentTokens + tokensBonus);
+            updates.put("league", newLeague);
             transaction.update(ref, updates);
             return null;
         });

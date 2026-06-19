@@ -3,6 +3,7 @@ package com.example.slagalica;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -70,17 +71,16 @@ public final class TopBarHelper {
         TextView tokenView = activity.findViewById(R.id.topBarTokenCount);
         TextView starView = activity.findViewById(R.id.topBarStarCount);
         TextView leagueView = activity.findViewById(R.id.topBarLeagueText);
+        ImageView leagueIconView = activity.findViewById(R.id.topBarLeagueIcon);
 
         if (tokenView != null) tokenView.setText(String.valueOf(tokens));
         if (starView != null) starView.setText(String.valueOf(stars));
+        int leagueIndex = (int) league;
         if (leagueView != null) {
-            int leagueIndex = (int) league;
-            String[] names = {"Liga 0", "Liga 1", "Liga 2", "Liga 3", "Liga 4", "Liga 5"};
-            if (leagueIndex >= 0 && leagueIndex < names.length) {
-                leagueView.setText(names[leagueIndex]);
-            } else {
-                leagueView.setText("Liga " + leagueIndex);
-            }
+            leagueView.setText(LeagueHelper.getLeagueNameByIndex(leagueIndex));
+        }
+        if (leagueIconView != null) {
+            leagueIconView.setImageResource(LeagueHelper.getLeagueIconByIndex(leagueIndex));
         }
     }
 }

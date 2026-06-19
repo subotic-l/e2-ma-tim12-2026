@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -15,6 +16,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 public class NetworkMatchSummaryActivity extends AppCompatActivity {
 
@@ -74,31 +76,42 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
 
             int starsDelta = UserService.calculateStarsDelta(myScore, iWon);
 
-            userService.updateLastSeen();
-            userService.processMatchRewards(myScore, iWon)
-                    .addOnSuccessListener(aVoid -> {
-                        // Read updated profile to show current balance
-                        userService.loadProfile().addOnSuccessListener(doc -> {
-                            if (doc.exists()) {
-                                Long stars = doc.getLong("stars");
-                                Long tokens = doc.getLong("tokens");
-                                rewardsCard.setVisibility(View.VISIBLE);
+            // Read old league before processing rewards
+            userService.loadProfile().addOnSuccessListener(oldProfile -> {
+                long oldLeague = oldProfile.getLong("league") != null ? oldProfile.getLong("league") : 0;
 
-                                String starPrefix = starsDelta >= 0 ? "+" : "";
-                                starsChangeText.setText(
-                                        "Zvezde: " + starPrefix + starsDelta +
-                                        " (ukupno: " + (stars != null ? stars : 0) + ")");
+                userService.updateLastSeen();
+                userService.processMatchRewards(myScore, iWon)
+                        .addOnSuccessListener(aVoid -> {
+                            // Read updated profile to show current balance
+                            userService.loadProfile().addOnSuccessListener(doc -> {
+                                if (doc.exists()) {
+                                    Long stars = doc.getLong("stars");
+                                    Long tokens = doc.getLong("tokens");
+                                    long newLeague = doc.getLong("league") != null ? doc.getLong("league") : 0;
+                                    rewardsCard.setVisibility(View.VISIBLE);
 
-                                tokenBonusText.setText(
-                                        "Tokeni: " + (tokens != null ? tokens : 0));
-                            }
+                                    String starPrefix = starsDelta >= 0 ? "+" : "";
+                                    starsChangeText.setText(
+                                            "Zvezde: " + starPrefix + starsDelta +
+                                            " (ukupno: " + (stars != null ? stars : 0) + ")");
+
+                                    tokenBonusText.setText(
+                                            "Tokeni: " + (tokens != null ? tokens : 0));
+
+                                    // Check for league change
+                                    if (newLeague != oldLeague) {
+                                        showLeagueChangeDialog(oldLeague, newLeague);
+                                    }
+                                }
+                            });
+                        })
+                        .addOnFailureListener(e -> {
+                            rewardsCard.setVisibility(View.VISIBLE);
+                            starsChangeText.setText("Greška pri obradi nagrada");
+                            tokenBonusText.setText("");
                         });
-                    })
-                    .addOnFailureListener(e -> {
-                        rewardsCard.setVisibility(View.VISIBLE);
-                        starsChangeText.setText("Greška pri obradi nagrada");
-                        tokenBonusText.setText("");
-                    });
+            });
         }
 
         backButton.setOnClickListener(v -> {
@@ -107,5 +120,28 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
             startActivity(backIntent);
             finish();
         });
+    }
+
+    private void showLeagueChangeDialog(long oldLeague, long newLeague) {
+        String oldName = LeagueHelper.getLeagueNameByIndex((int) oldLeague);
+        String newName = LeagueHelper.getLeagueNameByIndex((int) newLeague);
+        int iconRes = LeagueHelper.getLeagueIconByIndex((int) newLeague);
+
+        boolean promoted = newLeague > oldLeague;
+        String title = promoted ? "\u2605 Napredovanje!" : "\u25BC Pad lige";
+        String message;
+        if (promoted) {
+            message = "\u010Cestitamo! Napredovali ste iz lige \"" + oldName +
+                    "\" u ligu \"" + newName + "\"!";
+        } else {
+            message = "Na\u017Ealost, pali ste iz lige \"" + oldName +
+                    "\" u ligu \"" + newName + "\".";
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show();
     }
 }

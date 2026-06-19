@@ -53,17 +53,32 @@
                     android:id="@+id/friendStars"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0 zvezda"
-                    android:textColor="#B3FFFFFF"
-                    android:textSize="13sp" />
+                    android:text="0"
+                    android:textColor="#FFD700"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_star"
+                    android:contentDescription="Zvezde"
+                    android:layout_marginEnd="12dp" />
+
+                <ImageView
+                    android:id="@+id/friendLeagueIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ant"
+                    android:contentDescription="Liga"
+                    android:layout_marginEnd="4dp" />
 
                 <TextView
                     android:id="@+id/friendLeague"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="Liga 0"
-                    android:textColor="#FFD700"
+                    android:text="Mrav"
+                    android:textColor="#FFFFFF"
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
