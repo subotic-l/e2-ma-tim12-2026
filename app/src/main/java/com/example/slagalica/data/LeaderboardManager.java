@@ -97,19 +97,20 @@ public class LeaderboardManager {
         String getUserName();
         String getAvatarUrl();
         int getGamesPlayed();
+        int getLeague();
     }
 
-    public Task<Void> updateScore(String uid, String userName, String avatarUrl, int starsGained) {
+    public Task<Void> updateScore(String uid, String userName, String avatarUrl, int starsGained, int league) {
 
         List<Task<Void>> tasks = new ArrayList<>();
         for (Period period : Period.values()) {
-            tasks.add(updateScoreForCycle(getCycleId(period), uid, userName, avatarUrl, starsGained));
+            tasks.add(updateScoreForCycle(getCycleId(period), uid, userName, avatarUrl, starsGained, league));
         }
         return Tasks.whenAll(tasks);
     }
 
     private Task<Void> updateScoreForCycle(String cycleId, String uid,
-                                            String userName, String avatarUrl, int starsGained) {
+                                            String userName, String avatarUrl, int starsGained, int league) {
         DocumentReference scoreRef = db.collection(LEADERBOARDS_COLLECTION)
                 .document(cycleId)
                 .collection(SCORES_SUBCOLLECTION)
@@ -120,6 +121,7 @@ public class LeaderboardManager {
             Map<String, Object> updates = new HashMap<>();
             updates.put("userName", userName);
             updates.put("avatarUrl", avatarUrl != null ? avatarUrl : "");
+            updates.put("league", league);
             updates.put("updatedAt", FieldValue.serverTimestamp());
 
             if (snap.exists()) {
@@ -154,6 +156,7 @@ public class LeaderboardManager {
                             String name = (String) d.get("userName");
                             String avatar = (String) d.get("avatarUrl");
                             long gp = d.containsKey("gamesPlayed") ? (long) d.get("gamesPlayed") : 0;
+                            long league = d.containsKey("league") ? (long) d.get("league") : 0;
                             String uid = doc.getId();
                             result.add(new LeaderboardEntry() {
                                 @Override public String getUserId() { return uid; }
@@ -161,6 +164,7 @@ public class LeaderboardManager {
                                 @Override public String getUserName() { return name; }
                                 @Override public String getAvatarUrl() { return avatar; }
                                 @Override public int getGamesPlayed() { return (int) gp; }
+                                @Override public int getLeague() { return (int) league; }
                             });
                         }
                     }
@@ -183,6 +187,7 @@ public class LeaderboardManager {
                         String name = d != null ? (String) d.get("userName") : null;
                         String avatar = d != null ? (String) d.get("avatarUrl") : null;
                         long gp = d != null && d.containsKey("gamesPlayed") ? (long) d.get("gamesPlayed") : 0;
+                        long league = d != null && d.containsKey("league") ? (long) d.get("league") : 0;
                         String uid2 = doc.getId();
                         return (LeaderboardEntry) new LeaderboardEntry() {
                             @Override public String getUserId() { return uid2; }
@@ -190,6 +195,7 @@ public class LeaderboardManager {
                             @Override public String getUserName() { return name; }
                             @Override public String getAvatarUrl() { return avatar; }
                             @Override public int getGamesPlayed() { return (int) gp; }
+                            @Override public int getLeague() { return (int) league; }
                         };
                     }
                     return null;

@@ -111,12 +111,16 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
                                         ? doc.getString("username") : null;
                                 String avatarUrl = doc != null && doc.exists()
                                         ? doc.getString("avatarUrl") : null;
+                                long league = doc != null && doc.exists()
+                                        ? (doc.getLong("league") != null ? doc.getLong("league") : 0)
+                                        : 0;
                                 if (currentUser != null) {
                                     new LeaderboardManager().updateScore(
                                             currentUser.getUid(),
                                             userName != null ? userName : "Nepoznat",
                                             avatarUrl,
-                                            starsGained
+                                            starsGained,
+                                            (int) league
                                     );
                                 }
                             });

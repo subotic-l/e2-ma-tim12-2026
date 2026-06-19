@@ -72,6 +72,7 @@ public class RangListaFragment extends Fragment {
 
         updateTabStyles();
         loadLeaderboard();
+        //showRewardDialog(1, 10, LeaderboardManager.getCycleId(LeaderboardManager.Period.WEEKLY));
         startAutoRefresh();
     }
 
@@ -196,11 +197,9 @@ public class RangListaFragment extends Fragment {
     private void distributeAndNotify(final String oldCycleId,
                                      final android.content.SharedPreferences prefs) {
         leaderboardManager.tryDistributeRewards(oldCycleId)
-                .addOnSuccessListener(distributed -> {
-                    if (distributed != null && distributed) {
-                        checkUserWonReward(oldCycleId);
-                    }
-                });
+                .addOnSuccessListener(distributed ->
+                    checkUserWonReward(oldCycleId)
+                );
     }
 
     private void checkUserWonReward(String cycleId) {
@@ -235,32 +234,61 @@ public class RangListaFragment extends Fragment {
                 });
     }
 
+    private void playRewardSound() {
+        try {
+            android.net.Uri uri = android.media.RingtoneManager.getDefaultUri(
+                    android.media.RingtoneManager.TYPE_NOTIFICATION);
+            android.media.Ringtone r = android.media.RingtoneManager.getRingtone(requireActivity(), uri);
+            if (r != null) r.play();
+        } catch (Exception ignored) {}
+    }
+
     private void showRewardDialog(int rank, int tokenReward, String cycleId) {
-        if (!isAdded()) return;
+        if (!isAdded() || getActivity() == null) return;
 
         String periodLabel = cycleId.startsWith("weekly") ? "nedeljnoj" : "mesečnoj";
         String message = "Osvojili ste #" + rank + ". mesto na " + periodLabel + " rang listi!\n"
                 + "Nagrada: " + tokenReward + " tokena";
 
-        String title = "Čestitamo!";
+        // Build custom dialog with animation
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_reward, null);
 
-        if (getActivity() != null) {
-            android.media.MediaPlayer mp = android.media.MediaPlayer.create(getActivity(),
-                    android.media.MediaPlayer.MEDIA_ERROR_UNKNOWN);
-            if (mp != null) {
-                try {
-                    mp.start();
-                } catch (Exception ignored) {
-                }
-            }
-        }
+        TextView titleView = dialogView.findViewById(R.id.rewardTitle);
+        TextView msgView = dialogView.findViewById(R.id.rewardMessage);
+        ImageView starView = dialogView.findViewById(R.id.rewardStar);
+        com.google.android.material.button.MaterialButton okBtn = dialogView.findViewById(R.id.rewardOkButton);
 
-        new androidx.appcompat.app.AlertDialog.Builder(requireActivity())
-                .setTitle(title)
-                .setMessage(message)
-                .setPositiveButton("Super!", null)
-                .setIcon(android.R.drawable.star_big_on)
+        msgView.setText(message);
+
+        // Pulsing animation on star
+        android.animation.ObjectAnimator scaleX = android.animation.ObjectAnimator.ofFloat(
+                starView, "scaleX", 1f, 1.4f, 1f);
+        android.animation.ObjectAnimator scaleY = android.animation.ObjectAnimator.ofFloat(
+                starView, "scaleY", 1f, 1.4f, 1f);
+        scaleX.setDuration(800);
+        scaleY.setDuration(800);
+        scaleX.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scaleY.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scaleX.start();
+        scaleY.start();
+
+        // Play notification sound
+        playRewardSound();
+
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(requireActivity())
+                .setView(dialogView)
                 .show();
+
+        okBtn.setOnClickListener(v -> {
+            scaleX.cancel();
+            scaleY.cancel();
+            dialog.dismiss();
+        });
+
+        dialog.setOnDismissListener(d -> {
+            scaleX.cancel();
+            scaleY.cancel();
+        });
     }
 
     private static class LeaderboardAdapter
@@ -292,6 +320,7 @@ public class RangListaFragment extends Fragment {
             h.rankText.setText(rank + ".");
             h.playerName.setText(e.getUserName() != null ? e.getUserName() : "Nepoznat");
             h.starCount.setText(String.valueOf(e.getStars()));
+            h.leagueIcon.setImageResource(LeagueHelper.getLeagueIconByIndex(e.getLeague()));
             if (e.getAvatarUrl() != null && !e.getAvatarUrl().isEmpty()) {
                 NetworkMatchActivity.loadAvatarStatic(h.avatar, e.getAvatarUrl());
             } else {
@@ -313,7 +342,7 @@ public class RangListaFragment extends Fragment {
 
         static class ViewHolder extends RecyclerView.ViewHolder {
             TextView rankText, playerName, starCount;
-            ImageView avatar;
+            ImageView avatar, leagueIcon;
 
             ViewHolder(View v) {
                 super(v);
@@ -321,6 +350,7 @@ public class RangListaFragment extends Fragment {
                 playerName = v.findViewById(R.id.playerName);
                 starCount = v.findViewById(R.id.starCount);
                 avatar = v.findViewById(R.id.playerAvatar);
+                leagueIcon = v.findViewById(R.id.leagueIcon);
             }
         }
     }

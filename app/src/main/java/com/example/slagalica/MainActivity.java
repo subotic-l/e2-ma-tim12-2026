@@ -117,9 +117,9 @@ public class MainActivity extends AppCompatActivity {
                             long tokenReward = w.containsKey("tokenReward") ? (long) w.get("tokenReward") : 0;
 
                             android.content.SharedPreferences prefs = getSharedPreferences("leaderboard_prefs", MODE_PRIVATE);
-                            String claimed = prefs.getString("claimed_reward_" + cycleId, "");
-                            if (!claimed.equals(uid)) {
-                                prefs.edit().putString("claimed_reward_" + cycleId, uid).apply();
+                            String notified = prefs.getString("notified_reward_" + cycleId, "");
+                            if (!notified.equals(uid)) {
+                                prefs.edit().putString("notified_reward_" + cycleId, uid).apply();
                                 String periodLabel = cycleId.startsWith("weekly") ? "nedeljnoj" : "mesečnoj";
                                 NotificationHelper.show(this, SlagalicaApp.CHANNEL_REWARDS,
                                         "Nagrada za rang listu!",
@@ -127,10 +127,64 @@ public class MainActivity extends AppCompatActivity {
                                                 + " rang listi! Nagrada: " + tokenReward + " tokena.",
                                         uid);
                             }
+                            // Show reward dialog (once, independent of notification)
+                            String claimed = prefs.getString("claimed_reward_" + cycleId, "");
+                            if (!claimed.equals(uid)) {
+                                prefs.edit().putString("claimed_reward_" + cycleId, uid).apply();
+                                showRewardDialog((int) rank, (int) tokenReward, cycleId);
+                            }
                             break;
                         }
                     }
                 });
+    }
+
+    private void showRewardDialog(int rank, int tokenReward, String cycleId) {
+        String periodLabel = cycleId.startsWith("weekly") ? "nedeljnoj" : "mesečnoj";
+        String message = "Osvojili ste #" + rank + ". mesto na " + periodLabel + " rang listi!\n"
+                + "Nagrada: " + tokenReward + " tokena";
+
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_reward, null);
+
+        android.widget.TextView msgView = dialogView.findViewById(R.id.rewardMessage);
+        android.widget.ImageView starView = dialogView.findViewById(R.id.rewardStar);
+        com.google.android.material.button.MaterialButton okBtn = dialogView.findViewById(R.id.rewardOkButton);
+
+        msgView.setText(message);
+
+        android.animation.ObjectAnimator scaleX = android.animation.ObjectAnimator.ofFloat(
+                starView, "scaleX", 1f, 1.4f, 1f);
+        android.animation.ObjectAnimator scaleY = android.animation.ObjectAnimator.ofFloat(
+                starView, "scaleY", 1f, 1.4f, 1f);
+        scaleX.setDuration(800);
+        scaleY.setDuration(800);
+        scaleX.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scaleY.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scaleX.start();
+        scaleY.start();
+
+        // Play sound
+        try {
+            android.net.Uri uri = android.media.RingtoneManager.getDefaultUri(
+                    android.media.RingtoneManager.TYPE_NOTIFICATION);
+            android.media.Ringtone r = android.media.RingtoneManager.getRingtone(this, uri);
+            if (r != null) r.play();
+        } catch (Exception ignored) {}
+
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .show();
+
+        okBtn.setOnClickListener(v -> {
+            scaleX.cancel();
+            scaleY.cancel();
+            dialog.dismiss();
+        });
+
+        dialog.setOnDismissListener(d -> {
+            scaleX.cancel();
+            scaleY.cancel();
+        });
     }
 
     @Override
