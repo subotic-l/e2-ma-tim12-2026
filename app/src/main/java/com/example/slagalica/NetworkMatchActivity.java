@@ -37,12 +37,12 @@ import java.util.Map;
 public class NetworkMatchActivity extends AppCompatActivity {
 
     private final List<Class<?>> gameOrder = Arrays.asList(
-            NetworkWhoKnowsKnows.class/*,
+            NetworkWhoKnowsKnows.class,
             NetworkSpojniceGame.class,
             NetworkNumbersGame.class,
             NetworkStepByStep.class,
             NetworkAsocijacijeGame.class,
-            NetworkSkockoGame.class*/
+            NetworkSkockoGame.class
     );
 
     private GameSessionManager sessionManager;
