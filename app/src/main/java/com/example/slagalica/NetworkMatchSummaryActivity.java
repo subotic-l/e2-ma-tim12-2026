@@ -67,6 +67,7 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
 
             int starsDelta = UserService.calculateStarsDelta(myScore, iWon);
 
+            userService.updateLastSeen();
             userService.processMatchRewards(myScore, iWon)
                     .addOnSuccessListener(aVoid -> {
                         // Read updated profile to show current balance

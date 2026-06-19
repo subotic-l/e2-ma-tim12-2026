@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
         navHelper = new NavigationHelper(this, R.id.navigation_home)
                 .addFragmentTab(R.id.navigation_home, HomeFragment.class)
                 .addFragmentTab(R.id.navigation_profile, ProfileFragment.class)
-                .addSoonTab(R.id.navigation_stats)
+                .addFragmentTab(R.id.navigation_stats, RegionsFragment.class)
                 .addSoonTab(R.id.navigation_friends)
                 .addSoonTab(R.id.navigation_rankings);
 
@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
             navHelper.onResume();
         }
         userService.grantDailyTokensIfNeeded();
+        userService.updateLastSeen();
         TopBarHelper.loadAndUpdateTopBar(this);
     }
 }

@@ -69,6 +69,7 @@
         <activity android:name=".AsocijacijeGameActivity" />
 
         <activity android:name=".NotificationsActivity" />
+        <activity android:name=".RegionDetailActivity" android:exported="false" />
         <activity android:name=".TournamentLobbyActivity" android:exported="false" />
         <activity android:name=".MatchLobbyActivity" android:exported="false" />
         <activity android:name=".NetworkMatchActivity" android:exported="false" />

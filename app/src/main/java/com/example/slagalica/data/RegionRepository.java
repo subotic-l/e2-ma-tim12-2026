@@ -79,4 +79,16 @@ public class RegionRepository {
     public static Map<String, Region> getMap() {
         return Collections.unmodifiableMap(REGIONS);
     }
+
+    public static String getNameToCode(String name) {
+        for (Region r : REGIONS.values()) {
+            if (r.getName().equals(name)) return r.getCode();
+        }
+        return null;
+    }
+
+    public static String getCodeToName(String code) {
+        Region r = REGIONS.get(code);
+        return r != null ? r.getName() : null;
+    }
 }

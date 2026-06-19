@@ -108,6 +108,15 @@ public class UserService {
         return repository.applyMatchRewards(user.getUid(), delta);
     }
 
+    /** Updates the lastSeen timestamp for the authenticated user. */
+    public Task<Void> updateLastSeen() {
+        FirebaseUser user = repository.getCurrentUser();
+        if (user == null) {
+            return Tasks.forException(new IllegalStateException("No authenticated user"));
+        }
+        return repository.updateLastSeen(user.getUid());
+    }
+
     /** Returns true if the authenticated user has at least 1 token. */
     public Task<Boolean> hasEnoughTokens() {
         FirebaseUser user = repository.getCurrentUser();
