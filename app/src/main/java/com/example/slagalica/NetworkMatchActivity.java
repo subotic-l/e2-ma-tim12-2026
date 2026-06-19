@@ -2,6 +2,7 @@ package com.example.slagalica;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -22,6 +23,7 @@ import com.example.slagalica.network.NetworkStepByStep;
 import com.example.slagalica.network.NetworkWhoKnowsKnows;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -175,6 +177,56 @@ public class NetworkMatchActivity extends AppCompatActivity {
                 .into(iv);
     }
 
+    private void processTournamentRewards(long p1Score, long p2Score, String p1Id, String p2Id) {
+        try {
+            com.google.firebase.firestore.FirebaseFirestore fb = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+            boolean isFinal = "final".equals(tournamentRound);
+            long myScore = myPlayerNumber == 1 ? p1Score : p2Score;
+            boolean iWon = myPlayerNumber == 1 ? p1Score > p2Score : p2Score > p1Score;
+            int starsDelta = com.example.slagalica.service.UserService.calculateStarsDelta((int) myScore, iWon);
+
+            DocumentReference userRef = fb.collection("users").document(myPlayerId);
+
+            if (isFinal) {
+                if (iWon) {
+                    userRef.update(
+                            "stars", FieldValue.increment(starsDelta + 10),
+                            "totalStarsEarned", FieldValue.increment(Math.max(0, starsDelta) + 10),
+                            "monthlyStars", FieldValue.increment(Math.max(0, starsDelta) + 10),
+                            "tokens", FieldValue.increment(3)
+                    );
+                } else {
+                    userRef.update(
+                            "stars", FieldValue.increment(starsDelta),
+                            "totalStarsEarned", FieldValue.increment(Math.max(0, starsDelta)),
+                            "monthlyStars", FieldValue.increment(starsDelta)
+                    );
+                }
+            } else {
+                if (iWon) {
+                    userRef.update(
+                            "stars", FieldValue.increment(starsDelta),
+                            "totalStarsEarned", FieldValue.increment(Math.max(0, starsDelta)),
+                            "monthlyStars", FieldValue.increment(starsDelta),
+                            "tokens", FieldValue.increment(2)
+                    );
+                }
+                // Semi loser: nothing
+            }
+
+            // Update league
+            userRef.get().addOnSuccessListener(doc -> {
+                Long ns = doc.getLong("stars");
+                if (ns != null) {
+                    int nl = com.example.slagalica.LeagueHelper.getLeagueIndex(ns);
+                    userRef.update("league", nl);
+                }
+            });
+        } catch (Exception e) {
+            Log.e("TournamentRewards", "Error processing rewards", e);
+        }
+    }
+
     private void showFinalSummary(Map<String, Object> state) {
         if (isFinishing()) return;
         sessionManager.cleanup();
@@ -255,6 +307,9 @@ public class NetworkMatchActivity extends AppCompatActivity {
                     tm.setSemiWinner(tournamentRound, winnerId, winnerName, winnerAvatar);
                 }
                 tm.cleanup();
+
+                // Tournament reward processing
+                processTournamentRewards(p1Score, p2Score, p1Id, p2Id);
             }
             finish();
             return;

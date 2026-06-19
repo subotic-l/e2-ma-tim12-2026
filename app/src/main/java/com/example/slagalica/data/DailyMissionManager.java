@@ -119,8 +119,7 @@ public class DailyMissionManager {
             }
 
             // Grant stars for mission
-            String uid2 = ref.getParent().getParent().getId();
-            DocumentReference userRef = db.collection("users").document(uid2);
+            DocumentReference userRef = db.collection("users").document(uid);
             transaction.update(userRef, "stars", com.google.firebase.firestore.FieldValue.increment(STARS_PER_MISSION));
             transaction.update(userRef, "totalStarsEarned", com.google.firebase.firestore.FieldValue.increment(STARS_PER_MISSION));
             transaction.update(userRef, "monthlyStars", com.google.firebase.firestore.FieldValue.increment(STARS_PER_MISSION));

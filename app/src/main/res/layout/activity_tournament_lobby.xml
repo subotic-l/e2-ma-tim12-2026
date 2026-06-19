@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#529dcc"
+    android:clipChildren="false"
     android:orientation="vertical">
 
     <include layout="@layout/top_bar" />
@@ -32,16 +33,20 @@
 
     <!-- 4 igrača u grid-u 2x2 -->
     <LinearLayout
+        android:id="@+id/slotsContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:clipChildren="false"
         android:orientation="vertical"
         android:gravity="center"
         android:paddingHorizontal="16dp">
 
         <LinearLayout
+            android:id="@+id/row1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
             android:orientation="horizontal"
             android:gravity="center">
 
@@ -50,6 +55,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clipChildren="false"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:padding="8dp">
@@ -84,6 +90,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clipChildren="false"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:padding="8dp">
@@ -114,9 +121,21 @@
             </LinearLayout>
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/vsText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VS"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <LinearLayout
+            android:id="@+id/row2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
             android:orientation="horizontal"
             android:gravity="center"
             android:layout_marginTop="16dp">
@@ -126,6 +145,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clipChildren="false"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:padding="8dp">
@@ -160,6 +180,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:clipChildren="false"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:padding="8dp">
@@ -189,6 +210,59 @@
                     android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
+    </LinearLayout>
+
+    <!-- Finale summary layout (shown after tournament ends, outside slotsContainer) -->
+    <LinearLayout
+        android:id="@+id/finaleLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/finaleWinnerAvatar"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/ic_profile" />
+
+        <TextView
+            android:id="@+id/finaleWinnerName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/finaleVsText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VS"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp" />
+
+        <ImageView
+            android:id="@+id/finaleLoserAvatar"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/ic_profile" />
+
+        <TextView
+            android:id="@+id/finaleLoserName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#B0BEC5"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp" />
     </LinearLayout>
 
     <ProgressBar
