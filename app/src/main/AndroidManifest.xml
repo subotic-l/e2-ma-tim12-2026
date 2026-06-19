@@ -74,6 +74,7 @@
         <activity android:name=".MatchLobbyActivity" android:exported="false" />
         <activity android:name=".NetworkMatchActivity" android:exported="false" />
         <activity android:name=".NetworkMatchSummaryActivity" android:exported="false" />
+        <activity android:name=".FriendLobbyActivity" android:exported="false" />
         <activity android:name=".network.NetworkWhoKnowsKnows" android:exported="false" />
         <activity android:name=".network.NetworkSpojniceGame" android:exported="false" />
         <activity android:name=".network.NetworkMatchingGame" android:exported="false" />

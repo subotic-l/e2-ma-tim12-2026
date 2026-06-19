@@ -54,6 +54,7 @@ public class NetworkMatchActivity extends AppCompatActivity {
     private boolean isTournamentSpectator;
     private String tournamentId;
     private String tournamentRound;
+    private boolean isFriendMatch;
 
     private TextView networkStatusText;
     private ProgressBar waitingProgressBar;
@@ -82,6 +83,7 @@ public class NetworkMatchActivity extends AppCompatActivity {
         isTournamentSpectator = intent.getBooleanExtra("isTournamentSpectator", false);
         tournamentId = intent.getStringExtra("tournamentId");
         tournamentRound = intent.getStringExtra("tournamentRound");
+        isFriendMatch = intent.getBooleanExtra("isFriendMatch", false);
 
         networkStatusText = findViewById(R.id.networkStatusText);
         waitingProgressBar = findViewById(R.id.waitingProgressBar);
@@ -192,7 +194,7 @@ public class NetworkMatchActivity extends AppCompatActivity {
 
         String p1Id = (String) state.get("player1Id");
         String p2Id = (String) state.get("player2Id");
-        if (p1Id != null && p2Id != null && myPlayerNumber == 1) {
+        if (p1Id != null && p2Id != null && myPlayerNumber == 1 && !isFriendMatch) {
             Map<String, Object> matchHistory1 = new HashMap<>();
             matchHistory1.put("matchId", matchId);
             matchHistory1.put("player1Id", p1Id);
@@ -263,6 +265,7 @@ public class NetworkMatchActivity extends AppCompatActivity {
         intent.putExtra("matchId", matchId);
         intent.putExtra("player1Id", p1Id);
         intent.putExtra("player2Id", p2Id);
+        intent.putExtra("isFriendMatch", isFriendMatch);
         startActivity(intent);
         finish();
     }

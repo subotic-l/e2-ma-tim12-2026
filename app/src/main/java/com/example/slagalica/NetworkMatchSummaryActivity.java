@@ -58,9 +58,16 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
         player1SummaryText.setText(player1Name + ": " + player1Score + " poena");
         player2SummaryText.setText(player2Name + ": " + player2Score + " poena");
 
-        // Process rewards for authenticated user
+        boolean isFriendMatch = intent.getBooleanExtra("isFriendMatch", false);
+
+        if (isFriendMatch) {
+            rewardsCard.setVisibility(View.VISIBLE);
+            starsChangeText.setText("Prijateljska partija - bez promene zvezdi");
+            tokenBonusText.setText("");
+        }
+
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
+        if (currentUser != null && !isFriendMatch) {
             int myScore = myPlayerNumber == 1 ? player1Score : player2Score;
             int opponentScore = myPlayerNumber == 1 ? player2Score : player1Score;
             boolean iWon = myScore > opponentScore;
