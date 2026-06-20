@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.slagalica.data.RegionRepository;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -61,6 +62,10 @@ public class RegionsFragment extends Fragment {
     private boolean mapInitialized = false;
     private final Map<String, List<List<GeoPoint>>> regionPolygonsCache = new HashMap<>();
 
+    private FloatingActionButton chatFab;
+    private View chatContainer;
+    private ChatFragment chatFragment;
+
     private static final Map<String, Integer> REGION_BORDER_RESOURCES = new HashMap<>();
 
     static {
@@ -108,6 +113,8 @@ public class RegionsFragment extends Fragment {
         mapTab = view.findViewById(R.id.mapTab);
         listTab = view.findViewById(R.id.listTab);
         textDateRange = view.findViewById(R.id.textRegionDateRange);
+        chatFab = view.findViewById(R.id.chatFab);
+        chatContainer = view.findViewById(R.id.chatContainer);
 
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -128,6 +135,7 @@ public class RegionsFragment extends Fragment {
         });
 
         listTab.setOnClickListener(v -> {
+            closeChat();
             mapContainer.setVisibility(View.GONE);
             listContainer.setVisibility(View.VISIBLE);
             listTab.setBackgroundResource(R.drawable.rounded_white_small);
@@ -136,7 +144,70 @@ public class RegionsFragment extends Fragment {
             mapTab.setTextColor(0xFFFFFFFF);
         });
 
+        updateChatFabVisibility();
+
+        chatFab.setOnClickListener(v -> openChat());
+
         loadRegionData();
+    }
+
+    private void updateChatFabVisibility() {
+        if (currentUser == null) {
+            chatFab.setVisibility(View.GONE);
+        } else {
+            chatFab.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void openChat() {
+        if (currentUser == null) {
+            android.widget.Toast.makeText(requireContext(),
+                    "Morate biti prijavljeni za čet", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (currentUserRegionName == null) {
+            android.widget.Toast.makeText(requireContext(),
+                    "Region nije učitan. Pokušajte ponovo.",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String regionCode = RegionRepository.getNameToCode(currentUserRegionName);
+        if (regionCode == null) {
+            android.widget.Toast.makeText(requireContext(),
+                    "Region nije prepoznat.", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (chatFragment != null) return;
+
+        chatFab.setVisibility(View.GONE);
+        chatContainer.setVisibility(View.VISIBLE);
+
+        chatFragment = ChatFragment.newInstance(regionCode);
+
+        getChildFragmentManager().beginTransaction()
+                .setCustomAnimations(R.anim.slide_up, R.anim.slide_down)
+                .replace(R.id.chatContainer, chatFragment)
+                .commit();
+    }
+
+    public void closeChat() {
+        ChatFragment fragment = chatFragment;
+        if (fragment == null) return;
+
+        chatFragment = null;
+
+        getChildFragmentManager().beginTransaction()
+                .setCustomAnimations(R.anim.slide_up, R.anim.slide_down)
+                .remove(fragment)
+                .commit();
+
+        chatContainer.postDelayed(() -> {
+            chatContainer.setVisibility(View.GONE);
+            chatFab.setVisibility(View.VISIBLE);
+        }, 250);
     }
 
     private void initRegionData() {
@@ -600,6 +671,10 @@ public class RegionsFragment extends Fragment {
         super.onDestroyView();
         if (mapView != null) {
             mapView.onDetach();
+        }
+        if (chatFragment != null) {
+            getChildFragmentManager().beginTransaction().remove(chatFragment).commit();
+            chatFragment = null;
         }
     }
 }
