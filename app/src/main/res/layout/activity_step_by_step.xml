@@ -14,7 +14,7 @@
 
         <include layout="@layout/top_bar" />
 
-        <include layout="@layout/player_score_row" />
+        <include layout="@layout/player_score_row_local" />
 
         <!-- Points + Timer row -->
         <LinearLayout

@@ -69,7 +69,7 @@ public class NumbersGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindPlayerHeader(this, getIntent());
+        MatchUiHelper.bindHeader(this, "Moj broj", 0);
 
         targetTextView = findViewById(R.id.targetTextView);
         expressionTextView = findViewById(R.id.expressionTextView);
@@ -338,6 +338,7 @@ public class NumbersGameActivity extends AppCompatActivity {
                     Toast.makeText(this, "Tačno! +10 bodova", Toast.LENGTH_SHORT).show();
                     cancelGameTimer();
                     score = 10;
+                    MatchUiHelper.updateScore(this, score);
                     finishWithScore();
                 } else {
                     Toast.makeText(this, "Netačno (" + formatResult(result) + ")", Toast.LENGTH_SHORT).show();

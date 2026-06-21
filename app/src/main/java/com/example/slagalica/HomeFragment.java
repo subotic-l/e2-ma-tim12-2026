@@ -33,8 +33,6 @@ public class HomeFragment extends Fragment {
         Button startMatchButton = view.findViewById(R.id.buttonStartMatch);
         startMatchButton.setOnClickListener(v -> {
             Intent intent = new Intent(requireActivity(), MatchPlayActivity.class);
-            intent.putExtra(MatchConstants.EXTRA_PLAYER_ONE_NAME, MatchConstants.DEFAULT_PLAYER_ONE_NAME);
-            intent.putExtra(MatchConstants.EXTRA_PLAYER_TWO_NAME, MatchConstants.DEFAULT_PLAYER_TWO_NAME);
             startActivity(intent);
         });
 

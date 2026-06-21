@@ -267,5 +267,17 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonChallenge"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Izazov"
+            android:textColor="@android:color/white"
+            app:backgroundTint="#FF9800"
+            app:icon="@android:drawable/ic_menu_myplaces"
+            app:iconGravity="textStart"
+            app:cornerRadius="20dp" />
+
     </LinearLayout>
 </ScrollView>

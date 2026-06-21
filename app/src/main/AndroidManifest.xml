@@ -84,6 +84,8 @@
         <activity android:name=".network.NetworkSkockoGame" android:exported="false" />
         <activity android:name=".network.NetworkStepByStep" android:exported="false" />
         <activity android:name=".network.NetworkNumbersGame" android:exported="false" />
+        <activity android:name=".ChallengeLobbyActivity" android:exported="false" />
+        <activity android:name=".ChallengePlayActivity" android:exported="false" />
     </application>
 
 </manifest>

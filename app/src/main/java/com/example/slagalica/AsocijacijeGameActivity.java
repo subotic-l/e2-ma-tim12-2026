@@ -41,17 +41,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
     private boolean[] solvedGroups = new boolean[4];
     private boolean[][] openedFields = new boolean[4][4];
     private int[] openedCounts = new int[4];
-    private int playerOneScore = 0;
-    private int playerTwoScore = 0;
-    private int basePlayerOneScore = 0;
-    private int basePlayerTwoScore = 0;
-    private int activePlayer = MatchConstants.PLAYER_ONE;
-    private int nextOpenPlayer = MatchConstants.PLAYER_ONE;
-    private int lastOpenedPlayer = 0;
-    private TextView playerOneScoreView;
-    private TextView playerTwoScoreView;
-    private android.view.View playerOneContainer;
-    private android.view.View playerTwoContainer;
+    private int score = 0;
     private boolean resultSent = false;
 
     @Override
@@ -64,20 +54,11 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindPlayerHeader(this, getIntent());
-        Intent intent = getIntent();
-        if (intent != null) {
-            basePlayerOneScore = intent.getIntExtra(MatchConstants.EXTRA_PLAYER_ONE_SCORE, 0);
-            basePlayerTwoScore = intent.getIntExtra(MatchConstants.EXTRA_PLAYER_TWO_SCORE, 0);
-            activePlayer = intent.getIntExtra(MatchConstants.EXTRA_ACTIVE_PLAYER, MatchConstants.PLAYER_ONE);
-            nextOpenPlayer = activePlayer;
-        }
+        MatchUiHelper.bindHeader(this, "Asocijacije", 0);
 
         setupViews();
         setupClickListeners();
         setupWordButtons();
-        updateHeaderScores();
-        updateActivePlayerIndicator();
 
         timerText = findViewById(R.id.timerText);
         startTimer();
@@ -133,7 +114,6 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         solutionButtons[2] = findViewById(R.id.btnC);
         solutionButtons[3] = findViewById(R.id.btnD);
 
-        // Word buttons
         wordButtons[0][0] = findViewById(R.id.a1); wordButtons[0][1] = findViewById(R.id.a2);
         wordButtons[0][2] = findViewById(R.id.a3); wordButtons[0][3] = findViewById(R.id.a4);
 
@@ -147,10 +127,6 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         wordButtons[3][2] = findViewById(R.id.d3); wordButtons[3][3] = findViewById(R.id.d4);
 
         btnFinal = findViewById(R.id.btnFinal);
-        playerOneScoreView = findViewById(R.id.playerOneScore);
-        playerTwoScoreView = findViewById(R.id.playerTwoScore);
-        playerOneContainer = findViewById(R.id.playerOneContainer);
-        playerTwoContainer = findViewById(R.id.playerTwoContainer);
     }
 
     private void setupClickListeners() {
@@ -172,24 +148,23 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
         builder.setView(input);
 
-        int guessingPlayer = getGuessingPlayer();
         builder.setPositiveButton("Potvrdi", (dialog, which) -> {
             String guess = input.getText().toString().trim().toUpperCase();
             if (guess.equals(groupSolutions[groupIndex])) {
-                openGroup(groupIndex, guessingPlayer);
+                openGroup(groupIndex);
             } else {
                 Toast.makeText(this, "Nije tačno! Probaj ponovo.", Toast.LENGTH_SHORT).show();
-                switchToNextOpener();
             }
         });
         builder.setNegativeButton("Otkaži", null);
         builder.show();
     }
 
-    private void openGroup(int groupIndex, int guessingPlayer) {
+    private void openGroup(int groupIndex) {
         int unopened = 4 - openedCounts[groupIndex];
         int points = GROUP_POINTS + Math.max(0, unopened);
-        addPoints(guessingPlayer, points);
+        score += points;
+        MatchUiHelper.updateScore(this, score);
         solvedGroups[groupIndex] = true;
         for (int i = 0; i < 4; i++) {
             wordButtons[groupIndex][i].setText(groups[groupIndex][i]);
@@ -210,18 +185,17 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
         builder.setView(input);
 
-        int guessingPlayer = getGuessingPlayer();
         builder.setPositiveButton("Potvrdi", (dialog, which) -> {
             String guess = input.getText().toString().trim().toUpperCase();
             if (guess.equals(finalWord)) {
-                addPoints(guessingPlayer, FINAL_POINTS);
+                score += FINAL_POINTS;
+                MatchUiHelper.updateScore(this, score);
                 if (countDownTimer != null) {
                     countDownTimer.cancel();
                 }
                 openAll();
             } else {
                 Toast.makeText(this, "Nije tačno!", Toast.LENGTH_SHORT).show();
-                switchToNextOpener();
             }
         });
         builder.setNegativeButton("Otkaži", null);
@@ -287,7 +261,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         }
 
         for (int i = 0; i < 4; i++) {
-            if (!solvedGroups[i]) openGroup(i, getGuessingPlayer());
+            if (!solvedGroups[i]) openGroup(i);
         }
 
         btnFinal.setText(finalWord);
@@ -304,9 +278,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         }
         resultSent = true;
         Intent data = new Intent();
-        data.putExtra(MatchConstants.EXTRA_GAME_SCORE, playerOneScore + playerTwoScore);
-        data.putExtra(MatchConstants.EXTRA_GAME_SCORE_PLAYER_ONE, playerOneScore);
-        data.putExtra(MatchConstants.EXTRA_GAME_SCORE_PLAYER_TWO, playerTwoScore);
+        data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
         setResult(RESULT_OK, data);
         finish();
     }
@@ -315,9 +287,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
     public void finish() {
         if (!resultSent) {
             Intent data = new Intent();
-            data.putExtra(MatchConstants.EXTRA_GAME_SCORE, playerOneScore + playerTwoScore);
-            data.putExtra(MatchConstants.EXTRA_GAME_SCORE_PLAYER_ONE, playerOneScore);
-            data.putExtra(MatchConstants.EXTRA_GAME_SCORE_PLAYER_TWO, playerTwoScore);
+            data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
             setResult(RESULT_OK, data);
             resultSent = true;
         }
@@ -333,48 +303,5 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         wordButtons[group][word].setEnabled(false);
         openedFields[group][word] = true;
         openedCounts[group]++;
-        lastOpenedPlayer = activePlayer;
-        nextOpenPlayer = otherPlayer(nextOpenPlayer);
-        activePlayer = nextOpenPlayer;
-        updateActivePlayerIndicator();
-    }
-
-    private int getGuessingPlayer() {
-        return lastOpenedPlayer != 0 ? lastOpenedPlayer : activePlayer;
-    }
-
-    private void addPoints(int player, int points) {
-        if (player == MatchConstants.PLAYER_ONE) {
-            playerOneScore += points;
-        } else {
-            playerTwoScore += points;
-        }
-        updateHeaderScores();
-    }
-
-    private void switchToNextOpener() {
-        activePlayer = nextOpenPlayer;
-        lastOpenedPlayer = 0;
-        updateActivePlayerIndicator();
-    }
-
-    private int otherPlayer(int player) {
-        return player == MatchConstants.PLAYER_ONE ? MatchConstants.PLAYER_TWO : MatchConstants.PLAYER_ONE;
-    }
-
-    private void updateHeaderScores() {
-        if (playerOneScoreView != null) {
-            playerOneScoreView.setText(String.valueOf(basePlayerOneScore + playerOneScore));
-        }
-        if (playerTwoScoreView != null) {
-            playerTwoScoreView.setText(String.valueOf(basePlayerTwoScore + playerTwoScore));
-        }
-    }
-
-    private void updateActivePlayerIndicator() {
-        if (playerOneContainer != null && playerTwoContainer != null) {
-            playerOneContainer.setAlpha(activePlayer == MatchConstants.PLAYER_ONE ? 1f : 0.6f);
-            playerTwoContainer.setAlpha(activePlayer == MatchConstants.PLAYER_TWO ? 1f : 0.6f);
-        }
     }
 }
