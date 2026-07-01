@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
@@ -38,7 +39,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private void saveTokenLocally(String token) {
-        SharedPreferences prefs = getSharedPreferences(FCM_PREFS, MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(FCM_PREFS, Context.MODE_PRIVATE);
         prefs.edit().putString(KEY_FCM_TOKEN, token).apply();
     }
 
@@ -52,8 +53,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         }
     }
 
-    public static String getLocalToken(android.content.Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(FCM_PREFS, MODE_PRIVATE);
+    public static String getLocalToken(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(FCM_PREFS, Context.MODE_PRIVATE);
         return prefs.getString(KEY_FCM_TOKEN, null);
     }
 }

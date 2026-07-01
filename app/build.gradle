@@ -68,6 +68,7 @@ dependencies {
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.auth
     implementation libs.firebase.firestore
+    implementation libs.firebase.messaging
     implementation libs.glide
     implementation libs.osmdroid.android
     implementation ("com.cloudinary:cloudinary-android:3.0.2") {
