@@ -1,7 +1,9 @@
 package com.example.slagalica;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -10,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.google.android.material.button.MaterialButton;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,11 +30,8 @@ public class MatchPlayActivity extends AppCompatActivity {
     );
 
     private int currentGameIndex = 0;
-    private int currentPlayer = MatchConstants.PLAYER_ONE;
-    private int playerOneScore = 0;
-    private int playerTwoScore = 0;
-    private String playerOneName = MatchConstants.DEFAULT_PLAYER_ONE_NAME;
-    private String playerTwoName = MatchConstants.DEFAULT_PLAYER_TWO_NAME;
+    private int totalScore = 0;
+    private boolean finished = false;
 
     private ActivityResultLauncher<Intent> gameLauncher;
 
@@ -45,49 +46,28 @@ public class MatchPlayActivity extends AppCompatActivity {
             return insets;
         });
 
-        Intent intent = getIntent();
-        if (intent != null) {
-            String name1 = intent.getStringExtra(MatchConstants.EXTRA_PLAYER_ONE_NAME);
-            String name2 = intent.getStringExtra(MatchConstants.EXTRA_PLAYER_TWO_NAME);
-            if (name1 != null) {
-                playerOneName = name1;
-            }
-            if (name2 != null) {
-                playerTwoName = name2;
-            }
+        MaterialButton quitButton = findViewById(R.id.quitMatchButton);
+        if (quitButton != null) {
+            quitButton.setOnClickListener(v -> {
+                new AlertDialog.Builder(this)
+                        .setTitle("Napusti partiju")
+                        .setMessage("Da li ste sigurni da želite da napustite partiju? Gubite partiju i ne dobijate zvezde.")
+                        .setPositiveButton("Napusti", (dialog, which) -> forfeitMatch())
+                        .setNegativeButton("Nastavi", null)
+                        .show();
+            });
         }
 
         gameLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
+                    if (finished) return;
                     int score = 0;
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         score = result.getData().getIntExtra(MatchConstants.EXTRA_GAME_SCORE, 0);
                     }
-                    Class<?> currentGame = gameOrder.get(currentGameIndex);
-                    if (currentGame == WhoKnowsKnows.class) {
-                        playerOneScore += score;
-                        currentPlayer = MatchConstants.PLAYER_ONE;
-                        currentGameIndex++;
-                    } else if (currentGame == AsocijacijeGameActivity.class) {
-                        if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                            int playerOneGameScore = result.getData()
-                                    .getIntExtra(MatchConstants.EXTRA_GAME_SCORE_PLAYER_ONE, 0);
-                            int playerTwoGameScore = result.getData()
-                                    .getIntExtra(MatchConstants.EXTRA_GAME_SCORE_PLAYER_TWO, 0);
-                            playerOneScore += playerOneGameScore;
-                            playerTwoScore += playerTwoGameScore;
-                        }
-                        currentPlayer = MatchConstants.PLAYER_ONE;
-                        currentGameIndex++;
-                    } else if (currentPlayer == MatchConstants.PLAYER_ONE) {
-                        playerOneScore += score;
-                        currentPlayer = MatchConstants.PLAYER_TWO;
-                    } else {
-                        playerTwoScore += score;
-                        currentPlayer = MatchConstants.PLAYER_ONE;
-                        currentGameIndex++;
-                    }
+                    totalScore += score;
+                    currentGameIndex++;
                     startNextGame();
                 }
         );
@@ -95,27 +75,30 @@ public class MatchPlayActivity extends AppCompatActivity {
         startNextGame();
     }
 
+    private void forfeitMatch() {
+        finished = true;
+        Toast.makeText(this, "Napustili ste partiju!", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, MatchSummaryActivity.class);
+        intent.putExtra(MatchConstants.EXTRA_GAME_SCORE, totalScore);
+        intent.putExtra("forfeit", true);
+        startActivity(intent);
+        finish();
+    }
+
     private void startNextGame() {
-        if (currentGameIndex >= gameOrder.size()) {
+        if (finished || currentGameIndex >= gameOrder.size()) {
             showSummary();
             return;
         }
 
         Intent intent = new Intent(this, gameOrder.get(currentGameIndex));
-        intent.putExtra(MatchConstants.EXTRA_PLAYER_ONE_NAME, playerOneName);
-        intent.putExtra(MatchConstants.EXTRA_PLAYER_TWO_NAME, playerTwoName);
-        intent.putExtra(MatchConstants.EXTRA_PLAYER_ONE_SCORE, playerOneScore);
-        intent.putExtra(MatchConstants.EXTRA_PLAYER_TWO_SCORE, playerTwoScore);
-        intent.putExtra(MatchConstants.EXTRA_ACTIVE_PLAYER, currentPlayer);
         gameLauncher.launch(intent);
     }
 
     private void showSummary() {
+        if (finished) return;
         Intent intent = new Intent(this, MatchSummaryActivity.class);
-        intent.putExtra(MatchConstants.EXTRA_PLAYER_ONE_NAME, playerOneName);
-        intent.putExtra(MatchConstants.EXTRA_PLAYER_TWO_NAME, playerTwoName);
-        intent.putExtra(MatchConstants.EXTRA_PLAYER_ONE_SCORE, playerOneScore);
-        intent.putExtra(MatchConstants.EXTRA_PLAYER_TWO_SCORE, playerTwoScore);
+        intent.putExtra(MatchConstants.EXTRA_GAME_SCORE, totalScore);
         startActivity(intent);
         finish();
     }

@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools" >
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".SlagalicaApp"
@@ -22,7 +23,8 @@
             android:exported="false" />
         <activity
             android:name=".MainActivity"
-            android:exported="true" >
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize" >
         </activity>
         <activity
             android:name=".MatchPlayActivity"
@@ -68,10 +70,14 @@
 
         <activity android:name=".AsocijacijeGameActivity" />
 
+        <activity android:name=".DailyChallengesActivity" android:exported="false" />
         <activity android:name=".NotificationsActivity" />
+        <activity android:name=".RegionDetailActivity" android:exported="false" />
+        <activity android:name=".TournamentLobbyActivity" android:exported="false" />
         <activity android:name=".MatchLobbyActivity" android:exported="false" />
         <activity android:name=".NetworkMatchActivity" android:exported="false" />
         <activity android:name=".NetworkMatchSummaryActivity" android:exported="false" />
+        <activity android:name=".FriendLobbyActivity" android:exported="false" />
         <activity android:name=".network.NetworkWhoKnowsKnows" android:exported="false" />
         <activity android:name=".network.NetworkSpojniceGame" android:exported="false" />
         <activity android:name=".network.NetworkMatchingGame" android:exported="false" />
@@ -79,6 +85,8 @@
         <activity android:name=".network.NetworkSkockoGame" android:exported="false" />
         <activity android:name=".network.NetworkStepByStep" android:exported="false" />
         <activity android:name=".network.NetworkNumbersGame" android:exported="false" />
+        <activity android:name=".ChallengeLobbyActivity" android:exported="false" />
+        <activity android:name=".ChallengePlayActivity" android:exported="false" />
     </application>
 
 </manifest>

@@ -112,6 +112,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         prevP1   = i.getIntExtra("previousPlayer1Score", 0);
         prevP2   = i.getIntExtra("previousPlayer2Score", 0);
         totalGames = i.getIntExtra("totalGames", 6);
+        boolean spectator = i.getBooleanExtra("isSpectator", false);
 
         tvTimer  = findViewById(R.id.timerText);
         tvMyName = findViewById(R.id.playerOneName);
@@ -153,6 +154,14 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         sm = new GameSessionManager();
         sm.attachToMatch(i.getStringExtra("matchId"), me);
         sm.listenToMatch(createListener());
+
+        if (spectator) {
+            for (int g = 0; g < GROUPS; g++) {
+                for (int f = 0; f < FIELDS; f++) wordBtns[g][f].setEnabled(false);
+                colBtns[g].setEnabled(false);
+            }
+            btnFinal.setEnabled(false);
+        }
     }
 
     // ───────────────────────────── LISTENER ──────────────────────────────

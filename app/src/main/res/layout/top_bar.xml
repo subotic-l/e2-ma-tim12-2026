@@ -3,78 +3,94 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="12dp"
-    android:background="#66C4FF">
+    android:padding="10dp"
+    android:gravity="center_vertical"
+    android:background="#66C4FF"
+    android:elevation="4dp">
 
+    <!-- Token Pill -->
     <LinearLayout
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="34dp"
         android:layout_weight="1"
         android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="4dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginEnd="4dp"
-        android:background="@drawable/rounded_white">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="20"
-            android:textColor="#000000"
-            android:textStyle="bold"
-            android:layout_marginEnd="4dp" />
+        android:gravity="center_vertical"
+        android:background="@drawable/pill_bg"
+        android:layout_marginEnd="6dp"
+        android:paddingStart="4dp"
+        android:paddingEnd="10dp">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
             android:src="@drawable/ic_token"
             android:contentDescription="Tokeni" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="4dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginEnd="4dp"
-        android:background="@drawable/rounded_white">
 
         <TextView
+            android:id="@+id/topBarTokenCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="12"
-            android:textColor="#000000"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:layout_marginEnd="4dp" />
+            android:layout_marginStart="6dp" />
+    </LinearLayout>
+
+    <!-- Star Pill -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="34dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/pill_bg"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="12dp"
+        android:paddingStart="4dp"
+        android:paddingEnd="10dp">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
             android:src="@drawable/ic_star"
             android:contentDescription="Zvezde" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="4dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginEnd="4dp"
-        android:background="@drawable/rounded_white">
 
         <TextView
+            android:id="@+id/topBarStarCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Liga Placeholder"
-            android:textColor="#000000"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:gravity="center" />
+            android:layout_marginStart="6dp" />
+    </LinearLayout>
+
+    <!-- League Section (right side) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/topBarLeagueText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mrav"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:maxLines="1"
+            android:layout_marginEnd="8dp" />
+
+        <ImageView
+            android:id="@+id/topBarLeagueIcon"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:src="@drawable/ant"
+            android:contentDescription="Liga" />
     </LinearLayout>
 </LinearLayout>

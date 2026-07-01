@@ -21,6 +21,16 @@
             android:text="Partija je u toku..."
             android:textColor="@android:color/white"
             android:textSize="18sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/quitMatchButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="24dp"
+            android:text="Napusti partiju"
+            android:textColor="@android:color/white"
+            app:backgroundTint="#D32F2F" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

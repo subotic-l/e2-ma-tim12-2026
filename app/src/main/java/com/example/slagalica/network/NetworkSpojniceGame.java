@@ -121,6 +121,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         previousP1Score = i.getIntExtra("previousPlayer1Score", 0);
         previousP2Score = i.getIntExtra("previousPlayer2Score", 0);
         opp = me == 1 ? 2 : 1;
+        boolean spectator = i.getBooleanExtra("isSpectator", false);
 
         timerView = findViewById(R.id.timerTextView);
         instrView = findViewById(R.id.instructionsTextView);
@@ -175,6 +176,11 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         sm = new GameSessionManager();
         sm.attachToMatch(matchId, me);
         sm.listenToMatch(createListener());
+
+        if (spectator) {
+            for (Button b : leftBtns) b.setEnabled(false);
+            for (Button b : rightBtns) b.setEnabled(false);
+        }
     }
 
     private GameSessionManager.StateListener createListener() {

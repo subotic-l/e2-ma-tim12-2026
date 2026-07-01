@@ -47,9 +47,14 @@ public class ProfileFragment extends Fragment {
     private TextView textUsername;
     private TextView textEmail;
     private TextView textRegion;
+    private TextView textStars;
+    private TextView textTokens;
+    private TextView textLeague;
+    private ImageView leagueIcon;
     private ImageView avatarImage;
     private ImageButton buttonEditAvatar;
     private ProgressBar avatarProgressBar;
+    private View avatarFrame;
     private StatsRepository statsRepository;
 
     private TextView textTotalGames;
@@ -101,17 +106,27 @@ public class ProfileFragment extends Fragment {
         textUsername = view.findViewById(R.id.textUsername);
         textEmail = view.findViewById(R.id.textEmail);
         textRegion = view.findViewById(R.id.textRegion);
+        textStars = view.findViewById(R.id.textStars);
+        textTokens = view.findViewById(R.id.textTokens);
+        textLeague = view.findViewById(R.id.textLeague);
+        leagueIcon = view.findViewById(R.id.leagueIcon);
         avatarImage = view.findViewById(R.id.avatarImage);
         buttonEditAvatar = view.findViewById(R.id.buttonEditAvatar);
         avatarProgressBar = view.findViewById(R.id.avatarProgressBar);
+        avatarFrame = view.findViewById(R.id.avatarFrame);
         Button forgotPasswordButton = view.findViewById(R.id.btn_forgot_password);
         forgotPasswordButton.setOnClickListener(v -> {
             Intent intent = new Intent(requireActivity(), ChangePasswordActivity.class);
             startActivity(intent);
         });
 
-        Button notificationsButton = view.findViewById(R.id.buttonNotifications);
+        Button dailyButton = view.findViewById(R.id.buttonDailyChallenges);
+        dailyButton.setOnClickListener(v -> {
+            Intent intent = new Intent(requireActivity(), DailyChallengesActivity.class);
+            startActivity(intent);
+        });
 
+        Button notificationsButton = view.findViewById(R.id.buttonNotifications);
         notificationsButton.setOnClickListener(v -> {
             Intent intent = new Intent(requireActivity(), NotificationsActivity.class);
             startActivity(intent);
@@ -176,10 +191,34 @@ public class ProfileFragment extends Fragment {
                 String em = document.getString("email");
                 String reg = document.getString("region");
                 String avUrl = document.getString("avatarUrl");
+                Long stars = document.getLong("stars");
+                Long tokens = document.getLong("tokens");
+                Long lastMonthRegionRank = document.getLong("lastMonthRegionRank");
 
                 textUsername.setText(uname != null ? uname : "Nepoznato");
                 textEmail.setText(em != null ? em : "Nepoznato");
                 textRegion.setText(reg != null ? "Region: " + reg : "Region: Nepoznato");
+                textStars.setText("Zvezde: " + (stars != null ? stars : 0));
+                textTokens.setText("Tokeni: " + (tokens != null ? tokens : 0));
+                if (textLeague != null && leagueIcon != null) {
+                    long l = document.getLong("league") != null ? document.getLong("league") : 0;
+                    textLeague.setText("Liga: " + LeagueHelper.getLeagueNameByIndex((int) l));
+                    leagueIcon.setImageResource(LeagueHelper.getLeagueIconByIndex((int) l));
+                }
+
+                if (lastMonthRegionRank != null) {
+                    if (lastMonthRegionRank == 1) {
+                        avatarFrame.setBackgroundResource(R.drawable.profile_frame_gold);
+                    } else if (lastMonthRegionRank == 2) {
+                        avatarFrame.setBackgroundResource(R.drawable.profile_frame_silver);
+                    } else if (lastMonthRegionRank == 3) {
+                        avatarFrame.setBackgroundResource(R.drawable.profile_frame_bronze);
+                    } else {
+                        avatarFrame.setBackgroundResource(R.drawable.profile_frame);
+                    }
+                } else {
+                    avatarFrame.setBackgroundResource(R.drawable.profile_frame);
+                }
 
                 loadAvatar(avUrl);
 

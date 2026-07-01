@@ -6,10 +6,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
+import com.example.slagalica.service.UserService;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 public class HomeFragment extends Fragment {
+
+    private UserService userService;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -20,52 +28,32 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        userService = new UserService();
+
         Button startMatchButton = view.findViewById(R.id.buttonStartMatch);
         startMatchButton.setOnClickListener(v -> {
             Intent intent = new Intent(requireActivity(), MatchPlayActivity.class);
-            intent.putExtra(MatchConstants.EXTRA_PLAYER_ONE_NAME, MatchConstants.DEFAULT_PLAYER_ONE_NAME);
-            intent.putExtra(MatchConstants.EXTRA_PLAYER_TWO_NAME, MatchConstants.DEFAULT_PLAYER_TWO_NAME);
             startActivity(intent);
         });
 
         Button onlineMatchButton = view.findViewById(R.id.buttonOnlineMatch);
         onlineMatchButton.setOnClickListener(v -> {
-            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(requireActivity());
-            builder.setTitle("Ime igrača");
-            builder.setMessage("Unesite ime koje će protivnik videti:");
-            final android.widget.EditText input = new android.widget.EditText(requireActivity());
-            input.setHint("Ime");
-            com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-            final String[] avatarHolder = {""};
-            if (user != null) {
-                com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                        .collection("users").document(user.getUid()).get()
-                        .addOnSuccessListener(doc -> {
-                            if (doc.exists() && doc.getString("username") != null) {
-                                input.setText(doc.getString("username"));
-                            }
-                            if (doc.exists() && doc.getString("avatarUrl") != null) {
-                                avatarHolder[0] = doc.getString("avatarUrl");
-                            }
-                        });
-            } else {
-                input.setText("Igrač");
-            }
-            builder.setView(input);
-            builder.setPositiveButton("Potvrdi", (dialog, which) -> {
-                String name = input.getText().toString().trim();
-                if (name.isEmpty()) name = "Igrač";
-                Intent intent = new Intent(requireActivity(), MatchLobbyActivity.class);
-                intent.putExtra("playerName", name);
-                if (user != null) {
-                    intent.putExtra("playerId", user.getUid());
-                    intent.putExtra("avatarUrl", avatarHolder[0]);
+            userService.hasEnoughTokens().addOnSuccessListener(enough -> {
+                if (!enough) {
+                    Toast.makeText(requireContext(),
+                            "Nemate dovoljno tokena za online partiju.",
+                            Toast.LENGTH_SHORT).show();
+                    return;
                 }
-                startActivity(intent);
+                showNameDialog(MatchLobbyActivity.class);
+            }).addOnFailureListener(e -> {
+                Toast.makeText(requireContext(),
+                        "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             });
-            builder.setNegativeButton("Otkaži", null);
-            builder.show();
         });
+
+        Button tournamentButton = view.findViewById(R.id.buttonTournament);
+        tournamentButton.setOnClickListener(v -> showNameDialog(TournamentLobbyActivity.class));
 
         view.findViewById(R.id.buttonStartWhoKnows).setOnClickListener(v ->
                 startActivity(new Intent(requireActivity(), WhoKnowsKnows.class)));
@@ -84,5 +72,43 @@ public class HomeFragment extends Fragment {
 
         view.findViewById(R.id.buttonStartAsocijacije).setOnClickListener(v ->
                 startActivity(new Intent(requireActivity(), AsocijacijeGameActivity.class)));
+    }
+
+    private void showNameDialog(Class<?> targetActivity) {
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(requireActivity());
+        builder.setTitle("Ime igrača");
+        builder.setMessage("Unesite ime koje će protivnik videti:");
+        final android.widget.EditText input = new android.widget.EditText(requireActivity());
+        input.setHint("Ime");
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        final String[] avatarHolder = {""};
+        if (user != null) {
+            FirebaseFirestore.getInstance()
+                    .collection("users").document(user.getUid()).get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists() && doc.getString("username") != null) {
+                            input.setText(doc.getString("username"));
+                        }
+                        if (doc.exists() && doc.getString("avatarUrl") != null) {
+                            avatarHolder[0] = doc.getString("avatarUrl");
+                        }
+                    });
+        } else {
+            input.setText("Igrač");
+        }
+        builder.setView(input);
+        builder.setPositiveButton("Potvrdi", (dialog, which) -> {
+            String name = input.getText().toString().trim();
+            if (name.isEmpty()) name = "Igrač";
+            Intent intent = new Intent(requireActivity(), targetActivity);
+            intent.putExtra("playerName", name);
+            if (user != null) {
+                intent.putExtra("playerId", user.getUid());
+                intent.putExtra("avatarUrl", avatarHolder[0]);
+            }
+            startActivity(intent);
+        });
+        builder.setNegativeButton("Otkaži", null);
+        builder.show();
     }
 }

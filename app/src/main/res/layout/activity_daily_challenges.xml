@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#529DCC"
+    android:orientation="vertical">
+
+    <include layout="@layout/top_bar" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dnevni izazov"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:padding="16dp" />
+
+    <TextView
+        android:id="@+id/missionDateText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="14sp"
+        android:textColor="#B0BEC5"
+        android:gravity="center"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:id="@+id/missionProgressText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0 / 4 misije rešene"
+        android:textSize="16sp"
+        android:textColor="#FFD700"
+        android:gravity="center"
+        android:paddingBottom="16dp" />
+
+    <LinearLayout
+        android:id="@+id/missionWinGame"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="#3B7FB3">
+
+        <ImageView
+            android:id="@+id/missionWinGameIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_myplaces"
+            android:layout_marginEnd="12dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pobedi partiju"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nagrada: 3 zvezde"
+                android:textColor="#B0BEC5"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/missionWinGameStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✗"
+            android:textSize="24sp"
+            android:textColor="#FF5252" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/missionSendChat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="#3B7FB3">
+
+        <ImageView
+            android:id="@+id/missionSendChatIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_send"
+            android:layout_marginEnd="12dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pošalji poruku u čet"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nagrada: 3 zvezde"
+                android:textColor="#B0BEC5"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/missionSendChatStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✗"
+            android:textSize="24sp"
+            android:textColor="#FF5252" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/missionPlayFriend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="#3B7FB3">
+
+        <ImageView
+            android:id="@+id/missionPlayFriendIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_share"
+            android:layout_marginEnd="12dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Odigraj prijateljsku partiju"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nagrada: 3 zvezde"
+                android:textColor="#B0BEC5"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/missionPlayFriendStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✗"
+            android:textSize="24sp"
+            android:textColor="#FF5252" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/missionWinTournament"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="#3B7FB3">
+
+        <ImageView
+            android:id="@+id/missionWinTournamentIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_sort_by_size"
+            android:layout_marginEnd="12dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pobedi partiju u turniru"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nagrada: 3 zvezde"
+                android:textColor="#B0BEC5"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/missionWinTournamentStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✗"
+            android:textSize="24sp"
+            android:textColor="#FF5252" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/bonusInfoText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Bonus za sve 4 misije: 2 tokena + 3 zvezde"
+        android:textSize="14sp"
+        android:textColor="#FFD700"
+        android:gravity="center"
+        android:padding="16dp" />
+
+    <ProgressBar
+        android:id="@+id/loadingSpinner"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="center"
+        android:indeterminateTint="@android:color/white"
+        android:visibility="gone" />
+
+</LinearLayout>

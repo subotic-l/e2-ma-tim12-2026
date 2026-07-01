@@ -13,6 +13,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
+        <!-- Player 1 -->
         <LinearLayout
             android:id="@+id/playerOneContainer"
             android:layout_width="0dp"
@@ -59,6 +60,18 @@
                 android:textSize="14sp" />
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/timerText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:layout_marginHorizontal="12dp"/>
+
+        <!-- Player 2 -->
         <LinearLayout
             android:id="@+id/playerTwoContainer"
             android:layout_width="0dp"

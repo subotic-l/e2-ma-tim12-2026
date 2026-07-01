@@ -1,6 +1,11 @@
 package com.example.slagalica;
 
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
@@ -20,9 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-public class NumbersGameActivity extends AppCompatActivity {
+public class NumbersGameActivity extends AppCompatActivity implements SensorEventListener {
 
     private static final String DIVIDE_SYMBOL = "÷";
+    private static final float SHAKE_THRESHOLD = 15.0f;
 
     private TextView targetTextView;
     private TextView expressionTextView;
@@ -44,6 +50,10 @@ public class NumbersGameActivity extends AppCompatActivity {
     private int openParensCount = 0;
     private int score = 0;
     private boolean resultSent = false;
+
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private long lastShakeTime = 0;
 
     private enum TokenType { NUMBER, OPERATOR, OPEN_PAREN, CLOSE_PAREN }
 
@@ -69,7 +79,7 @@ public class NumbersGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindPlayerHeader(this, getIntent());
+        MatchUiHelper.bindHeader(this, "Moj broj", 0);
 
         targetTextView = findViewById(R.id.targetTextView);
         expressionTextView = findViewById(R.id.expressionTextView);
@@ -92,6 +102,11 @@ public class NumbersGameActivity extends AppCompatActivity {
         setupNumberButtons();
         setupStopButton();
         setupConfirmButton();
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager != null) {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
 
         startNewGame();
     }
@@ -118,8 +133,40 @@ public class NumbersGameActivity extends AppCompatActivity {
         stopButton.setVisibility(View.VISIBLE);
         stopTimerRow.setVisibility(View.VISIBLE);
 
+        registerShakeListener();
         startAutoStopTimer();
     }
+
+    private void registerShakeListener() {
+        if (sensorManager != null && accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+        }
+    }
+
+    private void unregisterShakeListener() {
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(this);
+        }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER) return;
+        float x = event.values[0];
+        float y = event.values[1];
+        float z = event.values[2];
+        double magnitude = Math.sqrt(x * x + y * y + z * z);
+        if (magnitude > SHAKE_THRESHOLD) {
+            long now = System.currentTimeMillis();
+            if (now - lastShakeTime > 1000) {
+                lastShakeTime = now;
+                runOnUiThread(() -> stopButton.performClick());
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
     private void setupStopButton() {
         stopButton.setOnClickListener(v -> {
@@ -139,6 +186,7 @@ public class NumbersGameActivity extends AppCompatActivity {
 
     private void showNumbers() {
         stopStage = 2;
+        unregisterShakeListener();
         for (int i = 0; i < numberButtons.length; i++) {
             numberButtons[i].setText(String.valueOf(game.numbers.get(i)));
             numberButtons[i].setEnabled(true);
@@ -338,6 +386,7 @@ public class NumbersGameActivity extends AppCompatActivity {
                     Toast.makeText(this, "Tačno! +10 bodova", Toast.LENGTH_SHORT).show();
                     cancelGameTimer();
                     score = 10;
+                    MatchUiHelper.updateScore(this, score);
                     finishWithScore();
                 } else {
                     Toast.makeText(this, "Netačno (" + formatResult(result) + ")", Toast.LENGTH_SHORT).show();
@@ -353,6 +402,7 @@ public class NumbersGameActivity extends AppCompatActivity {
             finish();
             return;
         }
+        unregisterShakeListener();
         resultSent = true;
         Intent data = new Intent();
         data.putExtra(MatchConstants.EXTRA_GAME_SCORE, score);
@@ -368,6 +418,7 @@ public class NumbersGameActivity extends AppCompatActivity {
             setResult(RESULT_OK, data);
             resultSent = true;
         }
+        unregisterShakeListener();
         super.finish();
     }
 

@@ -43,7 +43,7 @@ public class StepByStepActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindPlayerHeader(this, getIntent());
+        MatchUiHelper.bindHeader(this, "Korak po korak", 0);
 
         pointsTextView = findViewById(R.id.pointsTextView);
         timerTextView = findViewById(R.id.timerTextView);
@@ -154,6 +154,7 @@ public class StepByStepActivity extends AppCompatActivity {
         guessInput.setText(game.answer);
         timerTextView.setText("Tačno!");
         score = currentPoints;
+        MatchUiHelper.updateScore(this, score);
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
     }
 
