@@ -38,23 +38,20 @@ async function main() {
     const lastSeen = data.lastSeen ? data.lastSeen.toMillis() : 0;
     if (lastSeen && lastSeen >= fiveMinutesAgo) continue; // user is active
 
-    // Find unread notifications for this user
+    // Find unread notifications for this user (newest first)
     const notifsSnap = await db
       .collection(USERS_COLLECTION)
       .doc(uid)
       .collection(NOTIFICATIONS_COLLECTION)
       .where("read", "==", false)
-      .limit(5)
+      .orderBy("createdAt", "desc")
+      .limit(1)
       .get();
 
     if (notifsSnap.empty) continue;
 
-    const notifs = [];
-    notifsSnap.forEach((n) => notifs.push({ id: n.id, data: n.data() }));
-
-    // Send one push with the latest notification
-    const latest = notifs[notifsSnap.size - 1].data;
-    const messageText = latest.message || "Nova poruka";
+    const latest = notifsSnap.docs[0].data();
+    const body = latest.message || "Nova poruka";
     const channelId = latest.channel || "chat";
 
     try {
@@ -62,12 +59,12 @@ async function main() {
         token: fcmToken,
         notification: {
           title: "Slagalica",
-          body: messageText,
+          body,
         },
         data: {
           channelId,
           title: "Slagalica",
-          body: messageText,
+          body,
         },
       });
 

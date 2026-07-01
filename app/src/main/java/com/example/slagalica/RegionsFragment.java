@@ -673,7 +673,7 @@ public class RegionsFragment extends Fragment {
             mapView.onDetach();
         }
         if (chatFragment != null) {
-            getChildFragmentManager().beginTransaction().remove(chatFragment).commit();
+            getChildFragmentManager().beginTransaction().remove(chatFragment).commitNow();
             chatFragment = null;
         }
     }
