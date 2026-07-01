@@ -64,6 +64,10 @@ public class MainActivity extends AppCompatActivity {
         userService.grantDailyTokensIfNeeded();
         userService.updateLastSeen();
         TopBarHelper.loadAndUpdateTopBar(this);
+        String token = MyFirebaseMessagingService.getLocalToken(this);
+        if (token != null) {
+            MyFirebaseMessagingService.uploadTokenToFirestore(token);
+        }
         listenForFriendInvitations();
         checkLeaderboardCycles();
     }
