@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 22
 
-      - run: npm install firebase-admin
+      - run: npm install firebase-admin@12
 
       - run: node .github/scripts/send-notifications.js
         env:
