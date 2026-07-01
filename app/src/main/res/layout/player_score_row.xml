@@ -13,6 +13,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
+        <!-- Player 1 -->
         <LinearLayout
             android:id="@+id/playerOneContainer"
             android:layout_width="0dp"
@@ -70,6 +71,7 @@
             android:textColor="#FFFFFF"
             android:layout_marginHorizontal="12dp"/>
 
+        <!-- Player 2 -->
         <LinearLayout
             android:id="@+id/playerTwoContainer"
             android:layout_width="0dp"

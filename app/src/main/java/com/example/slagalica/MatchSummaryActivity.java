@@ -26,17 +26,17 @@ public class MatchSummaryActivity extends AppCompatActivity {
         });
 
         Intent intent = getIntent();
-        MatchUiHelper.bindPlayerHeader(this, intent);
-
-        int playerOneScore = intent != null
-                ? intent.getIntExtra(MatchConstants.EXTRA_PLAYER_ONE_SCORE, 0)
+        int totalScore = intent != null
+                ? intent.getIntExtra(MatchConstants.EXTRA_GAME_SCORE, 0)
                 : 0;
-        int playerTwoScore = intent != null
-                ? intent.getIntExtra(MatchConstants.EXTRA_PLAYER_TWO_SCORE, 0)
-                : 0;
+        boolean forfeit = intent != null && intent.getBooleanExtra("forfeit", false);
 
         TextView summaryText = findViewById(R.id.matchSummaryText);
-        summaryText.setText("Igrač 1: " + playerOneScore + "\nIgrač 2: " + playerTwoScore);
+        if (forfeit) {
+            summaryText.setText("Napustili ste partiju!\nUkupan rezultat: " + totalScore);
+        } else {
+            summaryText.setText("Ukupan rezultat: " + totalScore);
+        }
 
         MaterialButton backButton = findViewById(R.id.buttonBackToMain);
         backButton.setOnClickListener(v -> {

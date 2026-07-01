@@ -1,6 +1,5 @@
 package com.example.slagalica;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -13,12 +12,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.material.button.MaterialButton;
+import com.example.slagalica.data.ChallengeManager;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class MatchPlayActivity extends AppCompatActivity {
+public class ChallengePlayActivity extends AppCompatActivity {
 
     private final List<Class<?>> gameOrder = Arrays.asList(
             WhoKnowsKnows.class,
@@ -31,7 +32,9 @@ public class MatchPlayActivity extends AppCompatActivity {
 
     private int currentGameIndex = 0;
     private int totalScore = 0;
-    private boolean finished = false;
+    private String challengeId;
+    private ChallengeManager challengeManager;
+    private FirebaseUser user;
 
     private ActivityResultLauncher<Intent> gameLauncher;
 
@@ -46,22 +49,13 @@ public class MatchPlayActivity extends AppCompatActivity {
             return insets;
         });
 
-        MaterialButton quitButton = findViewById(R.id.quitMatchButton);
-        if (quitButton != null) {
-            quitButton.setOnClickListener(v -> {
-                new AlertDialog.Builder(this)
-                        .setTitle("Napusti partiju")
-                        .setMessage("Da li ste sigurni da želite da napustite partiju? Gubite partiju i ne dobijate zvezde.")
-                        .setPositiveButton("Napusti", (dialog, which) -> forfeitMatch())
-                        .setNegativeButton("Nastavi", null)
-                        .show();
-            });
-        }
+        challengeManager = new ChallengeManager();
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        challengeId = getIntent().getStringExtra("challenge_id");
 
         gameLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (finished) return;
                     int score = 0;
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         score = result.getData().getIntExtra(MatchConstants.EXTRA_GAME_SCORE, 0);
@@ -75,19 +69,9 @@ public class MatchPlayActivity extends AppCompatActivity {
         startNextGame();
     }
 
-    private void forfeitMatch() {
-        finished = true;
-        Toast.makeText(this, "Napustili ste partiju!", Toast.LENGTH_SHORT).show();
-        Intent intent = new Intent(this, MatchSummaryActivity.class);
-        intent.putExtra(MatchConstants.EXTRA_GAME_SCORE, totalScore);
-        intent.putExtra("forfeit", true);
-        startActivity(intent);
-        finish();
-    }
-
     private void startNextGame() {
-        if (finished || currentGameIndex >= gameOrder.size()) {
-            showSummary();
+        if (currentGameIndex >= gameOrder.size()) {
+            submitResult();
             return;
         }
 
@@ -95,11 +79,26 @@ public class MatchPlayActivity extends AppCompatActivity {
         gameLauncher.launch(intent);
     }
 
-    private void showSummary() {
-        if (finished) return;
-        Intent intent = new Intent(this, MatchSummaryActivity.class);
-        intent.putExtra(MatchConstants.EXTRA_GAME_SCORE, totalScore);
-        startActivity(intent);
-        finish();
+    private void submitResult() {
+        if (user == null || challengeId == null) {
+            Toast.makeText(this, "Greška pri slanju rezultata", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        challengeManager.attachToChallenge(challengeId);
+        challengeManager.submitScore(user.getUid(), totalScore)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Rezultat poslat! Ukupno: " + totalScore, Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                })
+                .addOnCompleteListener(task -> {
+                    Intent intent = new Intent(this, MatchSummaryActivity.class);
+                    intent.putExtra(MatchConstants.EXTRA_GAME_SCORE, totalScore);
+                    startActivity(intent);
+                    finish();
+                });
     }
 }

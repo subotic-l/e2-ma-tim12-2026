@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,8 @@ import android.widget.TextView;
 import androidx.fragment.app.Fragment;
 
 import com.example.slagalica.data.RegionRepository;
+import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -77,6 +80,19 @@ public class RegionDetailFragment extends Fragment {
         String queryRegionName = regionName != null ? regionName : region.getName();
         loadRegionStats(queryRegionName);
         loadRegionHistory(regionCode);
+
+        MaterialButton challengeButton = view.findViewById(R.id.buttonChallenge);
+        challengeButton.setOnClickListener(v -> {
+            if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+                TextView msg = view.findViewById(R.id.textRegionName);
+                if (msg != null) msg.setText("Morate biti prijavljeni za izazov");
+                return;
+            }
+            Intent intent = new Intent(requireActivity(), ChallengeLobbyActivity.class);
+            intent.putExtra("region_code", regionCode);
+            intent.putExtra("region_name", regionName != null ? regionName : region.getName());
+            startActivity(intent);
+        });
     }
 
     private void initRegionIcons() {

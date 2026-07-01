@@ -63,7 +63,7 @@ public class SkockoGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindPlayerHeader(this, getIntent());
+        MatchUiHelper.bindHeader(this, "Skocko", 0);
 
         timerText = findViewById(R.id.timerText);
         startTimer();
@@ -354,6 +354,7 @@ public class SkockoGameActivity extends AppCompatActivity {
             } else {
                 score = 10;
             }
+            MatchUiHelper.updateScore(this, score);
         } else {
             score = 0;
         }

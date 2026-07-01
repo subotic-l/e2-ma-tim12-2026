@@ -17,7 +17,7 @@
 
         <include layout="@layout/top_bar" />
 
-        <include layout="@layout/player_score_row" />
+        <include layout="@layout/player_score_row_local" />
 
         <TextView
             android:id="@+id/timerTextView"

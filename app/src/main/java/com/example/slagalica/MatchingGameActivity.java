@@ -51,7 +51,7 @@ public class MatchingGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindPlayerHeader(this, getIntent());
+        MatchUiHelper.bindHeader(this, "Spojnice", 0);
 
         timerTextView = findViewById(R.id.timerTextView);
         instructionsTextView = findViewById(R.id.instructionsTextView);
@@ -162,6 +162,7 @@ public class MatchingGameActivity extends AppCompatActivity {
 
     private void markPairCorrect(int leftIndex, int rightIndex) {
         score += 2;
+        MatchUiHelper.updateScore(this, score);
         leftButtons[leftIndex].setBackgroundTintList(ColorStateList.valueOf(correctColor));
         leftButtons[leftIndex].setStrokeColor(ColorStateList.valueOf(correctBorder));
 
