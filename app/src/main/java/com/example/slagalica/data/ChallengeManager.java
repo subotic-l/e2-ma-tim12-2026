@@ -13,6 +13,7 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Transaction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,7 +157,7 @@ public class ChallengeManager {
     public Task<List<DocumentSnapshot>> findActiveChallenges(String region, String excludePlayerId) {
         return db.collection(CHALLENGES_COLLECTION)
                 .whereEqualTo("region", region)
-                .whereIn("status", new String[]{"waiting", "playing"})
+                .whereIn("status", Arrays.asList("waiting", "playing"))
                 .get()
                 .continueWith(task -> {
                     if (task.isSuccessful()) {

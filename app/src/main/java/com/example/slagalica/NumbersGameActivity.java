@@ -160,7 +160,7 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
             long now = System.currentTimeMillis();
             if (now - lastShakeTime > 1000) {
                 lastShakeTime = now;
-                runOnUiThread(this::onStopClick);
+                runOnUiThread(() -> stopButton.performClick());
             }
         }
     }

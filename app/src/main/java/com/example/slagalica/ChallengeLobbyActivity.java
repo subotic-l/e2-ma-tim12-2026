@@ -113,13 +113,16 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
                         if (tokensBet > 2) tokensBet = 2;
                     } catch (NumberFormatException ignored) {}
 
+                    final int finalStarsBet = starsBet;
+                    final int finalTokensBet = tokensBet;
+
                     challengeManager.createChallenge(user.getUid(),
                                     user.getDisplayName() != null ? user.getDisplayName() : "Igrač",
-                                    regionName, starsBet, tokensBet)
+                                    regionName, finalStarsBet, finalTokensBet)
                             .addOnSuccessListener(id -> {
                                 String msg = "Izazov kreiran!";
-                                if (starsBet > 0) msg += " " + starsBet + " ⭐";
-                                if (tokensBet > 0) msg += " " + tokensBet + " 🪙";
+                                if (finalStarsBet > 0) msg += " " + finalStarsBet + " ⭐";
+                                if (finalTokensBet > 0) msg += " " + finalTokensBet + " 🪙";
                                 Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
                                 loadChallenges();
                             })
