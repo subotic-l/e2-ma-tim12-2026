@@ -1,6 +1,7 @@
 package com.example.slagalica;
 
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +13,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -46,6 +50,7 @@ public class ChatFragment extends Fragment {
     private EditText chatInput;
     private ImageButton chatSendButton;
     private View chatBackButton;
+
 
     private MessageAdapter adapter;
     private List<MessageEntry> messageList;
@@ -109,7 +114,9 @@ public class ChatFragment extends Fragment {
         if (currentUser == null) return;
         SharedPreferences prefs = requireActivity()
                 .getSharedPreferences("chat_prefs", 0);
-        prefs.edit().putString("senderName_" + currentUser.getUid(), name).apply();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+            prefs.edit().putString("senderName_" + currentUser.getUid(), name).apply();
+        }
     }
 
     @Override
@@ -126,7 +133,6 @@ public class ChatFragment extends Fragment {
         chatInput = view.findViewById(R.id.chatInput);
         chatSendButton = view.findViewById(R.id.chatSendButton);
         chatBackButton = view.findViewById(R.id.chatBackButton);
-
         chatTitle.setText(regionName + " \u010det");
 
         messageList = new ArrayList<>();
@@ -135,12 +141,20 @@ public class ChatFragment extends Fragment {
         messagesRecyclerView.setAdapter(adapter);
 
         chatSendButton.setOnClickListener(v -> sendMessage());
-        chatInput.setOnEditorActionListener((v, actionId, event) -> {
-            sendMessage();
-            return true;
-        });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CUPCAKE) {
+            chatInput.setOnEditorActionListener((v, actionId, event) -> {
+                sendMessage();
+                return true;
+            });
+        }
 
         chatBackButton.setOnClickListener(v -> closeChat());
+
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            v.setPadding(0, 0, 0, Math.round(ime.bottom * 0.5f));
+            return insets;
+        });
 
         listenToMessages();
     }
@@ -149,7 +163,9 @@ public class ChatFragment extends Fragment {
         if (currentUser == null) return;
 
         String text = chatInput.getText().toString().trim();
-        if (text.isEmpty()) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+            if (text.isEmpty()) return;
+        }
 
         String name = senderName != null ? senderName : "Korisnik";
         chatRepository.sendMessage(regionCode, currentUser.getUid(), name, text);
