@@ -401,4 +401,10 @@ public class FriendLobbyActivity extends AppCompatActivity {
         removeListener();
         autoDeclineHandler.removeCallbacks(autoDeclineRunnable);
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        NotificationHelper.onRequestPermissionsResult(this, requestCode, grantResults);
+    }
 }

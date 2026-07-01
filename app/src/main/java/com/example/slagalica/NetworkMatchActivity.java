@@ -338,4 +338,10 @@ public class NetworkMatchActivity extends AppCompatActivity {
             sessionManager.cleanup();
         }
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        NotificationHelper.onRequestPermissionsResult(this, requestCode, grantResults);
+    }
 }
