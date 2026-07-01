@@ -9,14 +9,14 @@
     <com.google.android.material.textview.MaterialTextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Unesite iznos opklade:"
+        android:text="Uloži zvezde (max 10):"
         android:textSize="14sp"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="4dp" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="12dp"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -25,38 +25,28 @@
             android:layout_height="wrap_content"
             android:inputType="number"
             android:text="1"
-            android:hint="Iznos" />
+            android:hint="Zvezde" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textview.MaterialTextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Valuta:"
+        android:text="Uloži tokene (max 2, opciono):"
         android:textSize="14sp"
-        android:layout_marginBottom="8dp" />
+        android:layout_marginBottom="4dp" />
 
-    <LinearLayout
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:layout_marginBottom="8dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonStars"
-            android:layout_width="wrap_content"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/inputTokenBet"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Zvezdice ⭐"
-            android:textColor="@android:color/white"
-            app:backgroundTint="#FF9800"
-            android:layout_marginEnd="12dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonTokens"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Tokeni 🪙"
-            android:textColor="@android:color/white"
-            app:backgroundTint="#2196F3"
-            android:alpha="0.6f" />
-    </LinearLayout>
+            android:inputType="number"
+            android:text="0"
+            android:hint="Tokeni" />
+    </com.google.android.material.textfield.TextInputLayout>
 </LinearLayout>

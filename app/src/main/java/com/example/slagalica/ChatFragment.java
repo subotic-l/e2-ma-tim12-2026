@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -76,15 +77,39 @@ public class ChatFragment extends Fragment {
             senderName = "Gost";
             return;
         }
+
+        if (currentUser.getDisplayName() != null && !currentUser.getDisplayName().isEmpty()) {
+            senderName = currentUser.getDisplayName();
+            cacheSenderName(senderName);
+            return;
+        }
+
+        SharedPreferences prefs = requireActivity()
+                .getSharedPreferences("chat_prefs", 0);
+        senderName = prefs.getString("senderName_" + currentUser.getUid(), null);
+        if (senderName != null) return;
+
         FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUser.getUid())
                 .get()
                 .addOnSuccessListener(doc -> {
                     String username = doc.getString("username");
-                    senderName = username != null ? username : "Korisnik";
+                    if (username != null) {
+                        senderName = username;
+                        cacheSenderName(username);
+                    }
                 })
-                .addOnFailureListener(e -> senderName = "Korisnik");
+                .addOnFailureListener(e -> {
+                    if (senderName == null) senderName = "Korisnik";
+                });
+    }
+
+    private void cacheSenderName(String name) {
+        if (currentUser == null) return;
+        SharedPreferences prefs = requireActivity()
+                .getSharedPreferences("chat_prefs", 0);
+        prefs.edit().putString("senderName_" + currentUser.getUid(), name).apply();
     }
 
     @Override

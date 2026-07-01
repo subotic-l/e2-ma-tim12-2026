@@ -44,38 +44,61 @@ public class ChallengeManager {
 
     public Task<String> createChallenge(String hostId, String hostName, String region,
                                          int betAmount, String currencyType) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("region", region);
-        data.put("hostId", hostId);
-        data.put("hostName", hostName);
-        data.put("betAmount", betAmount);
-        data.put("currencyType", currencyType);
-        data.put("status", "waiting");
-        data.put("createdAt", FieldValue.serverTimestamp());
-        data.put("winnerId", "");
+        int starsBet = "stars".equals(currencyType) ? betAmount : 0;
+        int tokensBet = "tokens".equals(currencyType) ? betAmount : 0;
+        return createChallenge(hostId, hostName, region, starsBet, tokensBet);
+    }
 
-        Map<String, Object> hostEntry = new HashMap<>();
-        hostEntry.put("playerName", hostName);
-        hostEntry.put("score", null);
-        hostEntry.put("finished", false);
-        data.put("participants", new HashMap<String, Object>() {{
-            put(hostId, hostEntry);
-        }});
+    public Task<String> createChallenge(String hostId, String hostName, String region,
+                                         int starsBet, int tokensBet) {
+        DocumentReference hostRef = db.collection("users").document(hostId);
 
-        return db.collection(CHALLENGES_COLLECTION).add(data)
-                .continueWith(task -> {
-                    if (task.isSuccessful()) {
-                        this.challengeId = task.getResult().getId();
-                        this.challengeDocRef = db.collection(CHALLENGES_COLLECTION).document(challengeId);
-                        return challengeId;
-                    } else {
-                        throw task.getException();
-                    }
-                });
+        return db.runTransaction((Transaction.Function<String>) transaction -> {
+            DocumentSnapshot hostSnap = transaction.get(hostRef);
+            Long starBalance = hostSnap.getLong("stars");
+            Long tokenBalance = hostSnap.getLong("tokens");
+            if (starBalance == null || starBalance < starsBet) {
+                throw new RuntimeException("Nedovoljno zvezda");
+            }
+            if (tokenBalance == null || tokenBalance < tokensBet) {
+                throw new RuntimeException("Nedovoljno tokena");
+            }
+
+            transaction.update(hostRef, "stars", FieldValue.increment(-starsBet));
+            if (tokensBet > 0) {
+                transaction.update(hostRef, "tokens", FieldValue.increment(-tokensBet));
+            }
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("region", region);
+            data.put("hostId", hostId);
+            data.put("hostName", hostName);
+            data.put("starsBet", (long) starsBet);
+            data.put("tokensBet", (long) tokensBet);
+            data.put("status", "waiting");
+            data.put("createdAt", FieldValue.serverTimestamp());
+            data.put("winnerId", "");
+
+            Map<String, Object> hostEntry = new HashMap<>();
+            hostEntry.put("playerName", hostName);
+            hostEntry.put("score", null);
+            hostEntry.put("finished", false);
+            Map<String, Object> participants = new HashMap<>();
+            participants.put(hostId, hostEntry);
+            data.put("participants", participants);
+
+            DocumentReference newRef = db.collection(CHALLENGES_COLLECTION).document();
+            transaction.set(newRef, data);
+
+            this.challengeId = newRef.getId();
+            this.challengeDocRef = newRef;
+            return challengeId;
+        });
     }
 
     public Task<String> joinChallenge(String challengeDocId, String playerId, String playerName) {
         DocumentReference ref = db.collection(CHALLENGES_COLLECTION).document(challengeDocId);
+        DocumentReference playerRef = db.collection("users").document(playerId);
 
         return db.runTransaction((Transaction.Function<String>) transaction -> {
             DocumentSnapshot snap = transaction.get(ref);
@@ -88,6 +111,26 @@ public class ChallengeManager {
 
             if (participants != null && participants.containsKey(playerId)) {
                 return challengeDocId;
+            }
+
+            Long starsBet = snap.getLong("starsBet");
+            Long tokensBet = snap.getLong("tokensBet");
+            if (starsBet == null) starsBet = 0L;
+            if (tokensBet == null) tokensBet = 0L;
+
+            DocumentSnapshot playerSnap = transaction.get(playerRef);
+            Long starBalance = playerSnap.getLong("stars");
+            Long tokenBalance = playerSnap.getLong("tokens");
+            if (starBalance == null || starBalance < starsBet) {
+                throw new RuntimeException("Nedovoljno zvezda");
+            }
+            if (tokenBalance == null || tokenBalance < tokensBet) {
+                throw new RuntimeException("Nedovoljno tokena");
+            }
+
+            transaction.update(playerRef, "stars", FieldValue.increment(-starsBet));
+            if (tokensBet > 0) {
+                transaction.update(playerRef, "tokens", FieldValue.increment(-tokensBet));
             }
 
             Map<String, Object> newPlayer = new HashMap<>();
@@ -172,25 +215,38 @@ public class ChallengeManager {
                 return null;
             }
 
+            int finishedCount = 0;
+            for (Map.Entry<String, Object> entry : participants.entrySet()) {
+                Map<String, Object> p = (Map<String, Object>) entry.getValue();
+                if (p != null && Boolean.TRUE.equals(p.get("finished"))) {
+                    finishedCount++;
+                }
+            }
+
             Map<String, Object> updates = new HashMap<>();
             updates.put("participants." + playerId + ".score", score);
             updates.put("participants." + playerId + ".finished", true);
             transaction.update(challengeDocRef, updates);
 
-            Map<String, Object> updatedParticipants = (Map<String, Object>) transaction.get(challengeDocRef).get("participants");
-            int finishedCount = 0;
-            if (updatedParticipants != null) {
-                for (Object entry : updatedParticipants.values()) {
-                    Map<String, Object> p = (Map<String, Object>) entry;
-                    if (Boolean.TRUE.equals(p.get("finished"))) {
-                        finishedCount++;
-                    }
-                }
-            }
-
             int total = participants.size();
-            if (finishedCount >= total) {
-                String winnerId = determineWinner(updatedParticipants);
+            if (finishedCount + 1 >= total) {
+                Map<String, Object> updatedParticipants = new HashMap<>(participants);
+                Map<String, Object> myData = new HashMap<>((Map<String, Object>) participants.get(playerId));
+                myData.put("score", score);
+                myData.put("finished", true);
+                updatedParticipants.put(playerId, myData);
+
+                String[] result = determineWinnerAndRunnerUp(updatedParticipants);
+                String winnerId = result[0];
+                String runnerUpId = result[1];
+
+                Long starsBet = snap.getLong("starsBet");
+                Long tokensBet = snap.getLong("tokensBet");
+                if (starsBet == null) starsBet = 0L;
+                if (tokensBet == null) tokensBet = 0L;
+
+                distributeRewards(transaction, winnerId, runnerUpId, starsBet, tokensBet, participants.size());
+
                 transaction.update(challengeDocRef, "status", "finished", "winnerId", winnerId);
             }
 
@@ -198,10 +254,38 @@ public class ChallengeManager {
         });
     }
 
-    private String determineWinner(Map<String, Object> participants) {
-        String winnerId = "";
-        int bestScore = -1;
-        if (participants == null) return winnerId;
+    private void distributeRewards(Transaction transaction, String winnerId, String runnerUpId,
+                                    long starsBet, long tokensBet, int totalPlayers) {
+        if (winnerId != null && !winnerId.isEmpty()) {
+            DocumentReference winnerRef = db.collection("users").document(winnerId);
+
+            if (starsBet > 0) {
+                long totalStarsPot = starsBet * totalPlayers;
+                long winnerStarsShare = (long) (totalStarsPot * 0.75);
+                transaction.update(winnerRef, "stars", FieldValue.increment(winnerStarsShare));
+            }
+            if (tokensBet > 0) {
+                long totalTokensPot = tokensBet * totalPlayers;
+                long winnerTokensShare = (long) (totalTokensPot * 0.75);
+                transaction.update(winnerRef, "tokens", FieldValue.increment(winnerTokensShare));
+            }
+        }
+
+        if (runnerUpId != null && !runnerUpId.isEmpty() && !runnerUpId.equals(winnerId)) {
+            DocumentReference runnerRef = db.collection("users").document(runnerUpId);
+            if (starsBet > 0) {
+                transaction.update(runnerRef, "stars", FieldValue.increment(starsBet));
+            }
+            if (tokensBet > 0) {
+                transaction.update(runnerRef, "tokens", FieldValue.increment(tokensBet));
+            }
+        }
+    }
+
+    private String[] determineWinnerAndRunnerUp(Map<String, Object> participants) {
+        String winnerId = "", runnerUpId = "";
+        int bestScore = -1, secondBest = -1;
+        if (participants == null) return new String[]{winnerId, runnerUpId};
         for (Map.Entry<String, Object> entry : participants.entrySet()) {
             Map<String, Object> p = (Map<String, Object>) entry.getValue();
             if (p == null) continue;
@@ -209,12 +293,17 @@ public class ChallengeManager {
             if (scoreObj instanceof Long) {
                 int s = ((Long) scoreObj).intValue();
                 if (s > bestScore) {
+                    secondBest = bestScore;
+                    runnerUpId = winnerId;
                     bestScore = s;
                     winnerId = entry.getKey();
+                } else if (s > secondBest) {
+                    secondBest = s;
+                    runnerUpId = entry.getKey();
                 }
             }
         }
-        return winnerId;
+        return new String[]{winnerId, runnerUpId};
     }
 
     public void attachToChallenge(String challengeId) {

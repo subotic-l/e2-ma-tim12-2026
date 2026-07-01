@@ -93,30 +93,34 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
         if (user == null) return;
 
         View view = getLayoutInflater().inflate(R.layout.dialog_create_challenge, null);
-        TextInputEditText betInput = view.findViewById(R.id.inputBetAmount);
-        MaterialButton starsBtn = view.findViewById(R.id.buttonStars);
-        MaterialButton tokensBtn = view.findViewById(R.id.buttonTokens);
-        final String[] currency = {"stars"};
-
-        starsBtn.setOnClickListener(v -> { currency[0] = "stars"; starsBtn.setAlpha(1f); tokensBtn.setAlpha(0.6f); });
-        tokensBtn.setOnClickListener(v -> { currency[0] = "tokens"; tokensBtn.setAlpha(1f); starsBtn.setAlpha(0.6f); });
+        TextInputEditText starsInput = view.findViewById(R.id.inputBetAmount);
+        TextInputEditText tokensInput = view.findViewById(R.id.inputTokenBet);
 
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Kreiraj izazov")
                 .setView(view)
                 .setPositiveButton("Kreiraj", (dialog, which) -> {
-                    String betStr = betInput.getText() != null ? betInput.getText().toString().trim() : "";
-                    int bet = 1;
+                    int starsBet = 1;
+                    int tokensBet = 0;
                     try {
-                        bet = Integer.parseInt(betStr);
-                        if (bet < 1) bet = 1;
+                        starsBet = Integer.parseInt(starsInput.getText().toString().trim());
+                        if (starsBet < 1) starsBet = 1;
+                        if (starsBet > 10) starsBet = 10;
+                    } catch (NumberFormatException ignored) {}
+                    try {
+                        tokensBet = Integer.parseInt(tokensInput.getText().toString().trim());
+                        if (tokensBet < 0) tokensBet = 0;
+                        if (tokensBet > 2) tokensBet = 2;
                     } catch (NumberFormatException ignored) {}
 
                     challengeManager.createChallenge(user.getUid(),
                                     user.getDisplayName() != null ? user.getDisplayName() : "Igrač",
-                                    regionName, bet, currency[0])
+                                    regionName, starsBet, tokensBet)
                             .addOnSuccessListener(id -> {
-                                Toast.makeText(this, "Izazov kreiran!", Toast.LENGTH_SHORT).show();
+                                String msg = "Izazov kreiran!";
+                                if (starsBet > 0) msg += " " + starsBet + " ⭐";
+                                if (tokensBet > 0) msg += " " + tokensBet + " 🪙";
+                                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
                                 loadChallenges();
                             })
                             .addOnFailureListener(e ->
@@ -141,8 +145,10 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
             DocumentSnapshot doc = challenges.get(position);
             String hostId = doc.getString("hostId");
             String hostName = doc.getString("hostName");
-            Long betAmount = doc.getLong("betAmount");
-            String currencyType = doc.getString("currencyType");
+            Long starsBet = doc.getLong("starsBet");
+            Long tokensBet = doc.getLong("tokensBet");
+            if (starsBet == null) starsBet = 0L;
+            if (tokensBet == null) tokensBet = 0L;
             String status = doc.getString("status");
             String challengeDocId = doc.getId();
 
@@ -151,8 +157,13 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
 
             holder.hostText.setText(hostName != null ? hostName : "Nepoznat");
 
-            String betText = betAmount != null ? betAmount + ("stars".equals(currencyType) ? " ⭐" : " 🪙") : "?";
-            holder.betText.setText(betText);
+            StringBuilder betText = new StringBuilder();
+            if (starsBet > 0) betText.append(starsBet).append(" ⭐");
+            if (tokensBet > 0) {
+                if (betText.length() > 0) betText.append(" + ");
+                betText.append(tokensBet).append(" 🪙");
+            }
+            holder.betText.setText(betText.length() > 0 ? betText.toString() : "?");
 
             StringBuilder parts = new StringBuilder("Igrači: ");
             if (participants != null) {

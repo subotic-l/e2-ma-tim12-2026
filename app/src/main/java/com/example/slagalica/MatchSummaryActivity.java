@@ -29,9 +29,14 @@ public class MatchSummaryActivity extends AppCompatActivity {
         int totalScore = intent != null
                 ? intent.getIntExtra(MatchConstants.EXTRA_GAME_SCORE, 0)
                 : 0;
+        boolean forfeit = intent != null && intent.getBooleanExtra("forfeit", false);
 
         TextView summaryText = findViewById(R.id.matchSummaryText);
-        summaryText.setText("Ukupan rezultat: " + totalScore);
+        if (forfeit) {
+            summaryText.setText("Napustili ste partiju!\nUkupan rezultat: " + totalScore);
+        } else {
+            summaryText.setText("Ukupan rezultat: " + totalScore);
+        }
 
         MaterialButton backButton = findViewById(R.id.buttonBackToMain);
         backButton.setOnClickListener(v -> {
