@@ -17,7 +17,7 @@ const NOTIFICATIONS_COLLECTION = "notifications";
  * and sends them FCM push for new unread notifications.
  */
 async function main() {
-  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+  const fiveMinutesAgo = Date.now() - 1 * 60 * 1000; // 1 minute ago actually, for testing
 
   // Get all users who have an FCM token
   const usersSnap = await db
