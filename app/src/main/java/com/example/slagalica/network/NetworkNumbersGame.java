@@ -11,6 +11,7 @@ import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.slagalica.InactivityWatcher;
 import com.example.slagalica.NumbersGame;
 import com.example.slagalica.R;
 import com.example.slagalica.data.GameSessionManager;
@@ -34,6 +36,8 @@ import java.util.Map;
 import java.util.Stack;
 
 public class NetworkNumbersGame extends AppCompatActivity implements SensorEventListener {
+
+    private InactivityWatcher inactivityWatcher;
 
     private static final int STOP_TIME_MS = 5000;
     private static final int GAME_TIME_MS = 60000;
@@ -177,6 +181,47 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
             clearBtn.setEnabled(false);
             stopBtn.setEnabled(false);
         }
+
+        inactivityWatcher = new InactivityWatcher(60000, () -> {
+            if (done || isFinishing()) return;
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Automatska predaja zbog neaktivnosti", Toast.LENGTH_SHORT).show();
+                if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
+                done = true;
+                if (gameTimer != null) gameTimer.cancel();
+                if (stopTimer != null) stopTimer.cancel();
+                unregisterShakeListener();
+                finish();
+            });
+        });
+        inactivityWatcher.start();
+        setupQuitButton();
+    }
+
+    @Override
+    public void onUserInteraction() {
+        super.onUserInteraction();
+        if (inactivityWatcher != null) inactivityWatcher.reset();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Napuštanjem igre igrač gubi partiju i ne dobija zvezde. Protivnik nastavlja partiju.")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
+                        done = true;
+                        if (gameTimer != null) gameTimer.cancel();
+                        if (stopTimer != null) stopTimer.cancel();
+                        unregisterShakeListener();
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
+        }
     }
 
     private void showWaitingState() {
@@ -307,14 +352,8 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
             }
 
             public void onMatchEnded(Map<String, Object> f) {
-                if (done) return;
-                done = true;
-                if (gameTimer != null) gameTimer.cancel();
-                if (stopTimer != null) stopTimer.cancel();
-                unregisterShakeListener();
-                sm.cleanup();
-                setResult(RESULT_OK);
-                finish();
+                // Opponent forfeited – finish game gracefully so match continues
+                finishGame();
             }
 
             public void onError(String e) {}
@@ -851,6 +890,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (inactivityWatcher != null) inactivityWatcher.cancel();
         if (gameTimer != null) gameTimer.cancel();
         if (stopTimer != null) stopTimer.cancel();
         unregisterShakeListener();

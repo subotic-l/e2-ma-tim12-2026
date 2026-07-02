@@ -9,6 +9,7 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -50,6 +51,7 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
     private int openParensCount = 0;
     private int score = 0;
     private boolean resultSent = false;
+    private boolean submitted = false;
     private TextView playerNameView, playerScoreView;
 
     private SensorManager sensorManager;
@@ -84,8 +86,10 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
         expressionTextView = findViewById(R.id.expressionTextView);
         playerNameView = findViewById(R.id.playerOneName);
         playerScoreView = findViewById(R.id.playerOneScore);
-        playerNameView.setText("Moj broj");
-        playerScoreView.setText("0");
+        String pn = getIntent().getStringExtra("playerName");
+        playerNameView.setText(pn != null ? pn : "Moj broj");
+        int ts = getIntent().getIntExtra("totalScore", 0);
+        playerScoreView.setText(String.valueOf(ts));
         stopTimerTextView = findViewById(R.id.stopTimerTextView);
         timerText = findViewById(R.id.timerText);
         stopTimerRow = findViewById(R.id.stopTimerRow);
@@ -112,6 +116,25 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
         }
 
         startNewGame();
+
+        setupQuitButton();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Da li ste sigurni?")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        resultSent = true;
+                        submitted = true;
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
+        }
     }
 
     private void startNewGame() {
@@ -239,13 +262,10 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
 
             @Override
             public void onFinish() {
+                if (submitted) return;
+                submitted = true;
                 timerText.setText("0");
-
-                for (MaterialButton b : numberButtons) {
-                    b.setEnabled(false);
-                }
-                confirmButton.setEnabled(false);
-                expressionTextView.setEnabled(false);
+                disableAllInputs();
                 Toast.makeText(NumbersGameActivity.this, "Vreme je isteklo!", Toast.LENGTH_SHORT).show();
                 expressionTextView.setText("");
                 new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
@@ -254,6 +274,14 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
                 );
             }
         }.start();
+    }
+
+    private void disableAllInputs() {
+        for (MaterialButton b : numberButtons) if (b != null) b.setEnabled(false);
+        confirmButton.setEnabled(false);
+        findViewById(R.id.clearButton).setEnabled(false);
+        int[] opIds = {R.id.btnOpen, R.id.btnClose, R.id.btnPlus, R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide};
+        for (int id : opIds) { View v = findViewById(id); if (v != null) v.setEnabled(false); }
     }
 
     private void cancelGameTimer() {
@@ -380,23 +408,32 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
 
     private void setupConfirmButton() {
         confirmButton.setOnClickListener(v -> {
+            if (submitted) return;
             String expr = buildEvalExpression();
             if (expr.isEmpty()) return;
+
+            submitted = true;
+            disableAllInputs();
+            cancelGameTimer();
 
             try {
                 double result = evaluate(expr);
                 if (Math.abs(result - game.targetNumber) < 0.0001) {
                     Toast.makeText(this, "Tačno! +10 bodova", Toast.LENGTH_SHORT).show();
-                    cancelGameTimer();
                     score = 10;
-                    playerScoreView.setText(String.valueOf(score));
-                    finishWithScore();
                 } else {
-                    Toast.makeText(this, "Netačno (" + formatResult(result) + ")", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Pokušaj: " + formatResult(result), Toast.LENGTH_SHORT).show();
+                    score = 0;
                 }
+                playerScoreView.setText(String.valueOf(score));
             } catch (Exception e) {
                 Toast.makeText(this, "Neispravan izraz", Toast.LENGTH_SHORT).show();
             }
+
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                    NumbersGameActivity.this::finishWithScore,
+                    2000
+            );
         });
     }
 

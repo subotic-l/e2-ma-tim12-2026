@@ -6,7 +6,9 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -50,7 +52,8 @@ public class WhoKnowsKnows extends AppCompatActivity {
         questionTextView = findViewById(R.id.questionTextView);
         playerNameView = findViewById(R.id.playerOneName);
         playerScoreView = findViewById(R.id.playerOneScore);
-        playerNameView.setText("Ko zna zna");
+        String pn = getIntent().getStringExtra("playerName");
+        playerNameView.setText(pn != null ? pn : "Ko zna zna");
         playerScoreView.setText("0");
         answerButtons = new MaterialButton[] {
                 findViewById(R.id.answerButton1),
@@ -66,6 +69,24 @@ public class WhoKnowsKnows extends AppCompatActivity {
 
         questionRepository = new QuestionRepository();
         loadQuestionsFromFirestore();
+
+        setupQuitButton();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Da li ste sigurni?")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        resultSent = true;
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
+        }
     }
 
     private void loadQuestionsFromFirestore() {

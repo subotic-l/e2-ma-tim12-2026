@@ -3,8 +3,10 @@ package com.example.slagalica;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -57,7 +59,8 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         });
         playerNameView = findViewById(R.id.playerOneName);
         playerScoreView = findViewById(R.id.playerOneScore);
-        playerNameView.setText("Asocijacije");
+        String pn = getIntent().getStringExtra("playerName");
+        playerNameView.setText(pn != null ? pn : "Asocijacije");
         playerScoreView.setText("0");
 
         setupViews();
@@ -66,6 +69,24 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
 
         timerText = findViewById(R.id.timerText);
         startTimer();
+
+        setupQuitButton();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Da li ste sigurni?")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        resultSent = true;
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
+        }
     }
 
     private void startTimer() {

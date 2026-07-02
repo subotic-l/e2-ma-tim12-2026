@@ -62,6 +62,14 @@ public class MatchPlayActivity extends AppCompatActivity {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (finished) return;
+                    if (result.getResultCode() == RESULT_CANCELED) {
+                        finished = true;
+                        Intent homeIntent = new Intent(this, MainActivity.class);
+                        homeIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        startActivity(homeIntent);
+                        finish();
+                        return;
+                    }
                     int score = 0;
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         score = result.getData().getIntExtra(MatchConstants.EXTRA_GAME_SCORE, 0);
@@ -92,6 +100,8 @@ public class MatchPlayActivity extends AppCompatActivity {
         }
 
         Intent intent = new Intent(this, gameOrder.get(currentGameIndex));
+        intent.putExtra("playerName", getIntent().getStringExtra("playerName"));
+        intent.putExtra("totalScore", totalScore);
         gameLauncher.launch(intent);
     }
 

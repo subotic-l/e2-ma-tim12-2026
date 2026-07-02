@@ -32,8 +32,21 @@ public class HomeFragment extends Fragment {
 
         Button startMatchButton = view.findViewById(R.id.buttonStartMatch);
         startMatchButton.setOnClickListener(v -> {
-            Intent intent = new Intent(requireActivity(), MatchPlayActivity.class);
-            startActivity(intent);
+            FirebaseUser fbUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (fbUser == null) return;
+            FirebaseFirestore.getInstance()
+                    .collection("users").document(fbUser.getUid()).get()
+                    .addOnSuccessListener(doc -> {
+                        String name = doc.getString("username");
+                        if (name == null || name.isEmpty()) name = "Igrač";
+                        Intent intent = new Intent(requireActivity(), MatchPlayActivity.class);
+                        intent.putExtra("playerName", name);
+                        startActivity(intent);
+                    })
+                    .addOnFailureListener(e -> {
+                        Intent intent = new Intent(requireActivity(), MatchPlayActivity.class);
+                        startActivity(intent);
+                    });
         });
 
         Button onlineMatchButton = view.findViewById(R.id.buttonOnlineMatch);

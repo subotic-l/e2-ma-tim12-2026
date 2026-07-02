@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -56,7 +58,8 @@ public class MatchingGameActivity extends AppCompatActivity {
         instructionsTextView = findViewById(R.id.instructionsTextView);
         playerNameView = findViewById(R.id.playerOneName);
         playerScoreView = findViewById(R.id.playerOneScore);
-        playerNameView.setText("Spojnice");
+        String pn = getIntent().getStringExtra("playerName");
+        playerNameView.setText(pn != null ? pn : "Spojnice");
         playerScoreView.setText("0");
 
         defaultColor = ContextCompat.getColor(this, R.color.button_default_color);
@@ -88,6 +91,24 @@ public class MatchingGameActivity extends AppCompatActivity {
         loadMatchingGame();
         displayGame();
         startMatchingRound();
+
+        setupQuitButton();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Da li ste sigurni?")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        resultSent = true;
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
+        }
     }
 
     private void setupButtonListeners() {

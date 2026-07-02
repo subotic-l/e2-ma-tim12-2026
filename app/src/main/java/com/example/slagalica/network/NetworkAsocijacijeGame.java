@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,6 +22,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.slagalica.InactivityWatcher;
 import com.example.slagalica.R;
 import com.example.slagalica.data.GameSessionManager;
 
@@ -31,6 +33,7 @@ import java.util.Map;
 
 public class NetworkAsocijacijeGame extends AppCompatActivity {
 
+    private InactivityWatcher inactivityWatcher;
     private static final int GROUPS = 4;
     private static final int FIELDS = 4;
     private static final int ROUND_TIME = 120;
@@ -92,7 +95,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     private ImageView ivMyAvatar, ivOppAvatar;
     private Button[][] wordBtns = new Button[GROUPS][FIELDS];
     private Button[] colBtns  = new Button[GROUPS];
-    private Button btnFinal;
+    private Button btnFinal, btnSkip;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,6 +118,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         boolean spectator = i.getBooleanExtra("isSpectator", false);
 
         tvTimer  = findViewById(R.id.timerText);
+        tvInstr  = findViewById(R.id.instructionsTextView);
         tvMyName = findViewById(R.id.playerOneName);
         tvOppName= findViewById(R.id.playerTwoName);
         tvMyScore= findViewById(R.id.playerOneScore);
@@ -143,6 +147,14 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         btnFinal = findViewById(R.id.btnFinal);
         btnFinal.setOnClickListener(v -> onFinalClick());
 
+        btnSkip = findViewById(R.id.skipButton);
+        btnSkip.setOnClickListener(v -> {
+            if (!isMyTurn || finished) return;
+            switchTurn();
+            btnSkip.setVisibility(View.GONE);
+        });
+        btnSkip.setVisibility(View.GONE);
+
         tvTimer.setVisibility(View.GONE);
 
         if (me == 1) {
@@ -161,6 +173,45 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
                 colBtns[g].setEnabled(false);
             }
             btnFinal.setEnabled(false);
+        }
+
+        inactivityWatcher = new InactivityWatcher(60000, () -> {
+            if (finished || isFinishing()) return;
+            runOnUiThread(() -> {
+                Toast.makeText(NetworkAsocijacijeGame.this, "Automatska predaja zbog neaktivnosti", Toast.LENGTH_SHORT).show();
+                if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
+                finished = true;
+                if (timer != null) timer.cancel();
+                if (revealHandler != null) revealHandler.removeCallbacksAndMessages(null);
+                finish();
+            });
+        });
+        inactivityWatcher.start();
+        setupQuitButton();
+    }
+
+    @Override
+    public void onUserInteraction() {
+        super.onUserInteraction();
+        if (inactivityWatcher != null) inactivityWatcher.reset();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Napuštanjem igre igrač gubi partiju i ne dobija zvezde. Protivnik nastavlja partiju.")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
+                        finished = true;
+                        if (timer != null) timer.cancel();
+                        if (revealHandler != null) revealHandler.removeCallbacksAndMessages(null);
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
         }
     }
 
@@ -219,12 +270,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
             }
 
             public void onMatchEnded(Map<String, Object> f) {
-                if (finished) return;
-                finished = true;
-                if (timer != null) timer.cancel();
-                sm.cleanup();
-                setResult(RESULT_OK);
-                finish();
+                endGame();
             }
 
             public void onError(String e) {}
@@ -255,13 +301,13 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     // ───────────────────────────── UI ─────────────────────────────────────
 
     private void updateUI() {
-        // isMyTurn: aktivan igrač sam ja I nema pending pogađanja
-        isMyTurn = (syncActivePlayer == me) && !pendingGuess;
+        isMyTurn = syncActivePlayer == me;
 
         boolean r1     = PHASE_R1.equals(syncPhase);
         boolean r2     = PHASE_R2.equals(syncPhase);
         boolean reveal = PHASE_R1_REVEAL.equals(syncPhase) || PHASE_R2_REVEAL.equals(syncPhase);
         boolean done   = PHASE_DONE.equals(syncPhase);
+        boolean playing = r1 || r2;
 
         int myTotal  = (me == 1 ? prevP1 : prevP2) + myPts;
         int oppTotal = (me == 1 ? prevP2 : prevP1) + oppPts;
@@ -272,15 +318,34 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         if (!syncPhase.equals(lastPhase)) {
             lastPhase = syncPhase;
             onPhaseChanged();
+            // onPhaseChanged resets pendingGuess, restore after phase init
+            if (playing && isMyTurn) {
+                btnSkip.setVisibility(View.VISIBLE);
+            }
         }
 
         if (done) {
             tvTimer.setVisibility(View.GONE);
-            // endGame poziva samo P koji je postavio PHASE_DONE (vidi advanceAfterReveal)
+            tvInstr.setText("Kraj igre");
+            btnSkip.setVisibility(View.GONE);
             return;
         }
 
-        if (reveal) {
+        if (playing) {
+            btnSkip.setVisibility(isMyTurn ? View.VISIBLE : View.GONE);
+            if (pendingGuess) {
+                tvInstr.setText(isMyTurn ? "Pogodi kolonu ili konačno rešenje" : "Protivnik pogađa...");
+            } else if (isMyTurn) {
+                tvInstr.setText("Tvoj red - otvori polje");
+            } else {
+                tvInstr.setText("Protivnik je na potezu");
+            }
+        } else if (reveal) {
+            tvInstr.setText("Rešenje");
+            btnSkip.setVisibility(View.GONE);
+        }
+
+        if (reveal || done) {
             tvTimer.setVisibility(View.GONE);
         } else {
             tvTimer.setVisibility(View.VISIBLE);
@@ -307,7 +372,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
                     btn.setText((char)('A' + g) + "" + (f + 1));
                     btn.setBackgroundTintList(getColorStateList(android.R.color.holo_blue_dark));
                     btn.setTextColor(0xFFFFFFFF);
-                    btn.setEnabled(isMyTurn && syncSolved[g] == 0);
+                    btn.setEnabled(isMyTurn && !pendingGuess && syncSolved[g] == 0);
                 }
             }
 
@@ -511,8 +576,6 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     }
 
     private void processGuess(String guess, int col, boolean isFinal) {
-        pendingGuess = false;
-
         if (isFinal) {
             if (guess.equals(ALL_FINAL[curSet])) {
                 int pts = calcFinalScore();
@@ -538,6 +601,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
                 updateUI();
                 goToReveal();
             } else {
+                pendingGuess = false;
                 switchTurn();
                 Toast.makeText(this, "Netačno!", Toast.LENGTH_SHORT).show();
             }
@@ -561,9 +625,11 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
                 u.put("p2SolvedGroups", p2SolvedGroups);
                 sm.updateGameState(u);
                 Toast.makeText(this, "Tačno! +" + pts, Toast.LENGTH_SHORT).show();
+                pendingGuess = true;
                 updateUI();
                 if (allFieldsOpened()) goToReveal();
             } else {
+                pendingGuess = false;
                 switchTurn();
                 Toast.makeText(this, "Netačno!", Toast.LENGTH_SHORT).show();
             }
@@ -718,6 +784,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (inactivityWatcher != null) inactivityWatcher.cancel();
         if (timer != null) timer.cancel();
         if (revealHandler != null) revealHandler.removeCallbacksAndMessages(null);
         if (sm != null) sm.cleanup();
