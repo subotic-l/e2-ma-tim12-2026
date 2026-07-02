@@ -40,6 +40,7 @@ public class MatchingGameActivity extends AppCompatActivity {
     private int wrongBorder;
     private int score = 0;
     private boolean resultSent = false;
+    private TextView playerNameView, playerScoreView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,10 +52,12 @@ public class MatchingGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindHeader(this, "Spojnice", 0);
-
         timerTextView = findViewById(R.id.timerTextView);
         instructionsTextView = findViewById(R.id.instructionsTextView);
+        playerNameView = findViewById(R.id.playerOneName);
+        playerScoreView = findViewById(R.id.playerOneScore);
+        playerNameView.setText("Spojnice");
+        playerScoreView.setText("0");
 
         defaultColor = ContextCompat.getColor(this, R.color.button_default_color);
         defaultBorder = ContextCompat.getColor(this, R.color.button_default_border);
@@ -162,7 +165,7 @@ public class MatchingGameActivity extends AppCompatActivity {
 
     private void markPairCorrect(int leftIndex, int rightIndex) {
         score += 2;
-        MatchUiHelper.updateScore(this, score);
+        playerScoreView.setText(String.valueOf(score));
         leftButtons[leftIndex].setBackgroundTintList(ColorStateList.valueOf(correctColor));
         leftButtons[leftIndex].setStrokeColor(ColorStateList.valueOf(correctBorder));
 

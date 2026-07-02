@@ -32,6 +32,7 @@ public class StepByStepActivity extends AppCompatActivity {
     private static final int STEP_TIME_MS = 10000;
     private int score = 0;
     private boolean resultSent = false;
+    private TextView playerNameView, playerScoreView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +44,10 @@ public class StepByStepActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindHeader(this, "Korak po korak", 0);
+        playerNameView = findViewById(R.id.playerOneName);
+        playerScoreView = findViewById(R.id.playerOneScore);
+        playerNameView.setText("Korak po korak");
+        playerScoreView.setText("0");
 
         pointsTextView = findViewById(R.id.pointsTextView);
         timerTextView = findViewById(R.id.timerTextView);
@@ -154,7 +158,7 @@ public class StepByStepActivity extends AppCompatActivity {
         guessInput.setText(game.answer);
         timerTextView.setText("Tačno!");
         score = currentPoints;
-        MatchUiHelper.updateScore(this, score);
+        playerScoreView.setText(String.valueOf(score));
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
     }
 

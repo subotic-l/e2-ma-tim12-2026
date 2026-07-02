@@ -50,6 +50,7 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
     private int openParensCount = 0;
     private int score = 0;
     private boolean resultSent = false;
+    private TextView playerNameView, playerScoreView;
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -79,10 +80,12 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindHeader(this, "Moj broj", 0);
-
         targetTextView = findViewById(R.id.targetTextView);
         expressionTextView = findViewById(R.id.expressionTextView);
+        playerNameView = findViewById(R.id.playerOneName);
+        playerScoreView = findViewById(R.id.playerOneScore);
+        playerNameView.setText("Moj broj");
+        playerScoreView.setText("0");
         stopTimerTextView = findViewById(R.id.stopTimerTextView);
         gameTimerTextView = findViewById(R.id.gameTimerTextView);
         stopTimerRow = findViewById(R.id.stopTimerRow);
@@ -386,7 +389,7 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
                     Toast.makeText(this, "Tačno! +10 bodova", Toast.LENGTH_SHORT).show();
                     cancelGameTimer();
                     score = 10;
-                    MatchUiHelper.updateScore(this, score);
+                    playerScoreView.setText(String.valueOf(score));
                     finishWithScore();
                 } else {
                     Toast.makeText(this, "Netačno (" + formatResult(result) + ")", Toast.LENGTH_SHORT).show();

@@ -43,6 +43,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
     private int[] openedCounts = new int[4];
     private int score = 0;
     private boolean resultSent = false;
+    private TextView playerNameView, playerScoreView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +55,10 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindHeader(this, "Asocijacije", 0);
+        playerNameView = findViewById(R.id.playerOneName);
+        playerScoreView = findViewById(R.id.playerOneScore);
+        playerNameView.setText("Asocijacije");
+        playerScoreView.setText("0");
 
         setupViews();
         setupClickListeners();
@@ -164,7 +168,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         int unopened = 4 - openedCounts[groupIndex];
         int points = GROUP_POINTS + Math.max(0, unopened);
         score += points;
-        MatchUiHelper.updateScore(this, score);
+        playerScoreView.setText(String.valueOf(score));
         solvedGroups[groupIndex] = true;
         for (int i = 0; i < 4; i++) {
             wordButtons[groupIndex][i].setText(groups[groupIndex][i]);
@@ -189,7 +193,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
             String guess = input.getText().toString().trim().toUpperCase();
             if (guess.equals(finalWord)) {
                 score += FINAL_POINTS;
-                MatchUiHelper.updateScore(this, score);
+                playerScoreView.setText(String.valueOf(score));
                 if (countDownTimer != null) {
                     countDownTimer.cancel();
                 }

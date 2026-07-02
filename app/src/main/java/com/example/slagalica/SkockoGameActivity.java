@@ -39,6 +39,7 @@ public class SkockoGameActivity extends AppCompatActivity {
     private TextView timerText;
     private int score = 0;
     private boolean resultSent = false;
+    private TextView playerNameView, playerScoreView;
 
     private final String[] symbols = {"S", "T", "K", "P", "H", "Z"};
     private final int[] drawableIds = {
@@ -63,7 +64,10 @@ public class SkockoGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        MatchUiHelper.bindHeader(this, "Skocko", 0);
+        playerNameView = findViewById(R.id.playerOneName);
+        playerScoreView = findViewById(R.id.playerOneScore);
+        playerNameView.setText("Skocko");
+        playerScoreView.setText("0");
 
         timerText = findViewById(R.id.timerText);
         startTimer();
@@ -354,7 +358,7 @@ public class SkockoGameActivity extends AppCompatActivity {
             } else {
                 score = 10;
             }
-            MatchUiHelper.updateScore(this, score);
+            playerScoreView.setText(String.valueOf(score));
         } else {
             score = 0;
         }
