@@ -57,6 +57,7 @@ public class ChatRepository {
                             notif.put("createdAt", FieldValue.serverTimestamp());
                             notif.put("read", false);
                             notif.put("channel", SlagalicaApp.CHANNEL_CHAT);
+                            notif.put("regionCode", regionCode);
                             db.collection("users")
                                     .document(targetUid)
                                     .collection("notifications")

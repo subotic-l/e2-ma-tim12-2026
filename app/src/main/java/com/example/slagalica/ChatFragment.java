@@ -28,6 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -157,6 +158,7 @@ public class ChatFragment extends Fragment {
         });
 
         listenToMessages();
+        markNotificationsAsRead();
     }
 
     private void sendMessage() {
@@ -197,6 +199,28 @@ public class ChatFragment extends Fragment {
                 messagesRecyclerView.smoothScrollToPosition(messageList.size() - 1);
             }
         });
+    }
+
+    private void markNotificationsAsRead() {
+        if (currentUser == null) return;
+
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(currentUser.getUid())
+                .collection("notifications")
+                .whereEqualTo("read", false)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    if (snapshots.isEmpty()) return;
+                    WriteBatch batch = FirebaseFirestore.getInstance().batch();
+                    for (QueryDocumentSnapshot doc : snapshots) {
+                        String notifRegion = doc.getString("regionCode");
+                        if (notifRegion == null || notifRegion.equals(regionCode)) {
+                            batch.update(doc.getReference(), "read", true);
+                        }
+                    }
+                    batch.commit();
+                });
     }
 
     private void closeChat() {
