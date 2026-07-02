@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -47,6 +48,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     private int p1Correct = 0, p1Wrong = 0;
     private int p2Correct = 0, p2Wrong = 0;
     private boolean done = false;
+    private boolean opponentLeft = false;
     private boolean iAmFinisher = false;
     private QuestionRepository questionRepository;
 
@@ -116,6 +118,26 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         if (spectator) {
             for (Button b : btns) b.setEnabled(false);
         }
+
+        setupQuitButton();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Napuštanjem igre igrač gubi partiju i ne dobija zvezde. Protivnik nastavlja partiju.")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
+                        done = true;
+                        if (timer != null) timer.cancel();
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
+        }
     }
 
     private GameSessionManager.StateListener createL() {
@@ -175,9 +197,10 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
                 runOnUiThread(() -> process(gs));
             }
             public void onMatchEnded(Map<String, Object> f) {
-                if (done) return;
-                done = true; if (timer != null) timer.cancel();
-                sm.cleanup(); setResult(RESULT_OK); finish();
+                if (opponentLeft) return;
+                opponentLeft = true;
+                if (timer != null) timer.cancel();
+                new Handler(Looper.getMainLooper()).post(() -> finishGame());
             }
             public void onError(String e) {}
         };

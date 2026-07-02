@@ -77,8 +77,9 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
 
             int starsDelta = UserService.calculateStarsDelta(myScore, iWon);
 
-            // Read old league before processing rewards
+            // Read old stars & league before processing rewards
             userService.loadProfile().addOnSuccessListener(oldProfile -> {
+                long oldStars = oldProfile.getLong("stars") != null ? oldProfile.getLong("stars") : 0;
                 long oldLeague = oldProfile.getLong("league") != null ? oldProfile.getLong("league") : 0;
 
                 userService.updateLastSeen();
@@ -86,23 +87,20 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
                         .addOnSuccessListener(aVoid -> {
                             // Read updated profile to show current balance & update leaderboard
                             userService.loadProfile().addOnSuccessListener(doc -> {
-                                if (doc.exists()) {
-                                    Long stars = doc.getLong("stars");
-                                    long newLeague = doc.getLong("league") != null ? doc.getLong("league") : 0;
-                                    rewardsCard.setVisibility(View.VISIBLE);
+                                long newStars = Math.max(0, oldStars + starsDelta);
+                                long newLeague = doc.getLong("league") != null ? doc.getLong("league") : 0;
+                                rewardsCard.setVisibility(View.VISIBLE);
 
-                                    String starPrefix = starsDelta >= 0 ? "+" : "";
-                                    starsChangeText.setText(
-                                            starPrefix + starsDelta + " ⭐" +
-                                            " (ukupno: " + (stars != null ? stars : 0) + ")");
+                                String starPrefix = starsDelta >= 0 ? "+" : "";
+                                starsChangeText.setText(
+                                        starPrefix + starsDelta + " ⭐");
 
-                                    // Check for league change
-                                    if (newLeague != oldLeague) {
-                                        showLeagueChangeDialog(oldLeague, newLeague);
-                                    }
+                                // Check for league change
+                                if (newLeague != oldLeague) {
+                                    showLeagueChangeDialog(oldLeague, newLeague);
                                 }
 
-                                int starsGained = starsDelta;
+                                int starsGained = Math.max(0, starsDelta);
                                 String userName = doc != null && doc.exists()
                                         ? doc.getString("username") : null;
                                 String avatarUrl = doc != null && doc.exists()

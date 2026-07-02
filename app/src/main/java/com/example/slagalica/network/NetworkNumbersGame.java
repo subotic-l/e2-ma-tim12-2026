@@ -55,6 +55,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     private boolean submitted = false;
     private boolean playInitialized = false;
     private boolean phaseCompleted = false;
+    private boolean transitionScheduled = false;
     private double myResult = 0;
 
     private int round1Score = 0, round2Score = 0;
@@ -162,6 +163,11 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         }
 
         showWaitingState();
+
+        int myInitScore = me == 1 ? previousP1Score : previousP2Score;
+        int oppInitScore = me == 1 ? previousP2Score : previousP1Score;
+        myScoreView.setText(String.valueOf(myInitScore));
+        oppScoreView.setText(String.valueOf(oppInitScore));
 
         sm = new GameSessionManager();
         sm.attachToMatch(matchId, me);
@@ -356,6 +362,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         submitted = false;
         playInitialized = false;
         phaseCompleted = false;
+        transitionScheduled = false;
         tokens.clear();
         openParensCount = 0;
         usedNumberButtons.clear();
@@ -396,6 +403,9 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         disableNumberButtons();
         hideOperatorButtons();
         playInitialized = false;
+        phaseCompleted = false;
+        submitted = false;
+        transitionScheduled = false;
         exprView.setText("");
         for (MaterialButton b : numBtns) { b.setText(""); b.setAlpha(1f); }
         if (iAmRevealer) {
@@ -486,10 +496,12 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
                 + "Protivnik: " + oppRes + " (" + oppRoundScore + " poena)";
         instrView.setText(msg);
 
-        if (iAmFinisher) {
+        if (iAmFinisher && !transitionScheduled) {
+            transitionScheduled = true;
+            int capturedRound = round;
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 if (done) return;
-                if (round == 1) {
+                if (capturedRound == 1) {
                     startRound2();
                 } else {
                     finishGameState();

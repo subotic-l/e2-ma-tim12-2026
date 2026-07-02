@@ -621,6 +621,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
 
     private void switchTurn() {
         // Prebaci turn na protivnika — timer se NE restartuje, samo activePlayer
+        pendingGuess = false;
         int next = (syncActivePlayer == 1) ? 2 : 1;
         Map<String, Object> u = new HashMap<>();
         u.put("activePlayer", (long) next);
