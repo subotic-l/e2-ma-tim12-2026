@@ -20,9 +20,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.slagalica.data.LeaderboardManager;
 import com.example.slagalica.service.UserService;
 
 import java.util.ArrayList;
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
@@ -355,17 +357,22 @@ public class FriendsFragment extends Fragment {
         if (entry.friendId == null) return;
 
         db.collection("users").document(entry.friendId).get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
+                .continueWithTask(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        DocumentSnapshot doc = task.getResult();
                         String freshUsername = doc.getString("username");
-                        if (freshUsername != null) {
-                            entry.username = freshUsername;
-                        }
+                        if (freshUsername != null) entry.username = freshUsername;
                         entry.stars = doc.getLong("stars") != null ? doc.getLong("stars") : 0;
                         entry.league = doc.getLong("league") != null ? doc.getLong("league") : 0;
                         entry.avatarUrl = doc.getString("avatarUrl");
-                        adapter.notifyDataSetChanged();
+                        return new LeaderboardManager()
+                                .getPlayerRank(LeaderboardManager.Period.MONTHLY, entry.friendId);
                     }
+                    return Tasks.forResult(-1);
+                })
+                .addOnSuccessListener(rank -> {
+                    entry.monthlyRank = rank;
+                    adapter.notifyDataSetChanged();
                 });
     }
 
@@ -396,6 +403,7 @@ public class FriendsFragment extends Fragment {
         String avatarUrl;
         long stars;
         long league;
+        int monthlyRank;
 
         FriendEntry(String friendId, String username, String avatarUrl) {
             this.friendId = friendId;
@@ -403,6 +411,7 @@ public class FriendsFragment extends Fragment {
             this.avatarUrl = avatarUrl;
             this.stars = 0;
             this.league = 0;
+            this.monthlyRank = -1;
         }
     }
 
@@ -441,6 +450,16 @@ public class FriendsFragment extends Fragment {
                 holder.leagueIcon.setImageResource(LeagueHelper.getLeagueIconByIndex(leagueIdx));
             }
 
+
+
+            if (holder.monthlyRankText != null) {
+                if (entry.monthlyRank > 0) {
+                    holder.monthlyRankText.setText("Mjesečni rang: #" + entry.monthlyRank);
+                } else {
+                    holder.monthlyRankText.setText("");
+                }
+            }
+
             String url = entry.avatarUrl;
             if (url != null && !url.isEmpty()) {
                 Glide.with(holder.itemView.getContext())
@@ -450,7 +469,10 @@ public class FriendsFragment extends Fragment {
                         .circleCrop()
                         .into(holder.avatarImage);
             } else {
-                holder.avatarImage.setImageResource(R.drawable.default_profile);
+                Glide.with(holder.itemView.getContext())
+                        .load(R.drawable.default_profile)
+                        .circleCrop()
+                        .into(holder.avatarImage);
             }
 
             holder.playButton.setOnClickListener(v -> {
@@ -471,6 +493,7 @@ public class FriendsFragment extends Fragment {
             final TextView starsText;
             final TextView leagueText;
             final ImageView leagueIcon;
+            final TextView monthlyRankText;
             final MaterialButton playButton;
 
             ViewHolder(View itemView) {
@@ -480,6 +503,7 @@ public class FriendsFragment extends Fragment {
                 starsText = itemView.findViewById(R.id.friendStars);
                 leagueText = itemView.findViewById(R.id.friendLeague);
                 leagueIcon = itemView.findViewById(R.id.friendLeagueIcon);
+                monthlyRankText = itemView.findViewById(R.id.friendMonthlyRank);
                 playButton = itemView.findViewById(R.id.buttonPlayFriend);
             }
         }
