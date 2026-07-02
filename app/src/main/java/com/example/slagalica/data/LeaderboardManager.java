@@ -17,9 +17,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class LeaderboardManager {
 
@@ -239,6 +241,8 @@ public class LeaderboardManager {
             Boolean distributed = meta.getBoolean("distributed");
             if (distributed != null && distributed) return Tasks.forResult(false);
 
+            boolean isMonthly = oldCycleId.startsWith("monthly");
+
             // Read top 10 outside transaction
             return db.collection(LEADERBOARDS_COLLECTION)
                     .document(oldCycleId)
@@ -258,6 +262,7 @@ public class LeaderboardManager {
                                 : new int[]{10, 6, 4, 2, 2, 2, 2, 2, 2, 2};
 
                         // Transaction: set distributed + update tokens
+                        final List<Map<String, Object>>[] winnersRef = new List[]{null};
                         return db.runTransaction((Transaction.Function<Boolean>) t -> {
                             DocumentSnapshot metaCheck = t.get(metadataRef);
                             if (Boolean.TRUE.equals(metaCheck.getBoolean("distributed"))) {
@@ -285,10 +290,51 @@ public class LeaderboardManager {
                             metaUpdate.put("distributedAt", FieldValue.serverTimestamp());
                             metaUpdate.put("winners", winners);
                             t.set(metadataRef, metaUpdate);
+                            winnersRef[0] = winners;
                             return true;
+                        }).continueWithTask(txTask -> {
+                            if (!txTask.isSuccessful() || !Boolean.TRUE.equals(txTask.getResult())) {
+                                return Tasks.forResult(false);
+                            }
+
+                            // For monthly cycles: apply 30% star penalty to non-winners
+                            if (isMonthly) {
+                                applyMonthlyPenalty(oldCycleId, winnersRef[0]);
+                            }
+                            return Tasks.forResult(true);
                         });
                     });
         });
+    }
+
+    private void applyMonthlyPenalty(String cycleId, List<Map<String, Object>> winners) {
+        // Collect UIDs of users who played at least one match (have a score doc in this cycle)
+        db.collection(LEADERBOARDS_COLLECTION)
+                .document(cycleId)
+                .collection(SCORES_SUBCOLLECTION)
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    Set<String> playedUserIds = new HashSet<>();
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        playedUserIds.add(doc.getId());
+                    }
+
+                    // Query all users and apply 30% penalty to those who didn't play
+                    db.collection("users")
+                            .get()
+                            .addOnSuccessListener(userDocs -> {
+                                for (DocumentSnapshot userDoc : userDocs.getDocuments()) {
+                                    String uid = userDoc.getId();
+                                    if (playedUserIds.contains(uid)) continue;
+
+                                    Long currentStars = userDoc.getLong("stars");
+                                    if (currentStars == null || currentStars <= 0) continue;
+                                    long reduction = Math.max(1, (long) (currentStars * 0.3));
+                                    db.collection("users").document(uid)
+                                            .update("stars", FieldValue.increment(-reduction));
+                                }
+                            });
+                });
     }
 
     public Task<Map<String, Object>> getCycleMetadata(String cycleId) {

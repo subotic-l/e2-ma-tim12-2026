@@ -114,6 +114,37 @@ public class ProfileFragment extends Fragment {
         buttonEditAvatar = view.findViewById(R.id.buttonEditAvatar);
         avatarProgressBar = view.findViewById(R.id.avatarProgressBar);
         avatarFrame = view.findViewById(R.id.avatarFrame);
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        boolean isGuest = currentUser == null;
+
+        if (isGuest) {
+            View statsCard = view.findViewById(R.id.statsCard);
+            View qrCard = view.findViewById(R.id.qrCard);
+            View forgotPasswordButton = view.findViewById(R.id.btn_forgot_password);
+            View dailyButton = view.findViewById(R.id.buttonDailyChallenges);
+            View notificationsButton = view.findViewById(R.id.buttonNotifications);
+            View logoutButton = view.findViewById(R.id.buttonLogout);
+
+            textUsername.setText("Gost");
+            textEmail.setText("Prijavite se da vidite profil");
+            textRegion.setVisibility(View.GONE);
+            textStars.setVisibility(View.GONE);
+            textTokens.setVisibility(View.GONE);
+            textLeague.setVisibility(View.GONE);
+            leagueIcon.setVisibility(View.GONE);
+            buttonEditAvatar.setVisibility(View.GONE);
+            if (statsCard != null) statsCard.setVisibility(View.GONE);
+            if (qrCard != null) qrCard.setVisibility(View.GONE);
+            if (forgotPasswordButton != null) forgotPasswordButton.setVisibility(View.GONE);
+            if (dailyButton != null) dailyButton.setVisibility(View.GONE);
+            if (notificationsButton != null) notificationsButton.setVisibility(View.GONE);
+            if (logoutButton != null) logoutButton.setVisibility(View.GONE);
+
+            view.findViewById(R.id.textStatisticsTitle).setVisibility(View.GONE);
+            return;
+        }
+
         Button forgotPasswordButton = view.findViewById(R.id.btn_forgot_password);
         forgotPasswordButton.setOnClickListener(v -> {
             Intent intent = new Intent(requireActivity(), ChangePasswordActivity.class);
@@ -145,8 +176,7 @@ public class ProfileFragment extends Fragment {
         buttonEditAvatar.setOnClickListener(v -> openGallery());
 
         ImageView qrCodeImage = view.findViewById(R.id.qrCodeImage);
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        String qrLink = currentUser != null ? currentUser.getUid() : "";
+        String qrLink = currentUser.getUid();
         generateQrCode(qrLink, qrCodeImage);
 
         setupToggle(view, R.id.WhoKnowsStatsToggleHeader, R.id.WhoKnowsStatsExpandedContainer, R.id.WhoKnowsStatsToggleIcon);
