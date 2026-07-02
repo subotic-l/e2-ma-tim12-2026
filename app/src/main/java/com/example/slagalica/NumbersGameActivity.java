@@ -42,7 +42,7 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
     private NumbersGame game;
     private int stopStage = 0; // 0 = nothing shown, 1 = target shown, 2 = numbers shown
     private CountDownTimer autoStopTimer;
-    private TextView gameTimerTextView;
+    private TextView timerText;
     private CountDownTimer gameTimer;
 
     private final Stack<MaterialButton> usedNumberButtons = new Stack<>();
@@ -87,7 +87,7 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
         playerNameView.setText("Moj broj");
         playerScoreView.setText("0");
         stopTimerTextView = findViewById(R.id.stopTimerTextView);
-        gameTimerTextView = findViewById(R.id.gameTimerTextView);
+        timerText = findViewById(R.id.timerText);
         stopTimerRow = findViewById(R.id.stopTimerRow);
         stopButton = findViewById(R.id.stopButton);
         confirmButton = findViewById(R.id.confirmButton);
@@ -124,7 +124,7 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
         openParensCount = 0;
         usedNumberButtons.clear();
 
-        gameTimerTextView.setText("60");
+        timerText.setText("60");
         cancelGameTimer();
 
         for (MaterialButton b : numberButtons) {
@@ -234,12 +234,12 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
             @Override
             public void onTick(long millisUntilFinished) {
                 int seconds = (int) (millisUntilFinished / 1000);
-                gameTimerTextView.setText(String.valueOf(seconds));
+                timerText.setText(String.valueOf(seconds));
             }
 
             @Override
             public void onFinish() {
-                gameTimerTextView.setText("0");
+                timerText.setText("0");
 
                 for (MaterialButton b : numberButtons) {
                     b.setEnabled(false);

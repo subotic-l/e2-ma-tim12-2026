@@ -1,6 +1,7 @@
 package com.example.slagalica;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.widget.TextView;
@@ -12,6 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.Arrays;
@@ -21,7 +23,7 @@ public class StepByStepActivity extends AppCompatActivity {
 
     private StepByStepGame game;
     private TextView pointsTextView;
-    private TextView timerTextView;
+    private TextView timerText;
     private TextView[] clueViews;
     private TextInputEditText guessInput;
     private MaterialButton submitButton;
@@ -29,9 +31,10 @@ public class StepByStepActivity extends AppCompatActivity {
     private CountDownTimer timer;
     private int currentStep = 0;
     private int currentPoints = 20;
-    private static final int STEP_TIME_MS = 10000;
+    private static final int TOTAL_TIME_MS = 70000;
     private int score = 0;
     private boolean resultSent = false;
+    private int advanceCount = 0;
     private TextView playerNameView, playerScoreView;
 
     @Override
@@ -50,7 +53,7 @@ public class StepByStepActivity extends AppCompatActivity {
         playerScoreView.setText("0");
 
         pointsTextView = findViewById(R.id.pointsTextView);
-        timerTextView = findViewById(R.id.timerTextView);
+        timerText = findViewById(R.id.timerText);
         guessInput = findViewById(R.id.guessInput);
         submitButton = findViewById(R.id.submitGuessButton);
 
@@ -88,9 +91,12 @@ public class StepByStepActivity extends AppCompatActivity {
     private void resetBoard() {
         currentStep = 0;
         currentPoints = 20;
+        advanceCount = 0;
         updatePoints();
         for (TextView clueView : clueViews) {
-            clueView.setText("(zatvoreno)");
+            clueView.setText("");
+            MaterialCardView card = (MaterialCardView) clueView.getParent();
+            card.setCardBackgroundColor(Color.parseColor("#2D2D2D"));
         }
     }
 
@@ -101,29 +107,43 @@ public class StepByStepActivity extends AppCompatActivity {
     private void revealCurrentClue() {
         if (currentStep < game.maxSteps()) {
             clueViews[currentStep].setText(game.clues.get(currentStep));
+            MaterialCardView card = (MaterialCardView) clueViews[currentStep].getParent();
+            card.setCardBackgroundColor(Color.parseColor("#1565C0"));
         }
     }
 
     private void revealAllClues() {
         for (int i = 0; i < clueViews.length && i < game.maxSteps(); i++) {
             clueViews[i].setText(game.clues.get(i));
+            MaterialCardView card = (MaterialCardView) clueViews[i].getParent();
+            card.setCardBackgroundColor(Color.parseColor("#1565C0"));
         }
     }
 
     private void startTimer() {
         if (timer != null) timer.cancel();
+        advanceCount = 0;
 
-        timer = new CountDownTimer(STEP_TIME_MS, 1000) {
+        timer = new CountDownTimer(TOTAL_TIME_MS, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
-                int seconds = (int) (millisUntilFinished / 1000) + 1;
-                timerTextView.setText("Vreme: " + seconds);
+                int seconds = (int) Math.ceil(millisUntilFinished / 1000.0);
+                timerText.setText(String.valueOf(seconds));
+
+                int elapsedSec = 70 - seconds;
+                int expectedAdvances = Math.min(6, elapsedSec / 10);
+                while (advanceCount < expectedAdvances && currentStep < 6 && !resultSent) {
+                    advanceCount++;
+                    moveToNextStepOrFinish();
+                }
             }
 
             @Override
             public void onFinish() {
-                timerTextView.setText("Vreme: 0");
-                moveToNextStepOrFinish();
+                timerText.setText("0");
+                if (!resultSent) {
+                    finishGameFail();
+                }
             }
         }.start();
     }
@@ -145,7 +165,6 @@ public class StepByStepActivity extends AppCompatActivity {
 
         if (currentStep < game.maxSteps()) {
             revealCurrentClue();
-            startTimer();
         } else {
             finishGameFail();
         }
@@ -156,7 +175,7 @@ public class StepByStepActivity extends AppCompatActivity {
         submitButton.setEnabled(false);
         revealAllClues();
         guessInput.setText(game.answer);
-        timerTextView.setText("Tačno!");
+        timerText.setText("0");
         score = currentPoints;
         playerScoreView.setText(String.valueOf(score));
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
@@ -167,7 +186,7 @@ public class StepByStepActivity extends AppCompatActivity {
         submitButton.setEnabled(false);
         revealAllClues();
         guessInput.setText(game.answer);
-        timerTextView.setText("Kraj");
+        timerText.setText("0");
         score = 0;
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(this::finishWithScore, 2000);
     }

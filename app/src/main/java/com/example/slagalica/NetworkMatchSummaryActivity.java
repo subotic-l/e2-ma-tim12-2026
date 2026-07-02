@@ -55,7 +55,6 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
         MaterialButton backButton = findViewById(R.id.buttonBackToHome);
         MaterialCardView rewardsCard = findViewById(R.id.rewardsCard);
         TextView starsChangeText = findViewById(R.id.starsChangeText);
-        TextView tokenBonusText = findViewById(R.id.tokenBonusText);
 
         summaryTitleText.setText("Kona\u010Dni rezultat");
         winnerText.setText("Pobednik: " + winner);
@@ -67,7 +66,6 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
         if (isFriendMatch) {
             rewardsCard.setVisibility(View.VISIBLE);
             starsChangeText.setText("Prijateljska partija - bez promene zvezdi");
-            tokenBonusText.setText("");
         }
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -90,17 +88,13 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
                             userService.loadProfile().addOnSuccessListener(doc -> {
                                 if (doc.exists()) {
                                     Long stars = doc.getLong("stars");
-                                    Long tokens = doc.getLong("tokens");
                                     long newLeague = doc.getLong("league") != null ? doc.getLong("league") : 0;
                                     rewardsCard.setVisibility(View.VISIBLE);
 
                                     String starPrefix = starsDelta >= 0 ? "+" : "";
                                     starsChangeText.setText(
-                                            "Zvezde: " + starPrefix + starsDelta +
+                                            starPrefix + starsDelta + " ⭐" +
                                             " (ukupno: " + (stars != null ? stars : 0) + ")");
-
-                                    tokenBonusText.setText(
-                                            "Tokeni: " + (tokens != null ? tokens : 0));
 
                                     // Check for league change
                                     if (newLeague != oldLeague) {
@@ -130,7 +124,6 @@ public class NetworkMatchSummaryActivity extends AppCompatActivity {
                         .addOnFailureListener(e -> {
                             rewardsCard.setVisibility(View.VISIBLE);
                             starsChangeText.setText("Greška pri obradi nagrada");
-                            tokenBonusText.setText("");
                         });
             });
         }

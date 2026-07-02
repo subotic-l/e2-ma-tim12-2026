@@ -56,6 +56,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     private double myResult = 0;
 
     private int round1Score = 0, round2Score = 0;
+    private int lastDisplayedR1Score = 0, lastDisplayedR2Score = 0;
     private int p1FoundExactCount = 0;
     private int p2FoundExactCount = 0;
 
@@ -114,7 +115,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         opp = me == 1 ? 2 : 1;
         boolean spectator = i.getBooleanExtra("isSpectator", false);
 
-        timerView = findViewById(R.id.gameTimerTextView);
+        timerView = findViewById(R.id.timerText);
         targetView = findViewById(R.id.targetTextView);
         exprView = findViewById(R.id.expressionTextView);
 
@@ -452,12 +453,18 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
 
         String myRes = formatResult(me == 1 ? p1r : p2r, target, me == 1 ? p1sub : p2sub);
         String oppRes = formatResult(me == 1 ? p2r : p1r, target, me == 1 ? p2sub : p1sub);
-        int myScore = me == 1 ? r1Score : r2Score;
-        int oppScorePts = me == 1 ? r2Score : r1Score;
+
+        int p1RoundScore = r1Score - lastDisplayedR1Score;
+        int p2RoundScore = r2Score - lastDisplayedR2Score;
+        lastDisplayedR1Score = r1Score;
+        lastDisplayedR2Score = r2Score;
+
+        int myRoundScore = me == 1 ? p1RoundScore : p2RoundScore;
+        int oppRoundScore = me == 1 ? p2RoundScore : p1RoundScore;
 
         String msg = "Runda " + round + " - Cilj: " + target + "\n"
-                + "Ti: " + myRes + " (" + myScore + " poena)\n"
-                + "Protivnik: " + oppRes + " (" + oppScorePts + " poena)";
+                + "Ti: " + myRes + " (" + myRoundScore + " poena)\n"
+                + "Protivnik: " + oppRes + " (" + oppRoundScore + " poena)";
         instrView.setText(msg);
 
         if (iAmFinisher) {
@@ -468,7 +475,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
                 } else {
                     finishGameState();
                 }
-            }, 4000);
+            }, 7000);
         }
     }
 

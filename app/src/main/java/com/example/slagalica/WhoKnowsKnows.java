@@ -28,7 +28,7 @@ public class WhoKnowsKnows extends AppCompatActivity {
     private int currentQuestionIndex = 0;
     private CountDownTimer timer;
     private int timeRemaining = 5;
-    private TextView timerTextView;
+    private TextView timerText;
     private TextView questionTextView;
     private MaterialButton[] answerButtons;
     private int score = 0;
@@ -46,7 +46,7 @@ public class WhoKnowsKnows extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        timerTextView = findViewById(R.id.timerTextView);
+        timerText = findViewById(R.id.timerText);
         questionTextView = findViewById(R.id.questionTextView);
         playerNameView = findViewById(R.id.playerOneName);
         playerScoreView = findViewById(R.id.playerOneScore);
@@ -107,7 +107,7 @@ public class WhoKnowsKnows extends AppCompatActivity {
         }
 
         timeRemaining = 5;
-        timerTextView.setText(String.valueOf(timeRemaining));
+        timerText.setText(String.valueOf(timeRemaining));
     }
 
     private void startTimer() {
@@ -119,12 +119,12 @@ public class WhoKnowsKnows extends AppCompatActivity {
             @Override
             public void onTick(long millisUntilFinished) {
                 timeRemaining = (int) (millisUntilFinished / 1000);
-                timerTextView.setText(String.valueOf(timeRemaining+1));
+                timerText.setText(String.valueOf(timeRemaining+1));
             }
 
             @Override
             public void onFinish() {
-                timerTextView.setText("0");
+                timerText.setText("0");
                 showCorrectAnswerOnTimeUp();
                 new Handler(Looper.getMainLooper()).postDelayed(() -> nextQuestion(), 2000);
             }
@@ -195,7 +195,7 @@ public class WhoKnowsKnows extends AppCompatActivity {
         if (timer != null) {
             timer.cancel();
         }
-        timerTextView.setText("Kraj");
+        timerText.setText("Kraj");
         disableAnswerButtons();
         questionTextView.setText("Igra je završena!");
 

@@ -193,6 +193,7 @@ public class RegionsFragment extends Fragment {
         if (chatFragment != null) return;
 
         chatFab.setVisibility(View.GONE);
+        challengeFab.setVisibility(View.GONE);
         chatContainer.setVisibility(View.VISIBLE);
 
         chatFragment = ChatFragment.newInstance(regionCode);
@@ -217,6 +218,7 @@ public class RegionsFragment extends Fragment {
         chatContainer.postDelayed(() -> {
             chatContainer.setVisibility(View.GONE);
             chatFab.setVisibility(View.VISIBLE);
+            challengeFab.setVisibility(View.VISIBLE);
         }, 250);
     }
 

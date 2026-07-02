@@ -1,6 +1,7 @@
 package com.example.slagalica.network;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -16,13 +17,15 @@ import com.example.slagalica.StepByStepGame;
 import com.example.slagalica.data.GameSessionManager;
 import com.example.slagalica.data.StepByStepRepository;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.*;
 
 public class NetworkStepByStep extends AppCompatActivity {
 
-    private static final int STEP_TIME = 10000;
+    private static final int TOTAL_TIME_MS = 70000;
+    private static final int STEAL_TIME_MS = 10000;
 
     private GameSessionManager sm;
     private int me, opp, gameIdx;
@@ -78,7 +81,7 @@ public class NetworkStepByStep extends AppCompatActivity {
         opp = me == 1 ? 2 : 1;
         boolean spectator = i.getBooleanExtra("isSpectator", false);
 
-        timerView = findViewById(R.id.timerTextView);
+        timerView = findViewById(R.id.timerText);
         pointsView = findViewById(R.id.pointsTextView);
         input = findViewById(R.id.guessInput);
         btn = findViewById(R.id.submitGuessButton);
@@ -221,9 +224,13 @@ public class NetworkStepByStep extends AppCompatActivity {
     }
 
     private void showWaiting() {
-        for (int i = 0; i < 7; i++) cluesView[i].setText("(\u010Dekanje)");
+        for (int i = 0; i < 7; i++) {
+            cluesView[i].setText("");
+            MaterialCardView card = (MaterialCardView) cluesView[i].getParent();
+            card.setCardBackgroundColor(0xFF2D2D2D);
+        }
         pointsView.setText("Bodovi: 0");
-        timerView.setText("Vreme: --");
+        timerView.setText("--");
         input.setEnabled(false);
         btn.setEnabled(false);
     }
@@ -270,8 +277,14 @@ public class NetworkStepByStep extends AppCompatActivity {
         }
 
         for (int i = 0; i < 7; i++) {
-            if (i <= step) cluesView[i].setText(clues.get(i));
-            else cluesView[i].setText("(zatvoreno)");
+            MaterialCardView card = (MaterialCardView) cluesView[i].getParent();
+            if (i <= step) {
+                cluesView[i].setText(clues.get(i));
+                card.setCardBackgroundColor(0xFF1565C0);
+            } else {
+                cluesView[i].setText("");
+                card.setCardBackgroundColor(0xFF2D2D2D);
+            }
         }
 
         if (roundEnding) {
@@ -301,14 +314,29 @@ public class NetworkStepByStep extends AppCompatActivity {
     private void startTimer() {
         if (timer != null) timer.cancel();
         isTimerRunning = true;
-        timer = new CountDownTimer(STEP_TIME, 1000) {
+
+        long duration = stealPhase ? STEAL_TIME_MS : TOTAL_TIME_MS;
+        long firstTrigger = stealPhase ? 0 : duration - 10000;
+
+        timer = new CountDownTimer(duration, 1000) {
+            private long nextTrigger = firstTrigger;
+
             public void onTick(long ms) {
-                timerView.setText("Vreme: " + (ms / 1000 + 1));
+                timerView.setText(String.valueOf(ms / 1000 + 1));
                 timerView.setTextColor(ms <= 3000 ? 0xFFFF0000 : 0xFFFFFFFF);
+
+                if (ms <= nextTrigger && !stealPhase && !roundEnding) {
+                    nextTrigger -= 10000;
+                    runOnUiThread(() -> {
+                        if (step < 6) {
+                            sm.updateField("gameState.step", (long) (step + 1));
+                        }
+                    });
+                }
             }
+
             public void onFinish() {
-                isTimerRunning = false;
-                timerView.setText("Vreme: 0");
+                timerView.setText("0");
                 timerView.setTextColor(0xFFFF0000);
                 runOnUiThread(() -> next());
             }

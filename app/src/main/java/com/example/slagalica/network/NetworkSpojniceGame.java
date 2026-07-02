@@ -123,7 +123,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         opp = me == 1 ? 2 : 1;
         boolean spectator = i.getBooleanExtra("isSpectator", false);
 
-        timerView = findViewById(R.id.timerTextView);
+        timerView = findViewById(R.id.timerText);
         instrView = findViewById(R.id.instructionsTextView);
         leftBtns = new com.google.android.material.button.MaterialButton[TOTAL_ITEMS];
         rightBtns = new com.google.android.material.button.MaterialButton[TOTAL_ITEMS];

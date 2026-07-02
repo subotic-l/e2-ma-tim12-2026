@@ -24,7 +24,7 @@ public class MatchingGameActivity extends AppCompatActivity {
     private MatchingGame matchingGame;
     private MaterialButton[] leftButtons;
     private MaterialButton[] rightButtons;
-    private TextView timerTextView;
+    private TextView timerText;
     private TextView instructionsTextView;
 
     private CountDownTimer timer;
@@ -52,7 +52,7 @@ public class MatchingGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        timerTextView = findViewById(R.id.timerTextView);
+        timerText = findViewById(R.id.timerText);
         instructionsTextView = findViewById(R.id.instructionsTextView);
         playerNameView = findViewById(R.id.playerOneName);
         playerScoreView = findViewById(R.id.playerOneScore);
@@ -114,7 +114,7 @@ public class MatchingGameActivity extends AppCompatActivity {
         currentLeftIndex = 0;
 
         instructionsTextView.setText(matchingGame.instructions);
-        timerTextView.setText("30");
+        timerText.setText("30");
 
         for (int i = 0; i < leftButtons.length; i++) {
             leftButtons[i].setText(matchingGame.leftItems.get(i));
@@ -198,12 +198,12 @@ public class MatchingGameActivity extends AppCompatActivity {
         timer = new CountDownTimer(30000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
-                timerTextView.setText(String.valueOf(millisUntilFinished / 1000 + 1));
+                timerText.setText(String.valueOf(millisUntilFinished / 1000 + 1));
             }
 
             @Override
             public void onFinish() {
-                timerTextView.setText("0");
+                timerText.setText("0");
                 finishMatchingGame();
             }
         }.start();

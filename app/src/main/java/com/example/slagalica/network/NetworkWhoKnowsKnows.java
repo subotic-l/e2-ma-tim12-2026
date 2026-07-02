@@ -78,7 +78,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         opp = me == 1 ? 2 : 1;
         boolean spectator = i.getBooleanExtra("isSpectator", false);
 
-        timerView = findViewById(R.id.timerTextView);
+        timerView = findViewById(R.id.timerText);
         qView = findViewById(R.id.questionTextView);
         btns = new com.google.android.material.button.MaterialButton[]{
                 findViewById(R.id.answerButton1), findViewById(R.id.answerButton2),
