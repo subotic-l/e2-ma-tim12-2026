@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -22,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.slagalica.InactivityWatcher;
 import com.example.slagalica.R;
 import com.example.slagalica.data.AvatarHelper;
 import com.example.slagalica.data.GameSessionManager;
@@ -34,9 +36,10 @@ import java.util.Random;
 
 public class NetworkSkockoGame extends AppCompatActivity {
 
+    private InactivityWatcher inactivityWatcher;
     private static final int TOTAL_COLS = 4;
     private static final int TOTAL_ROWS = 6;
-    private static final int ROUND_TIME = 30;
+    private static final int ROUND_TIME = 60;
     private static final int STEAL_TIME = 10;
     private static final int END_DELAY = 2000;
     private static final int SOLUTION_DISPLAY_MS = 5000;
@@ -169,9 +172,45 @@ public class NetworkSkockoGame extends AppCompatActivity {
                     if (!finished) writeInit();
                 }, 300);
             }
+            inactivityWatcher = new InactivityWatcher(60000, () -> {
+                if (finished || isFinishing()) return;
+                runOnUiThread(() -> {
+                    Toast.makeText(NetworkSkockoGame.this, "Automatska predaja zbog neaktivnosti", Toast.LENGTH_SHORT).show();
+                    if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
+                    finished = true;
+                    if (timer != null) timer.cancel();
+                    finish();
+                });
+            });
+            inactivityWatcher.start();
+            setupQuitButton();
         } catch (Exception e) {
             Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_LONG).show();
             finish();
+        }
+    }
+
+    @Override
+    public void onUserInteraction() {
+        super.onUserInteraction();
+        if (inactivityWatcher != null) inactivityWatcher.reset();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Napuštanjem igre igrač gubi partiju i ne dobija zvezde. Protivnik nastavlja partiju.")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
+                        finished = true;
+                        if (timer != null) timer.cancel();
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
         }
     }
 
@@ -252,12 +291,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
             }
 
             public void onMatchEnded(Map<String, Object> f) {
-                if (finished) return;
-                finished = true;
-                if (timer != null) timer.cancel();
-                sm.cleanup();
-                setResult(RESULT_OK);
-                finish();
+                endGame();
             }
 
             public void onError(String e) {}
@@ -851,8 +885,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
         subBtns = new Button[TOTAL_ROWS];
         dotConts = new LinearLayout[TOTAL_ROWS];
 
-        int cellSz = 120;
-        int cellPad = (int) (8 * getResources().getDisplayMetrics().density + 0.5f);
+        int cellPad = (int) (4 * getResources().getDisplayMetrics().density + 0.5f);
 
         for (int r = 0; r < TOTAL_ROWS; r++) {
             LinearLayout rowL = new LinearLayout(this);
@@ -861,7 +894,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
                     LinearLayout.LayoutParams.WRAP_CONTENT));
             rowL.setOrientation(LinearLayout.HORIZONTAL);
             rowL.setGravity(Gravity.CENTER_VERTICAL);
-            rowL.setPadding(8, 6, 8, 6);
+            rowL.setPadding(4, 2, 4, 2);
 
             LinearLayout flds = new LinearLayout(this);
             flds.setOrientation(LinearLayout.HORIZONTAL);
@@ -870,8 +903,8 @@ public class NetworkSkockoGame extends AppCompatActivity {
 
             for (int c = 0; c < TOTAL_COLS; c++) {
                 ImageView iv = new ImageView(this);
-                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(200, 135);
-                p.setMargins(3, 3, 3, 3);
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(130, 100);
+                p.setMargins(2, 2, 2, 2);
                 iv.setLayoutParams(p);
                 iv.setPadding(cellPad, cellPad, cellPad, cellPad);
                 iv.setBackgroundResource(R.drawable.cell_background);
@@ -903,14 +936,14 @@ public class NetworkSkockoGame extends AppCompatActivity {
 
             Button sb = new Button(this);
             sb.setText("OK");
-            sb.setTextSize(20);
+            sb.setTextSize(16);
             sb.setTextColor(Color.BLACK);
             sb.setGravity(Gravity.CENTER);
             sb.setPadding(0, 0, 0, 0);
             sb.setEnabled(false);
             sb.setVisibility(View.GONE);
-            LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(90, 90);
-            bp.setMargins(6, 0, 4, 0);
+            LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(70, 70);
+            bp.setMargins(4, 0, 2, 0);
             sb.setLayoutParams(bp);
             final int fr2 = r;
             sb.setOnClickListener(v -> onSubmitRow(fr2));
@@ -925,7 +958,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
             fb2.setOrientation(LinearLayout.HORIZONTAL);
             for (int i = 0; i < 4; i++) {
                 ImageView fv = new ImageView(this);
-                LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(30, 30);
+                LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(22, 22);
                 fp.setMargins(1, 1, 1, 1);
                 fv.setLayoutParams(fp);
                 fv.setBackgroundResource(R.drawable.feedback_circle);
@@ -950,7 +983,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
                 LinearLayout.LayoutParams.WRAP_CONTENT));
         stealRow.setOrientation(LinearLayout.HORIZONTAL);
         stealRow.setGravity(Gravity.CENTER_VERTICAL);
-        stealRow.setPadding(8, 8, 8, 8);
+        stealRow.setPadding(4, 4, 4, 4);
         stealRow.setBackgroundColor(0x33FFFFFF);
         stealRow.setVisibility(View.GONE);
 
@@ -971,8 +1004,8 @@ public class NetworkSkockoGame extends AppCompatActivity {
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         for (int c = 0; c < TOTAL_COLS; c++) {
             ImageView iv = new ImageView(this);
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(110, 110);
-            p.setMargins(2, 2, 2, 2);
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(80, 80);
+            p.setMargins(1, 1, 1, 1);
             iv.setLayoutParams(p);
             iv.setPadding(cellPad, cellPad, cellPad, cellPad);
             iv.setBackgroundResource(R.drawable.cell_background);
@@ -996,13 +1029,13 @@ public class NetworkSkockoGame extends AppCompatActivity {
 
         stealBtn = new Button(this);
         stealBtn.setText("OK");
-        stealBtn.setTextSize(18);
+        stealBtn.setTextSize(14);
         stealBtn.setTextColor(Color.BLACK);
         stealBtn.setGravity(Gravity.CENTER);
         stealBtn.setPadding(0, 0, 0, 0);
         stealBtn.setEnabled(false);
-        LinearLayout.LayoutParams sbp2 = new LinearLayout.LayoutParams(80, 80);
-        sbp2.setMargins(4, 0, 4, 0);
+        LinearLayout.LayoutParams sbp2 = new LinearLayout.LayoutParams(60, 60);
+        sbp2.setMargins(2, 0, 2, 0);
         stealBtn.setLayoutParams(sbp2);
         stealBtn.setOnClickListener(v -> onSubmitSteal());
 
@@ -1016,7 +1049,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
         stealDots = new ImageView[4];
         for (int i = 0; i < 4; i++) {
             ImageView fv = new ImageView(this);
-            LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(28, 28);
+            LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(20, 20);
             fp.setMargins(1, 1, 1, 1);
             fv.setLayoutParams(fp);
             fv.setBackgroundResource(R.drawable.feedback_circle);
@@ -1152,6 +1185,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (inactivityWatcher != null) inactivityWatcher.cancel();
         if (timer != null) timer.cancel();
         if (sm != null) sm.cleanup();
     }

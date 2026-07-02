@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -49,7 +51,8 @@ public class StepByStepActivity extends AppCompatActivity {
         });
         playerNameView = findViewById(R.id.playerOneName);
         playerScoreView = findViewById(R.id.playerOneScore);
-        playerNameView.setText("Korak po korak");
+        String pn = getIntent().getStringExtra("playerName");
+        playerNameView.setText(pn != null ? pn : "Korak po korak");
         playerScoreView.setText("0");
 
         pointsTextView = findViewById(R.id.pointsTextView);
@@ -73,6 +76,24 @@ public class StepByStepActivity extends AppCompatActivity {
         startTimer();
 
         submitButton.setOnClickListener(v -> checkGuess());
+
+        setupQuitButton();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Da li ste sigurni?")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        resultSent = true;
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
+        }
     }
 
     private void loadGame() {

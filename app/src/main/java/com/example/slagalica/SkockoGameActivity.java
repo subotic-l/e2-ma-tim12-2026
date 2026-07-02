@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -66,7 +67,8 @@ public class SkockoGameActivity extends AppCompatActivity {
         });
         playerNameView = findViewById(R.id.playerOneName);
         playerScoreView = findViewById(R.id.playerOneScore);
-        playerNameView.setText("Skocko");
+        String pn = getIntent().getStringExtra("playerName");
+        playerNameView.setText(pn != null ? pn : "Skocko");
         playerScoreView.setText("0");
 
         timerText = findViewById(R.id.timerText);
@@ -75,10 +77,28 @@ public class SkockoGameActivity extends AppCompatActivity {
         buildGameBoard();
         setupChoiceButtons();
         setupSolutionRow();
+
+        setupQuitButton();
+    }
+
+    private void setupQuitButton() {
+        ImageButton quitBtn = findViewById(R.id.quitGameButton);
+        if (quitBtn != null) {
+            quitBtn.setVisibility(View.VISIBLE);
+            quitBtn.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+                    .setTitle("Napusti igru")
+                    .setMessage("Da li ste sigurni?")
+                    .setPositiveButton("Napusti", (d, w) -> {
+                        resultSent = true;
+                        finish();
+                    })
+                    .setNegativeButton("Nastavi", null)
+                    .show());
+        }
     }
 
     private void startTimer() {
-        countDownTimer = new android.os.CountDownTimer(35000, 1000) {
+        countDownTimer = new android.os.CountDownTimer(60000, 1000) {
 
             public void onTick(long millisUntilFinished) {
                 timeLeft = (int) (millisUntilFinished / 1000);
@@ -132,7 +152,7 @@ public class SkockoGameActivity extends AppCompatActivity {
             rowLayout.setLayoutParams(lp);
             rowLayout.setOrientation(LinearLayout.HORIZONTAL);
             rowLayout.setGravity(Gravity.CENTER_VERTICAL);
-            rowLayout.setPadding(10, 16, 10, 16);
+            rowLayout.setPadding(6, 8, 6, 8);
 
             // Polja za simbole
             LinearLayout fieldsLayout = new LinearLayout(this);
@@ -145,8 +165,8 @@ public class SkockoGameActivity extends AppCompatActivity {
 
             for (int col = 0; col < 4; col++) {
                 ImageView iv = new ImageView(this);
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(200, 200);   // dobra veličina
-                params.setMargins(5, 6, 5, 6);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(130, 130);
+                params.setMargins(3, 3, 3, 3);
                 iv.setLayoutParams(params);
                 iv.setBackgroundResource(R.drawable.cell_background);
                 iv.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
@@ -161,16 +181,16 @@ public class SkockoGameActivity extends AppCompatActivity {
 
             Button submitBtn = new Button(this);
 
-            submitBtn.setText("?");
-            submitBtn.setTextSize(40);
+            submitBtn.setText("OK");
+            submitBtn.setTextSize(18);
             submitBtn.setTextColor(Color.BLACK);
             submitBtn.setGravity(Gravity.CENTER);
             submitBtn.setPadding(0, 0, 0, 0);
             submitBtn.setEnabled(false);
             submitBtn.setVisibility(row == 0 ? View.VISIBLE : View.INVISIBLE);
 
-            LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(140, 140);
-            btnParams.setMargins(12, 0, 8, 0);
+            LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(80, 80);
+            btnParams.setMargins(6, 0, 4, 0);
             submitBtn.setLayoutParams(btnParams);
 
             final int finalRowSubmit = row;
@@ -190,7 +210,7 @@ public class SkockoGameActivity extends AppCompatActivity {
     private LinearLayout createFeedbackLayoutImproved(int row) {
         LinearLayout feedbackLayout = new LinearLayout(this);
         feedbackLayout.setOrientation(LinearLayout.VERTICAL);
-        feedbackLayout.setPadding(18, 10, 0, 10);
+        feedbackLayout.setPadding(10, 4, 0, 4);
 
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
@@ -201,8 +221,8 @@ public class SkockoGameActivity extends AppCompatActivity {
 
         for (int i = 0; i < 4; i++) {
             ImageView fb = new ImageView(this);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(60, 60);
-            params.setMargins(3, 3, 3, 3);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(36, 36);
+            params.setMargins(2, 2, 2, 2);
             fb.setLayoutParams(params);
             fb.setBackgroundResource(R.drawable.feedback_circle);
             fb.setScaleType(ImageView.ScaleType.CENTER_INSIDE);

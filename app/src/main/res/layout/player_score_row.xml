@@ -13,6 +13,18 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
+        <!-- Quit Button -->
+        <ImageButton
+            android:id="@+id/quitGameButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="4dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="@null"
+            android:scaleType="fitCenter"
+            android:contentDescription="Napusti igru"
+            android:visibility="gone" />
+
         <!-- Player 1 -->
         <LinearLayout
             android:id="@+id/playerOneContainer"
