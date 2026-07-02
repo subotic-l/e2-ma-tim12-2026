@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         }
         listenForFriendInvitations();
         checkLeaderboardCycles();
+        new LeaderboardManager().checkAndResetRegionData();
     }
 
     private void checkLeaderboardCycles() {

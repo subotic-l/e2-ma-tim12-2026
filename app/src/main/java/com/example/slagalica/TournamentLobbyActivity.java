@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.slagalica.data.AvatarHelper;
 import com.example.slagalica.data.TournamentManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -353,6 +354,7 @@ public class TournamentLobbyActivity extends AppCompatActivity {
         // Find winner/loser display data for finaleLayout
         String[] finNames = {"Igrač", "Igrač"};
         String[] finAvatars = {"", ""};
+        String[] finIds = {"", ""};
         int fi = 0;
         for (Map<String, Object> p : participants) {
             String pid = (String) p.get("playerId");
@@ -360,11 +362,12 @@ public class TournamentLobbyActivity extends AppCompatActivity {
             if (pid.equals(w1Id) || pid.equals(w2Id)) {
                 finNames[fi] = (String) p.get("playerName");
                 finAvatars[fi] = (String) p.get("playerAvatar");
+                finIds[fi] = pid;
                 fi++;
             }
         }
-        final String fn1 = finNames[0], fv1 = finAvatars[0];
-        final String fn2 = finNames[1], fv2 = finAvatars[1];
+        final String fn1 = finNames[0], fv1 = finAvatars[0], fi1 = finIds[0];
+        final String fn2 = finNames[1], fv2 = finAvatars[1], fi2 = finIds[1];
 
         // Populate finaleLayout and show it after losers fade out
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
@@ -374,11 +377,11 @@ public class TournamentLobbyActivity extends AppCompatActivity {
             // Winner (first finalist) goes top, second goes bottom
             finaleWinnerName.setText(fn1);
             if (fv1 != null && !fv1.isEmpty()) {
-                NetworkMatchActivity.loadAvatarStatic(finaleWinnerAvatar, fv1);
+                AvatarHelper.loadAvatar(finaleWinnerAvatar, fi1, fv1);
             }
             finaleLoserName.setText(fn2);
             if (fv2 != null && !fv2.isEmpty()) {
-                NetworkMatchActivity.loadAvatarStatic(finaleLoserAvatar, fv2);
+                AvatarHelper.loadAvatar(finaleLoserAvatar, fi2, fv2);
             }
 
             finaleLayout.setVisibility(android.view.View.VISIBLE);
@@ -434,11 +437,7 @@ public class TournamentLobbyActivity extends AppCompatActivity {
                 String pid = (String) p.get("playerId");
                 names[i].setText(name != null ? name : "?");
                 names[i].setVisibility(android.view.View.VISIBLE);
-                if (avatar != null && !avatar.isEmpty()) {
-                    NetworkMatchActivity.loadAvatarStatic(avatars[i], avatar);
-                } else {
-                    avatars[i].setImageResource(R.drawable.ic_profile);
-                }
+                AvatarHelper.loadAvatar(avatars[i], pid, avatar);
                 // Load league
                 if (pid != null) {
                     final int slotIdx = i;
@@ -482,6 +481,7 @@ public class TournamentLobbyActivity extends AppCompatActivity {
 
         // Find winner/loser display data
         String winnerDisplayName = "Nepoznat", winnerAvatar = "", loserDisplayName = "Drugi", loserAvatar = "";
+        String loserId = "";
         if (participants != null) {
             for (Map<String, Object> p : participants) {
                 String pid = (String) p.get("playerId");
@@ -492,6 +492,7 @@ public class TournamentLobbyActivity extends AppCompatActivity {
                 } else if (pid.equals(finalist1Id) || pid.equals(finalist2Id)) {
                     loserDisplayName = (String) p.get("playerName");
                     loserAvatar = (String) p.get("playerAvatar");
+                    loserId = pid;
                 }
             }
         }
@@ -502,15 +503,11 @@ public class TournamentLobbyActivity extends AppCompatActivity {
         vsText.setVisibility(android.view.View.GONE);
 
         // Populate winner
-        if (winnerAvatar != null && !winnerAvatar.isEmpty()) {
-            NetworkMatchActivity.loadAvatarStatic(finaleWinnerAvatar, winnerAvatar);
-        }
+        AvatarHelper.loadAvatar(finaleWinnerAvatar, winnerId, winnerAvatar);
         finaleWinnerName.setText(winnerDisplayName);
 
         // Populate loser
-        if (loserAvatar != null && !loserAvatar.isEmpty()) {
-            NetworkMatchActivity.loadAvatarStatic(finaleLoserAvatar, loserAvatar);
-        }
+        AvatarHelper.loadAvatar(finaleLoserAvatar, loserId, loserAvatar);
         finaleLoserName.setText(loserDisplayName);
 
         // Show finaleLayout

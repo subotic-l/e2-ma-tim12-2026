@@ -5,12 +5,15 @@ import android.util.Log;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
+import com.example.slagalica.Region;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.Transaction;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -297,9 +300,10 @@ public class LeaderboardManager {
                                 return Tasks.forResult(false);
                             }
 
-                            // For monthly cycles: apply 30% star penalty to non-winners
+                            // For monthly cycles: apply 30% star penalty + reset region data
                             if (isMonthly) {
                                 applyMonthlyPenalty(oldCycleId, winnersRef[0]);
+                                resetMonthlyRegionData(oldCycleId, true);
                             }
                             return Tasks.forResult(true);
                         });
@@ -335,6 +339,83 @@ public class LeaderboardManager {
                                 }
                             });
                 });
+    }
+
+    public void checkAndResetRegionData() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -1);
+        String prevMonth = new SimpleDateFormat("yyyy-MM", Locale.US).format(cal.getTime());
+        String prevCycleId = "monthly_" + prevMonth.replace("-", "_");
+
+        // Check if region rankings for previous month already saved
+        db.collection("region_rankings").document(prevMonth + "_BEOGRAD").get()
+                .addOnSuccessListener(rankingDoc -> {
+                    if (rankingDoc.exists()) return;
+                    resetMonthlyRegionData(prevCycleId, false);
+                });
+    }
+
+    private void resetMonthlyRegionData(String oldCycleId, boolean resetStars) {
+        // Parse month: "monthly_2026_06" -> "2026-06"
+        String oldMonth = oldCycleId.replace("monthly_", "").replace("_", "-");
+        String currentMonth = new SimpleDateFormat("yyyy-MM", Locale.US).format(new Date());
+
+        db.collection("users").get().addOnSuccessListener(userDocs -> {
+            Map<String, Long> regionStars = new HashMap<>();
+            Map<String, String> uidToCode = new HashMap<>();
+
+            for (DocumentSnapshot userDoc : userDocs.getDocuments()) {
+                String regionName = userDoc.getString("region");
+                if (regionName == null) continue;
+                String code = RegionRepository.getNameToCode(regionName);
+                if (code == null) continue;
+                uidToCode.put(userDoc.getId(), code);
+                Long ms = userDoc.getLong("monthlyStars");
+                regionStars.merge(code, ms != null ? ms : 0L, Long::sum);
+            }
+
+            // Sort by stars descending
+            List<Map.Entry<String, Long>> sorted = new ArrayList<>(regionStars.entrySet());
+            sorted.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
+
+            Map<String, Long> regionRanks = new HashMap<>();
+            for (int i = 0; i < sorted.size(); i++) {
+                regionRanks.put(sorted.get(i).getKey(), (long) (i + 1));
+            }
+
+            WriteBatch batch = db.batch();
+
+            // Save region rankings
+            for (int i = 0; i < sorted.size(); i++) {
+                String code = sorted.get(i).getKey();
+                Region r = RegionRepository.get(code);
+                String regionName = r != null ? r.getName() : code;
+                Map<String, Object> data = new HashMap<>();
+                data.put("regionCode", code);
+                data.put("regionName", regionName);
+                data.put("rank", (long) (i + 1));
+                data.put("monthlyStars", sorted.get(i).getValue());
+                data.put("month", oldMonth);
+                batch.set(db.collection("region_rankings").document(oldMonth + "_" + code), data);
+            }
+
+            // Update each user: lastMonthRegionRank, optionally reset monthlyStars
+            for (DocumentSnapshot userDoc : userDocs.getDocuments()) {
+                String uid = userDoc.getId();
+                String code = uidToCode.get(uid);
+                long regionRank = code != null ? regionRanks.getOrDefault(code, 0L) : 0L;
+                DocumentReference ref = db.collection("users").document(uid);
+                batch.update(ref, "lastMonthRegionRank", regionRank);
+                if (resetStars) {
+                    batch.update(ref, "monthlyStars", 0L);
+                    batch.update(ref, "lastMonthlyReset", currentMonth);
+                }
+            }
+
+            batch.commit().addOnFailureListener(e ->
+                    Log.e(TAG, "Failed to reset monthly region data", e));
+        }).addOnFailureListener(e ->
+                Log.e(TAG, "Failed to load users for region reset", e));
     }
 
     public Task<Map<String, Object>> getCycleMetadata(String cycleId) {

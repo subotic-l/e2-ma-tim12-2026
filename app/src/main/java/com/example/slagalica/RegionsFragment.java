@@ -12,6 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.slagalica.data.LeaderboardManager;
 import com.example.slagalica.data.RegionRepository;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -436,7 +437,7 @@ public class RegionsFragment extends Fragment {
                     setupMap();
                     mapInitialized = true;
 
-                    saveMonthlyRankingsIfNeeded(regionEntries);
+                    new LeaderboardManager().checkAndResetRegionData();
                 });
     }
 

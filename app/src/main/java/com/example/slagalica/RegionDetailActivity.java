@@ -7,13 +7,18 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.slagalica.data.RegionRepository;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import com.google.firebase.Timestamp;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -123,20 +128,33 @@ public class RegionDetailActivity extends AppCompatActivity {
 
     private void loadRegionHistory(String regionCode) {
         if (regionCode == null) return;
+        String currentMonth = new SimpleDateFormat("yyyy-MM", Locale.US).format(new Date());
         db.collection("region_rankings")
                 .whereEqualTo("regionCode", regionCode)
-                .orderBy("month", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .limit(12)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<DocumentSnapshot> docs = new ArrayList<DocumentSnapshot>(queryDocumentSnapshots.getDocuments());
+                    Collections.sort(docs, (a, b) -> {
+                        String ma = a.getString("month");
+                        String mb = b.getString("month");
+                        if (ma == null && mb == null) return 0;
+                        if (ma == null) return 1;
+                        if (mb == null) return -1;
+                        return mb.compareTo(ma);
+                    });
                     long firsts = 0, seconds = 0, thirds = 0;
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                    int count = 0;
+                    for (DocumentSnapshot doc : docs) {
+                        if (count >= 12) break;
+                        String month = doc.getString("month");
+                        if (currentMonth.equals(month)) continue;
                         Long rank = doc.getLong("rank");
                         if (rank != null) {
                             if (rank == 1) firsts++;
                             else if (rank == 2) seconds++;
                             else if (rank == 3) thirds++;
                         }
+                        count++;
                     }
                     textFirstPlaces.setText(String.valueOf(firsts));
                     textSecondPlaces.setText(String.valueOf(seconds));
