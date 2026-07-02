@@ -22,7 +22,6 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.slagalica.InactivityWatcher;
 import com.example.slagalica.R;
 import com.example.slagalica.data.GameSessionManager;
 
@@ -33,7 +32,7 @@ import java.util.Map;
 
 public class NetworkAsocijacijeGame extends AppCompatActivity {
 
-    private InactivityWatcher inactivityWatcher;
+    private boolean opponentLeft = false;
     private static final int GROUPS = 4;
     private static final int FIELDS = 4;
     private static final int ROUND_TIME = 120;
@@ -175,25 +174,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
             btnFinal.setEnabled(false);
         }
 
-        inactivityWatcher = new InactivityWatcher(60000, () -> {
-            if (finished || isFinishing()) return;
-            runOnUiThread(() -> {
-                Toast.makeText(NetworkAsocijacijeGame.this, "Automatska predaja zbog neaktivnosti", Toast.LENGTH_SHORT).show();
-                if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
-                finished = true;
-                if (timer != null) timer.cancel();
-                if (revealHandler != null) revealHandler.removeCallbacksAndMessages(null);
-                finish();
-            });
-        });
-        inactivityWatcher.start();
         setupQuitButton();
-    }
-
-    @Override
-    public void onUserInteraction() {
-        super.onUserInteraction();
-        if (inactivityWatcher != null) inactivityWatcher.reset();
     }
 
     private void setupQuitButton() {
@@ -270,7 +251,9 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
             }
 
             public void onMatchEnded(Map<String, Object> f) {
-                endGame();
+                if (opponentLeft) return;
+                opponentLeft = true;
+                new Handler(Looper.getMainLooper()).post(() -> endGame());
             }
 
             public void onError(String e) {}
@@ -784,7 +767,6 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (inactivityWatcher != null) inactivityWatcher.cancel();
         if (timer != null) timer.cancel();
         if (revealHandler != null) revealHandler.removeCallbacksAndMessages(null);
         if (sm != null) sm.cleanup();

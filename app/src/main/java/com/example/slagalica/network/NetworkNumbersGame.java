@@ -23,7 +23,6 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.slagalica.InactivityWatcher;
 import com.example.slagalica.NumbersGame;
 import com.example.slagalica.R;
 import com.example.slagalica.data.GameSessionManager;
@@ -37,8 +36,7 @@ import java.util.Stack;
 
 public class NetworkNumbersGame extends AppCompatActivity implements SensorEventListener {
 
-    private InactivityWatcher inactivityWatcher;
-
+    private boolean opponentLeft = false;
     private static final int STOP_TIME_MS = 5000;
     private static final int GAME_TIME_MS = 60000;
 
@@ -182,26 +180,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
             stopBtn.setEnabled(false);
         }
 
-        inactivityWatcher = new InactivityWatcher(60000, () -> {
-            if (done || isFinishing()) return;
-            runOnUiThread(() -> {
-                Toast.makeText(this, "Automatska predaja zbog neaktivnosti", Toast.LENGTH_SHORT).show();
-                if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
-                done = true;
-                if (gameTimer != null) gameTimer.cancel();
-                if (stopTimer != null) stopTimer.cancel();
-                unregisterShakeListener();
-                finish();
-            });
-        });
-        inactivityWatcher.start();
         setupQuitButton();
-    }
-
-    @Override
-    public void onUserInteraction() {
-        super.onUserInteraction();
-        if (inactivityWatcher != null) inactivityWatcher.reset();
     }
 
     private void setupQuitButton() {
@@ -352,8 +331,9 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
             }
 
             public void onMatchEnded(Map<String, Object> f) {
-                // Opponent forfeited – finish game gracefully so match continues
-                finishGame();
+                if (opponentLeft) return;
+                opponentLeft = true;
+                new Handler(Looper.getMainLooper()).post(() -> finishGame());
             }
 
             public void onError(String e) {}
@@ -890,7 +870,6 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (inactivityWatcher != null) inactivityWatcher.cancel();
         if (gameTimer != null) gameTimer.cancel();
         if (stopTimer != null) stopTimer.cancel();
         unregisterShakeListener();

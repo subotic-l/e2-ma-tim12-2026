@@ -23,7 +23,6 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.slagalica.InactivityWatcher;
 import com.example.slagalica.R;
 import com.example.slagalica.data.GameSessionManager;
 
@@ -35,7 +34,7 @@ import java.util.Random;
 
 public class NetworkSkockoGame extends AppCompatActivity {
 
-    private InactivityWatcher inactivityWatcher;
+    private boolean opponentLeft = false;
     private static final int TOTAL_COLS = 4;
     private static final int TOTAL_ROWS = 6;
     private static final int ROUND_TIME = 60;
@@ -171,28 +170,11 @@ public class NetworkSkockoGame extends AppCompatActivity {
                     if (!finished) writeInit();
                 }, 300);
             }
-            inactivityWatcher = new InactivityWatcher(60000, () -> {
-                if (finished || isFinishing()) return;
-                runOnUiThread(() -> {
-                    Toast.makeText(NetworkSkockoGame.this, "Automatska predaja zbog neaktivnosti", Toast.LENGTH_SHORT).show();
-                    if (sm != null) { sm.forfeitMatch(); sm.cleanup(); }
-                    finished = true;
-                    if (timer != null) timer.cancel();
-                    finish();
-                });
-            });
-            inactivityWatcher.start();
             setupQuitButton();
         } catch (Exception e) {
             Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_LONG).show();
             finish();
         }
-    }
-
-    @Override
-    public void onUserInteraction() {
-        super.onUserInteraction();
-        if (inactivityWatcher != null) inactivityWatcher.reset();
     }
 
     private void setupQuitButton() {
@@ -290,7 +272,9 @@ public class NetworkSkockoGame extends AppCompatActivity {
             }
 
             public void onMatchEnded(Map<String, Object> f) {
-                endGame();
+                if (opponentLeft) return;
+                opponentLeft = true;
+                new Handler(Looper.getMainLooper()).post(() -> endGame());
             }
 
             public void onError(String e) {}
@@ -1188,7 +1172,6 @@ public class NetworkSkockoGame extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (inactivityWatcher != null) inactivityWatcher.cancel();
         if (timer != null) timer.cancel();
         if (sm != null) sm.cleanup();
     }
