@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.slagalica.data.FcmHelper;
 import com.example.slagalica.data.GameSessionManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.Timestamp;
@@ -42,6 +43,8 @@ public class FriendLobbyActivity extends AppCompatActivity {
 
     private String targetFriendId;
     private String targetFriendName;
+
+    private String autoAcceptInvitationId;
 
     private String invitationId;
     private boolean isSendingInvitation;
@@ -103,9 +106,12 @@ public class FriendLobbyActivity extends AppCompatActivity {
         Intent intent = getIntent();
         targetFriendId = intent.getStringExtra("friendId");
         targetFriendName = intent.getStringExtra("friendName");
+        autoAcceptInvitationId = intent.getStringExtra("autoAcceptInvitationId");
 
         loadMyProfile(() -> {
-            if (targetFriendId != null) {
+            if (autoAcceptInvitationId != null) {
+                acceptAutoInvitation(autoAcceptInvitationId);
+            } else if (targetFriendId != null) {
                 sendInvitation(targetFriendId, targetFriendName);
             } else {
                 listenForIncomingInvitations();
@@ -151,13 +157,8 @@ public class FriendLobbyActivity extends AppCompatActivity {
                     invitationId = doc.getId();
                     invitationStatusText.setText("Poziv poslat. Čekam odgovor...");
 
-                    if (myPlayerName != null) {
-                        NotificationHelper.show(FriendLobbyActivity.this,
-                                SlagalicaApp.CHANNEL_GENERAL,
-                                "Poziv za partiju",
-                                myPlayerName + " vas poziva na prijateljsku partiju Slagalice!",
-                                friendId);
-                    }
+                    FcmHelper.sendFriendInvitationPush(FriendLobbyActivity.this,
+                            friendId, myPlayerName, myPlayerId, invitationId);
 
                     autoDeclineRunnable = () -> {
                         if (!activityActive || invitationId == null) return;
@@ -364,6 +365,40 @@ public class FriendLobbyActivity extends AppCompatActivity {
         invitationStatusText.setText("Poziv odbijen.");
         invitationProgressBar.setVisibility(View.GONE);
         removeListener();
+    }
+
+    private void acceptAutoInvitation(String invId) {
+        invitationTitle.setText("Prijateljska partija");
+        invitationStatusText.setText("Prihvatam poziv...");
+        invitationProgressBar.setVisibility(View.VISIBLE);
+
+        db.collection(INVITATIONS_COLLECTION).document(invId).get()
+                .addOnSuccessListener(doc -> {
+                    if (!activityActive || !doc.exists()) return;
+
+                    String status = doc.getString("status");
+                    if (!"pending".equals(status)) {
+                        invitationStatusText.setText("Poziv je istekao ili je vec obradjen.");
+                        invitationProgressBar.setVisibility(View.GONE);
+                        return;
+                    }
+
+                    Long expiresAt = doc.getLong("expiresAt");
+                    if (expiresAt != null && System.currentTimeMillis() > expiresAt) {
+                        doc.getReference().update("status", "expired");
+                        invitationStatusText.setText("Poziv je istekao.");
+                        invitationProgressBar.setVisibility(View.GONE);
+                        return;
+                    }
+
+                    invitationId = invId;
+                    acceptInvitation();
+                })
+                .addOnFailureListener(e -> {
+                    if (!activityActive) return;
+                    invitationStatusText.setText("Greska: " + e.getMessage());
+                    invitationProgressBar.setVisibility(View.GONE);
+                });
     }
 
     private void startFriendMatch(String matchId, int playerNumber) {

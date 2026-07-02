@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import com.cloudinary.android.MediaManager;
+import com.example.slagalica.data.FcmHelper;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.HashMap;
@@ -19,10 +20,12 @@ public class SlagalicaApp extends Application {
     public static final String CHANNEL_RANKING = "ranking";
     public static final String CHANNEL_REWARDS = "rewards";
     public static final String CHANNEL_GENERAL = "general";
+    public static final String CHANNEL_INVITATIONS = "invitations";
 
     @Override
     public void onCreate() {
         super.onCreate();
+        FcmHelper.initialize(this);
         createNotificationChannels();
 
         String cloudName = BuildConfig.CLOUDINARY_CLOUD_NAME;
@@ -77,5 +80,7 @@ public class SlagalicaApp extends Application {
                 CHANNEL_REWARDS, "Nagrade", NotificationManager.IMPORTANCE_DEFAULT));
         nm.createNotificationChannel(new NotificationChannel(
                 CHANNEL_GENERAL, "Ostalo", NotificationManager.IMPORTANCE_LOW));
+        nm.createNotificationChannel(new NotificationChannel(
+                CHANNEL_INVITATIONS, "Pozivi", NotificationManager.IMPORTANCE_HIGH));
     }
 }

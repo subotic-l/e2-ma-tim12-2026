@@ -1,7 +1,11 @@
 package com.example.slagalica;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
+
+import androidx.core.app.NotificationCompat;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,6 +16,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.slagalica.data.LeaderboardManager;
 import com.example.slagalica.service.UserService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.google.firebase.auth.FirebaseAuth;
@@ -245,12 +250,38 @@ public class MainActivity extends AppCompatActivity {
                         if (isInForeground) {
                             showInvitationDialog(invitationId, fromName);
                         } else {
-                            NotificationHelper.show(MainActivity.this,
-                                    SlagalicaApp.CHANNEL_GENERAL,
-                                    "Poziv za partiju",
+                            Intent acceptIntent = new Intent(MainActivity.this, FriendLobbyActivity.class);
+                            acceptIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            acceptIntent.putExtra("autoAcceptInvitationId", invitationId);
+                            acceptIntent.putExtra("autoAcceptFromId", doc.getString("fromId"));
+                            acceptIntent.putExtra("autoAcceptFromName", fromName);
+                            acceptIntent.putExtra("autoAcceptFromAvatar", doc.getString("fromAvatar"));
+
+                            PendingIntent pendingIntent = PendingIntent.getActivity(
+                                    MainActivity.this, 0, acceptIntent,
+                                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+                            NotificationManager nm = getSystemService(NotificationManager.class);
+                            NotificationCompat.Builder builder = new NotificationCompat.Builder(
+                                    MainActivity.this, SlagalicaApp.CHANNEL_INVITATIONS)
+                                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                                    .setContentTitle("Poziv za partiju")
+                                    .setContentText((fromName != null ? fromName : "Neko") +
+                                            " vas poziva na prijateljsku partiju Slagalice!")
+                                    .setAutoCancel(true)
+                                    .setContentIntent(pendingIntent);
+                            nm.notify(4000 + invitationId.hashCode(), builder.build());
+
+                            Map<String, Object> notifData = new HashMap<>();
+                            notifData.put("message", "Poziv za partiju: " +
                                     (fromName != null ? fromName : "Neko") +
-                                            " vas poziva na prijateljsku partiju Slagalice!",
-                                    user.getUid());
+                                    " vas poziva na prijateljsku partiju Slagalice!");
+                            notifData.put("createdAt", com.google.firebase.Timestamp.now());
+                            notifData.put("read", false);
+                            notifData.put("channel", SlagalicaApp.CHANNEL_INVITATIONS);
+                            FirebaseFirestore.getInstance()
+                                    .collection("users").document(user.getUid())
+                                    .collection("notifications").add(notifData);
                         }
                         break;
                     }

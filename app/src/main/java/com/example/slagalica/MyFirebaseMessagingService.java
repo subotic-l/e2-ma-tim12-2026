@@ -1,9 +1,13 @@
 package com.example.slagalica;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -12,11 +16,13 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String FCM_PREFS = "fcm_prefs";
     private static final String KEY_FCM_TOKEN = "fcm_token";
+    private static final AtomicInteger notifId = new AtomicInteger(4000);
 
     @Override
     public void onNewToken(@NonNull String token) {
@@ -30,12 +36,45 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         super.onMessageReceived(message);
 
         Map<String, String> data = message.getData();
-        String channelId = data.getOrDefault("channelId", SlagalicaApp.CHANNEL_GENERAL);
-        String title = data.getOrDefault("title", "Slagalica");
-        String body = data.getOrDefault("body", "");
-        String uid = data.getOrDefault("uid", null);
+        String type = data.get("type");
 
-        NotificationHelper.show(this, channelId, title, body, uid);
+        if ("friend_invitation".equals(type)) {
+            handleFriendInvitation(data);
+        } else {
+            String channelId = data.getOrDefault("channelId", SlagalicaApp.CHANNEL_GENERAL);
+            String title = data.getOrDefault("title", "Slagalica");
+            String body = data.getOrDefault("body", "");
+            String uid = data.getOrDefault("uid", null);
+            NotificationHelper.show(this, channelId, title, body, uid);
+        }
+    }
+
+    private void handleFriendInvitation(Map<String, String> data) {
+        String fromName = data.get("fromName");
+        String fromId = data.get("fromId");
+        String invitationId = data.get("invitationId");
+
+        Intent intent = new Intent(this, FriendLobbyActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra("autoAcceptInvitationId", invitationId);
+        intent.putExtra("autoAcceptFromId", fromId);
+        intent.putExtra("autoAcceptFromName", fromName);
+        intent.putExtra("autoAcceptFromAvatar", data.getOrDefault("fromAvatar", ""));
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, SlagalicaApp.CHANNEL_INVITATIONS)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Poziv za partiju")
+                .setContentText((fromName != null ? fromName : "Neko")
+                        + " vas poziva na prijateljsku partiju Slagalice!")
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+
+        nm.notify(notifId.incrementAndGet(), builder.build());
     }
 
     private void saveTokenLocally(String token) {
