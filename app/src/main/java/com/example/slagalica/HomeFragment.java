@@ -45,7 +45,24 @@ public class HomeFragment extends Fragment {
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
-                showNameDialog(MatchLobbyActivity.class);
+                FirebaseUser fbUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (fbUser == null) return;
+                FirebaseFirestore.getInstance()
+                        .collection("users").document(fbUser.getUid()).get()
+                        .addOnSuccessListener(doc -> {
+                            String name = doc.getString("username");
+                            if (name == null || name.isEmpty()) name = "Igrač";
+                            String avatarUrl = doc.getString("avatarUrl");
+                            if (avatarUrl == null) avatarUrl = "";
+                            Intent intent = new Intent(requireActivity(), MatchLobbyActivity.class);
+                            intent.putExtra("playerName", name);
+                            intent.putExtra("playerId", fbUser.getUid());
+                            intent.putExtra("avatarUrl", avatarUrl);
+                            startActivity(intent);
+                        })
+                        .addOnFailureListener(e ->
+                                Toast.makeText(requireContext(),
+                                        "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }).addOnFailureListener(e -> {
                 Toast.makeText(requireContext(),
                         "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -55,23 +72,6 @@ public class HomeFragment extends Fragment {
         Button tournamentButton = view.findViewById(R.id.buttonTournament);
         tournamentButton.setOnClickListener(v -> showNameDialog(TournamentLobbyActivity.class));
 
-        view.findViewById(R.id.buttonStartWhoKnows).setOnClickListener(v ->
-                startActivity(new Intent(requireActivity(), WhoKnowsKnows.class)));
-
-        view.findViewById(R.id.buttonStartMatchingGame).setOnClickListener(v ->
-                startActivity(new Intent(requireActivity(), MatchingGameActivity.class)));
-
-        view.findViewById(R.id.buttonStartStepByStep).setOnClickListener(v ->
-                startActivity(new Intent(requireActivity(), StepByStepActivity.class)));
-
-        view.findViewById(R.id.buttonStartNumbersGame).setOnClickListener(v ->
-                startActivity(new Intent(requireActivity(), NumbersGameActivity.class)));
-
-        view.findViewById(R.id.buttonStartSkocko).setOnClickListener(v ->
-                startActivity(new Intent(requireActivity(), SkockoGameActivity.class)));
-
-        view.findViewById(R.id.buttonStartAsocijacije).setOnClickListener(v ->
-                startActivity(new Intent(requireActivity(), AsocijacijeGameActivity.class)));
     }
 
     private void showNameDialog(Class<?> targetActivity) {

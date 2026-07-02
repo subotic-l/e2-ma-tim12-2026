@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     NavigationHelper navHelper;
     private UserService userService;
     private ListenerRegistration invitationListener;
+    private ListenerRegistration topBarListener;
     private String lastShownInvitationId;
     private boolean isInGame;
     private boolean isInForeground;
@@ -63,7 +64,8 @@ public class MainActivity extends AppCompatActivity {
         }
         userService.grantDailyTokensIfNeeded();
         userService.updateLastSeen();
-        TopBarHelper.loadAndUpdateTopBar(this);
+        if (topBarListener != null) topBarListener.remove();
+        topBarListener = TopBarHelper.loadAndUpdateTopBar(this);
         String token = MyFirebaseMessagingService.getLocalToken(this);
         if (token != null) {
             MyFirebaseMessagingService.uploadTokenToFirestore(token);
@@ -195,6 +197,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         isInForeground = false;
+        if (topBarListener != null) {
+            topBarListener.remove();
+            topBarListener = null;
+        }
     }
 
     @Override

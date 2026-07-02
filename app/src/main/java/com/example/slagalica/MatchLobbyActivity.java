@@ -25,7 +25,6 @@ import java.util.UUID;
 public class MatchLobbyActivity extends AppCompatActivity {
 
     private TextView lobbyStatusText;
-    private Button buttonFindOpponent;
     private Button buttonCancelSearch;
     private ProgressBar searchProgressBar;
     private boolean activityActive = false;
@@ -53,9 +52,9 @@ public class MatchLobbyActivity extends AppCompatActivity {
         });
 
         lobbyStatusText = findViewById(R.id.lobbyStatusText);
-        buttonFindOpponent = findViewById(R.id.buttonFindOpponent);
         buttonCancelSearch = findViewById(R.id.buttonCancelSearch);
         searchProgressBar = findViewById(R.id.searchProgressBar);
+        searchProgressBar.setVisibility(android.view.View.VISIBLE);
 
         Intent intent = getIntent();
         myPlayerName = intent != null ? intent.getStringExtra("playerName") : null;
@@ -82,17 +81,14 @@ public class MatchLobbyActivity extends AppCompatActivity {
         activityActive = true;
         searchHandler = new Handler(Looper.getMainLooper());
 
-        buttonFindOpponent.setOnClickListener(v -> startSearching());
-        buttonCancelSearch.setOnClickListener(v -> stopSearching());
+        buttonCancelSearch.setOnClickListener(v -> finish());
+        startSearching();
     }
 
     private void startSearching() {
         if (isSearching) return;
         isSearching = true;
 
-        buttonFindOpponent.setVisibility(android.view.View.GONE);
-        buttonCancelSearch.setVisibility(android.view.View.VISIBLE);
-        searchProgressBar.setVisibility(android.view.View.VISIBLE);
         lobbyStatusText.setText("Tražim protivnika...");
 
         // Step 1: Try to find and claim an existing waiting match
@@ -193,10 +189,8 @@ public class MatchLobbyActivity extends AppCompatActivity {
                     .delete();
             myMatchId = null;
         }
-        buttonFindOpponent.setVisibility(android.view.View.VISIBLE);
-        buttonCancelSearch.setVisibility(android.view.View.GONE);
         searchProgressBar.setVisibility(android.view.View.GONE);
-        lobbyStatusText.setText("Klikni na dugme za traženje protivnika");
+        lobbyStatusText.setText("Pretraga otkazana");
     }
 
     private void navigateToMatch(int playerNumber, String opponentName) {

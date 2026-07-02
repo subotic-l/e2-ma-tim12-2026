@@ -25,7 +25,7 @@
                 android:id="@+id/lobbyTitleText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Pronađi protivnika"
+                android:text="Tražim protivnika"
                 android:textColor="@android:color/white"
                 android:textSize="24sp"
                 android:textStyle="bold"
@@ -36,41 +36,27 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Klikni na dugme za traženje protivnika"
+                android:text="Tražim protivnika..."
                 android:textColor="@android:color/white"
                 android:textSize="16sp"
                 android:gravity="center" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonFindOpponent"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:text="Traži protivnika"
-                android:textColor="@android:color/white"
-                android:backgroundTint="@color/button_default_color"
-                app:cornerRadius="12dp"
-                app:strokeColor="@color/button_default_border"
-                app:strokeWidth="2dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonCancelSearch"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Otkaži"
-                android:textColor="@android:color/white"
-                android:visibility="gone"
-                android:backgroundTint="#F44336"
-                app:cornerRadius="12dp" />
 
             <ProgressBar
                 android:id="@+id/searchProgressBar"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_marginTop="24dp"
-                android:visibility="gone"
                 android:indeterminateTint="@android:color/white" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonCancelSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Odustani"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#F44336"
+                app:cornerRadius="12dp" />
 
         </LinearLayout>
 

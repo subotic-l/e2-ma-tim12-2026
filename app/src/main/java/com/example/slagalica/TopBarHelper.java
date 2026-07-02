@@ -8,7 +8,9 @@ import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 public final class TopBarHelper {
 
@@ -21,20 +23,19 @@ public final class TopBarHelper {
     private static long cachedStars;
     private static long cachedLeague;
 
-    public static void loadAndUpdateTopBar(Activity activity) {
+    public static ListenerRegistration loadAndUpdateTopBar(Activity activity) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) return;
+        if (user == null) return null;
 
-        FirebaseFirestore.getInstance()
-                .collection("users").document(user.getUid()).get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
-                        long tokens = doc.getLong("tokens") != null ? doc.getLong("tokens") : 0;
-                        long stars = doc.getLong("stars") != null ? doc.getLong("stars") : 0;
-                        long league = doc.getLong("league") != null ? doc.getLong("league") : 0;
-                        saveToCache(activity, tokens, stars, league);
-                        applyToActivity(activity, tokens, stars, league);
-                    }
+        return FirebaseFirestore.getInstance()
+                .collection("users").document(user.getUid())
+                .addSnapshotListener((doc, error) -> {
+                    if (error != null || doc == null || !doc.exists()) return;
+                    long tokens = doc.getLong("tokens") != null ? doc.getLong("tokens") : 0;
+                    long stars = doc.getLong("stars") != null ? doc.getLong("stars") : 0;
+                    long league = doc.getLong("league") != null ? doc.getLong("league") : 0;
+                    saveToCache(activity, tokens, stars, league);
+                    applyToActivity(activity, tokens, stars, league);
                 });
     }
 

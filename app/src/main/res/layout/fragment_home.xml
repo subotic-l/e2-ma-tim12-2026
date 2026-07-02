@@ -37,59 +37,5 @@
             android:backgroundTint="#FF9800"
             android:textColor="@color/white" />
 
-        <Button
-            android:id="@+id/buttonStartWhoKnows"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Pokreni Ko zna zna"
-            android:backgroundTint="@color/button_default_color"
-            android:textColor="@color/white" />
-
-        <Button
-            android:id="@+id/buttonStartMatchingGame"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Pokreni Spojnice"
-            android:backgroundTint="@color/button_default_color"
-            android:textColor="@color/white" />
-
-        <Button
-            android:id="@+id/buttonStartStepByStep"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Pokreni Korak po korak"
-            android:backgroundTint="@color/button_default_color"
-            android:textColor="@color/white" />
-
-        <Button
-            android:id="@+id/buttonStartNumbersGame"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Pokreni Moj broj"
-            android:backgroundTint="@color/button_default_color"
-            android:textColor="@color/white" />
-
-        <Button
-            android:id="@+id/buttonStartSkocko"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Pokreni Skocko"
-            android:backgroundTint="@color/button_default_color"
-            android:textColor="@color/white" />
-
-        <Button
-            android:id="@+id/buttonStartAsocijacije"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Pokreni Asocijacije"
-            android:backgroundTint="@color/button_default_color"
-            android:textColor="@color/white" />
-
     </LinearLayout>
 </ScrollView>

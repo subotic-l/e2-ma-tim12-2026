@@ -68,6 +68,8 @@ public class RegionsFragment extends Fragment {
     private FloatingActionButton challengeFab;
     private View chatContainer;
     private ChatFragment chatFragment;
+    private View challengeContainer;
+    private ChallengeLobbyFragment challengeLobbyFragment;
 
     private static final Map<String, Integer> REGION_BORDER_RESOURCES = new HashMap<>();
 
@@ -119,6 +121,7 @@ public class RegionsFragment extends Fragment {
         chatFab = view.findViewById(R.id.chatFab);
         challengeFab = view.findViewById(R.id.challengeFab);
         chatContainer = view.findViewById(R.id.chatContainer);
+        challengeContainer = view.findViewById(R.id.challengeContainer);
 
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -140,6 +143,7 @@ public class RegionsFragment extends Fragment {
 
         listTab.setOnClickListener(v -> {
             closeChat();
+            closeChallengeLobby();
             mapContainer.setVisibility(View.GONE);
             listContainer.setVisibility(View.VISIBLE);
             listTab.setBackgroundResource(R.drawable.rounded_white_small);
@@ -235,11 +239,41 @@ public class RegionsFragment extends Fragment {
 
         String regionName = RegionRepository.getCodeToName(regionCode);
 
-        Intent intent = new Intent(requireContext(), ChallengeLobbyActivity.class);
-        intent.putExtra("region_code", regionCode);
-        intent.putExtra("region_name", regionName);
-        intent.putExtra("all_regions", true);
-        startActivity(intent);
+        openChallengeLobby(regionCode, regionName, true);
+    }
+
+    public void openChallengeLobby(String regionCode, String regionName, boolean allRegions) {
+        if (challengeLobbyFragment != null) return;
+
+        closeChat();
+        challengeFab.setVisibility(View.GONE);
+        chatFab.setVisibility(View.GONE);
+        challengeContainer.setVisibility(View.VISIBLE);
+
+        challengeLobbyFragment = ChallengeLobbyFragment.newInstance(regionCode, regionName, allRegions);
+
+        getChildFragmentManager().beginTransaction()
+                .setCustomAnimations(R.anim.slide_up, R.anim.slide_down)
+                .replace(R.id.challengeContainer, challengeLobbyFragment)
+                .commit();
+    }
+
+    public void closeChallengeLobby() {
+        ChallengeLobbyFragment fragment = challengeLobbyFragment;
+        if (fragment == null) return;
+
+        challengeLobbyFragment = null;
+
+        getChildFragmentManager().beginTransaction()
+                .setCustomAnimations(R.anim.slide_up, R.anim.slide_down)
+                .remove(fragment)
+                .commit();
+
+        challengeContainer.postDelayed(() -> {
+            challengeContainer.setVisibility(View.GONE);
+            challengeFab.setVisibility(View.VISIBLE);
+            updateChatFabVisibility();
+        }, 250);
     }
 
     private void initRegionData() {

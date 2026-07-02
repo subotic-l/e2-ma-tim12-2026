@@ -1,6 +1,5 @@
 package com.example.slagalica;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -9,12 +8,9 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,7 +28,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ChallengeLobbyActivity extends AppCompatActivity {
+public class ChallengeLobbyFragment extends Fragment {
+
+    private static final String ARG_REGION_NAME = "region_name";
+    private static final String ARG_REGION_CODE = "region_code";
+    private static final String ARG_ALL_REGIONS = "all_regions";
 
     private ChallengeManager challengeManager;
     private RecyclerView activeRecyclerView, finishedRecyclerView;
@@ -46,57 +46,78 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
     private TextView tabActive, tabFinished;
     private TextView textNoActive, textNoFinished;
 
+    public static ChallengeLobbyFragment newInstance(String regionCode, String regionName, boolean allRegions) {
+        ChallengeLobbyFragment fragment = new ChallengeLobbyFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_REGION_NAME, regionName);
+        args.putString(ARG_REGION_CODE, regionCode);
+        args.putBoolean(ARG_ALL_REGIONS, allRegions);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_challenge_lobby);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        Bundle args = getArguments();
+        if (args != null) {
+            regionName = args.getString(ARG_REGION_NAME, "");
+            regionCode = args.getString(ARG_REGION_CODE, "");
+            boolean allRegions = args.getBoolean(ARG_ALL_REGIONS, false);
+            if (allRegions) {
+                regionName = "";
+                regionCode = "";
+            }
+        }
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_challenge_lobby, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
         challengeManager = new ChallengeManager();
         user = FirebaseAuth.getInstance().getCurrentUser();
 
-        Intent intent = getIntent();
-        regionName = intent != null ? intent.getStringExtra("region_name") : "";
-        regionCode = intent != null ? intent.getStringExtra("region_code") : "";
-        boolean allRegions = intent != null && intent.getBooleanExtra("all_regions", false);
-        if (allRegions) {
-            regionName = "";
-            regionCode = "";
-        }
-
-        TopBarHelper.loadAndUpdateTopBar(this);
-
-        ((TextView) findViewById(R.id.textRegionName)).setText(
+        ((TextView) view.findViewById(R.id.textRegionName)).setText(
                 regionName != null && !regionName.isEmpty() ? regionName : "Svi regioni");
 
-        tabActive = (TextView) findViewById(R.id.tabActive);
-        tabFinished = (TextView) findViewById(R.id.tabFinished);
-        textNoActive = findViewById(R.id.textNoActive);
-        textNoFinished = findViewById(R.id.textNoFinished);
+        view.findViewById(R.id.challengeBackButton).setOnClickListener(v -> close());
 
-        activeRecyclerView = findViewById(R.id.activeRecyclerView);
-        activeRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        tabActive = view.findViewById(R.id.tabActive);
+        tabFinished = view.findViewById(R.id.tabFinished);
+        textNoActive = view.findViewById(R.id.textNoActive);
+        textNoFinished = view.findViewById(R.id.textNoFinished);
+
+        activeRecyclerView = view.findViewById(R.id.activeRecyclerView);
+        activeRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         activeAdapter = new ChallengeAdapter(true);
         activeRecyclerView.setAdapter(activeAdapter);
 
-        finishedRecyclerView = findViewById(R.id.finishedRecyclerView);
-        finishedRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        finishedRecyclerView = view.findViewById(R.id.finishedRecyclerView);
+        finishedRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         finishedAdapter = new ChallengeAdapter(false);
         finishedRecyclerView.setAdapter(finishedAdapter);
 
         tabActive.setOnClickListener(v -> selectTab(true));
         tabFinished.setOnClickListener(v -> selectTab(false));
 
-        findViewById(R.id.buttonCreateChallenge).setOnClickListener(v -> showCreateDialog());
+        view.findViewById(R.id.buttonCreateChallenge).setOnClickListener(v -> showCreateDialog());
 
         selectTab(true);
         loadActive();
         loadFinished();
+    }
+
+    private void close() {
+        if (getParentFragment() instanceof RegionsFragment) {
+            ((RegionsFragment) getParentFragment()).closeChallengeLobby();
+        }
     }
 
     private void selectTab(boolean active) {
@@ -132,7 +153,7 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
                     textNoActive.setVisibility(activeChallenges.isEmpty() ? View.VISIBLE : View.GONE);
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        Toast.makeText(requireContext(), "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void loadFinished() {
@@ -145,19 +166,19 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
                     textNoFinished.setVisibility(finishedChallenges.isEmpty() ? View.VISIBLE : View.GONE);
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        Toast.makeText(requireContext(), "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void showCreateDialog() {
         if (user == null) return;
 
-        View view = getLayoutInflater().inflate(R.layout.dialog_create_challenge, null);
-        TextInputEditText starsInput = view.findViewById(R.id.inputBetAmount);
-        TextInputEditText tokensInput = view.findViewById(R.id.inputTokenBet);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_create_challenge, null);
+        TextInputEditText starsInput = dialogView.findViewById(R.id.inputBetAmount);
+        TextInputEditText tokensInput = dialogView.findViewById(R.id.inputTokenBet);
 
-        new MaterialAlertDialogBuilder(this)
+        new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Kreiraj izazov")
-                .setView(view)
+                .setView(dialogView)
                 .setPositiveButton("Kreiraj", (dialog, which) -> {
                     int starsBet = 1;
                     int tokensBet = 0;
@@ -175,9 +196,10 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
                     final int finalStarsBet = starsBet;
                     final int finalTokensBet = tokensBet;
 
-                    String hostRegionName = regionName != null && !regionName.isEmpty() ? regionName
-                            : (getIntent().getStringExtra("region_name") != null
-                            ? getIntent().getStringExtra("region_name") : "Srbija");
+                    final String hostRegionName;
+                    String rawRegion = regionName != null && !regionName.isEmpty() ? regionName
+                            : (getArguments() != null ? getArguments().getString(ARG_REGION_NAME) : null);
+                    hostRegionName = (rawRegion != null && !rawRegion.isEmpty()) ? rawRegion : "Srbija";
 
                     FirebaseFirestore.getInstance()
                             .collection("users")
@@ -192,17 +214,161 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
                                             String msg = "Izazov kreiran!";
                                             if (finalStarsBet > 0) msg += " " + finalStarsBet + " ⭐";
                                             if (finalTokensBet > 0) msg += " " + finalTokensBet + " 🪙";
-                                            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
                                             loadActive();
                                         })
                                         .addOnFailureListener(e ->
-                                                Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                                                Toast.makeText(requireContext(), "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                             })
                             .addOnFailureListener(e ->
-                                    Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                                    Toast.makeText(requireContext(), "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                 })
                 .setNegativeButton("Otkaži", null)
                 .show();
+    }
+
+    private void joinChallenge(String challengeDocId) {
+        if (user == null) return;
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(user.getUid())
+                .get()
+                .addOnSuccessListener(doc -> {
+                    String playerName = doc.getString("username");
+                    if (playerName == null || playerName.isEmpty()) playerName = "Igrač";
+                    challengeManager.joinChallenge(challengeDocId, user.getUid(), playerName)
+                            .addOnSuccessListener(id -> {
+                                Toast.makeText(requireContext(), "Pridružili ste se izazovu!", Toast.LENGTH_SHORT).show();
+                                loadActive();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(requireContext(), "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(requireContext(), "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private void startChallenge(String challengeDocId) {
+        challengeManager.attachToChallenge(challengeDocId);
+        challengeManager.startChallenge()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(requireContext(), "Izazov započet!", Toast.LENGTH_SHORT).show();
+                    loadActive();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(requireContext(), "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private void playChallenge(String challengeDocId) {
+        Intent intent = new Intent(requireActivity(), ChallengePlayActivity.class);
+        intent.putExtra("challenge_id", challengeDocId);
+        startActivity(intent);
+    }
+
+    private void showDetailDialog(DocumentSnapshot doc) {
+        String hostName = doc.getString("hostName");
+        Long starsBet = doc.getLong("starsBet");
+        Long tokensBet = doc.getLong("tokensBet");
+        if (starsBet == null) starsBet = 0L;
+        if (tokensBet == null) tokensBet = 0L;
+        String status = doc.getString("status");
+
+        Map<String, Object> participants = (Map<String, Object>) doc.get("participants");
+        int totalPlayers = participants != null ? participants.size() : 0;
+        long totalStarsPot = starsBet * totalPlayers;
+        long totalTokensPot = tokensBet * totalPlayers;
+
+        View view = getLayoutInflater().inflate(R.layout.dialog_challenge_detail, null);
+
+        ((TextView) view.findViewById(R.id.dialogHostName)).setText(
+                "Domaćin: " + (hostName != null ? hostName : "Nepoznat"));
+
+        StringBuilder betInfo = new StringBuilder("Ulog: ");
+        if (starsBet > 0) betInfo.append(starsBet).append(" ⭐");
+        if (tokensBet > 0) {
+            if (starsBet > 0) betInfo.append(" + ");
+            betInfo.append(tokensBet).append(" 🪙");
+        }
+        betInfo.append(" po igraču");
+        ((TextView) view.findViewById(R.id.dialogBetInfo)).setText(betInfo.toString());
+
+        StringBuilder potInfo = new StringBuilder("Ukupan pot: ");
+        if (totalStarsPot > 0) potInfo.append(totalStarsPot).append(" ⭐");
+        if (totalTokensPot > 0) {
+            if (totalStarsPot > 0) potInfo.append(" + ");
+            potInfo.append(totalTokensPot).append(" 🪙");
+        }
+        ((TextView) view.findViewById(R.id.dialogPotInfo)).setText(potInfo.toString());
+
+        StringBuilder prizeInfo = new StringBuilder();
+        if (totalPlayers > 0) {
+            long winnerStars = (long) (totalStarsPot * 0.75);
+            long winnerTokens = (long) (totalTokensPot * 0.75);
+            prizeInfo.append("1. mesto: ");
+            if (winnerStars > 0) prizeInfo.append(winnerStars).append(" ⭐");
+            if (winnerTokens > 0) {
+                if (winnerStars > 0) prizeInfo.append(" + ");
+                prizeInfo.append(winnerTokens).append(" 🪙");
+            }
+            prizeInfo.append(" (75%)\n");
+            prizeInfo.append("2. mesto: nazad ulog (");
+            if (starsBet > 0) prizeInfo.append(starsBet).append(" ⭐");
+            if (tokensBet > 0) {
+                if (starsBet > 0) prizeInfo.append(" + ");
+                prizeInfo.append(tokensBet).append(" 🪙");
+            }
+            prizeInfo.append(")");
+        }
+        ((TextView) view.findViewById(R.id.dialogPrizeInfo)).setText(prizeInfo.toString());
+
+        StringBuilder playersText = new StringBuilder();
+        if (participants != null && !participants.isEmpty()) {
+            List<PlayerEntry> playerList = new ArrayList<>();
+            for (Map.Entry<String, Object> entry : participants.entrySet()) {
+                Map<String, Object> p = (Map<String, Object>) entry.getValue();
+                String name = p != null ? (String) p.get("playerName") : "?";
+                Object scoreObj = p != null ? p.get("score") : null;
+                Boolean finished = p != null ? (Boolean) p.get("finished") : false;
+                int score = 0;
+                if (scoreObj instanceof Long) score = ((Long) scoreObj).intValue();
+                playerList.add(new PlayerEntry(name, score, finished != null && finished));
+            }
+
+            playerList.sort((a, b) -> Integer.compare(b.score, a.score));
+
+            int rank = 1;
+            for (PlayerEntry pe : playerList) {
+                playersText.append(rank).append(". ").append(pe.name);
+                if (pe.finished) {
+                    playersText.append(" — ").append(pe.score).append(" poena");
+                } else {
+                    playersText.append(" — još nije završio/la");
+                }
+                playersText.append("\n");
+                rank++;
+            }
+        } else {
+            playersText.append("Nema igrača");
+        }
+        ((TextView) view.findViewById(R.id.dialogPlayers)).setText(playersText.toString().trim());
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Detalji izazova")
+                .setView(view)
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private static class PlayerEntry {
+        final String name;
+        final int score;
+        final boolean finished;
+
+        PlayerEntry(String name, int score, boolean finished) {
+            this.name = name;
+            this.score = score;
+            this.finished = finished;
+        }
     }
 
     private class ChallengeAdapter extends RecyclerView.Adapter<ChallengeAdapter.ViewHolder> {
@@ -340,149 +506,5 @@ public class ChallengeLobbyActivity extends AppCompatActivity {
                 actionButton = v.findViewById(R.id.buttonAction);
             }
         }
-    }
-
-    private void showDetailDialog(DocumentSnapshot doc) {
-        String hostName = doc.getString("hostName");
-        Long starsBet = doc.getLong("starsBet");
-        Long tokensBet = doc.getLong("tokensBet");
-        if (starsBet == null) starsBet = 0L;
-        if (tokensBet == null) tokensBet = 0L;
-        String status = doc.getString("status");
-
-        Map<String, Object> participants = (Map<String, Object>) doc.get("participants");
-        int totalPlayers = participants != null ? participants.size() : 0;
-        long totalStarsPot = starsBet * totalPlayers;
-        long totalTokensPot = tokensBet * totalPlayers;
-
-        View view = getLayoutInflater().inflate(R.layout.dialog_challenge_detail, null);
-
-        ((TextView) view.findViewById(R.id.dialogHostName)).setText(
-                "Domaćin: " + (hostName != null ? hostName : "Nepoznat"));
-
-        StringBuilder betInfo = new StringBuilder("Ulog: ");
-        if (starsBet > 0) betInfo.append(starsBet).append(" ⭐");
-        if (tokensBet > 0) {
-            if (starsBet > 0) betInfo.append(" + ");
-            betInfo.append(tokensBet).append(" 🪙");
-        }
-        betInfo.append(" po igraču");
-        ((TextView) view.findViewById(R.id.dialogBetInfo)).setText(betInfo.toString());
-
-        StringBuilder potInfo = new StringBuilder("Ukupan pot: ");
-        if (totalStarsPot > 0) potInfo.append(totalStarsPot).append(" ⭐");
-        if (totalTokensPot > 0) {
-            if (totalStarsPot > 0) potInfo.append(" + ");
-            potInfo.append(totalTokensPot).append(" 🪙");
-        }
-        ((TextView) view.findViewById(R.id.dialogPotInfo)).setText(potInfo.toString());
-
-        StringBuilder prizeInfo = new StringBuilder();
-        if (totalPlayers > 0) {
-            long winnerStars = (long) (totalStarsPot * 0.75);
-            long winnerTokens = (long) (totalTokensPot * 0.75);
-            prizeInfo.append("1. mesto: ");
-            if (winnerStars > 0) prizeInfo.append(winnerStars).append(" ⭐");
-            if (winnerTokens > 0) {
-                if (winnerStars > 0) prizeInfo.append(" + ");
-                prizeInfo.append(winnerTokens).append(" 🪙");
-            }
-            prizeInfo.append(" (75%)\n");
-            prizeInfo.append("2. mesto: nazad ulog (");
-            if (starsBet > 0) prizeInfo.append(starsBet).append(" ⭐");
-            if (tokensBet > 0) {
-                if (starsBet > 0) prizeInfo.append(" + ");
-                prizeInfo.append(tokensBet).append(" 🪙");
-            }
-            prizeInfo.append(")");
-        }
-        ((TextView) view.findViewById(R.id.dialogPrizeInfo)).setText(prizeInfo.toString());
-
-        StringBuilder playersText = new StringBuilder();
-        if (participants != null && !participants.isEmpty()) {
-            List<PlayerEntry> playerList = new ArrayList<>();
-            for (Map.Entry<String, Object> entry : participants.entrySet()) {
-                Map<String, Object> p = (Map<String, Object>) entry.getValue();
-                String name = p != null ? (String) p.get("playerName") : "?";
-                Object scoreObj = p != null ? p.get("score") : null;
-                Boolean finished = p != null ? (Boolean) p.get("finished") : false;
-                int score = 0;
-                if (scoreObj instanceof Long) score = ((Long) scoreObj).intValue();
-                playerList.add(new PlayerEntry(name, score, finished != null && finished));
-            }
-
-            playerList.sort((a, b) -> Integer.compare(b.score, a.score));
-
-            int rank = 1;
-            for (PlayerEntry pe : playerList) {
-                playersText.append(rank).append(". ").append(pe.name);
-                if (pe.finished) {
-                    playersText.append(" — ").append(pe.score).append(" poena");
-                } else {
-                    playersText.append(" — još nije završio/la");
-                }
-                playersText.append("\n");
-                rank++;
-            }
-        } else {
-            playersText.append("Nema igrača");
-        }
-        ((TextView) view.findViewById(R.id.dialogPlayers)).setText(playersText.toString().trim());
-
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Detalji izazova")
-                .setView(view)
-                .setPositiveButton("OK", null)
-                .show();
-    }
-
-    private static class PlayerEntry {
-        final String name;
-        final int score;
-        final boolean finished;
-
-        PlayerEntry(String name, int score, boolean finished) {
-            this.name = name;
-            this.score = score;
-            this.finished = finished;
-        }
-    }
-
-    private void joinChallenge(String challengeDocId) {
-        if (user == null) return;
-        FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(user.getUid())
-                .get()
-                .addOnSuccessListener(doc -> {
-                    String playerName = doc.getString("username");
-                    if (playerName == null || playerName.isEmpty()) playerName = "Igrač";
-                    challengeManager.joinChallenge(challengeDocId, user.getUid(), playerName)
-                            .addOnSuccessListener(id -> {
-                                Toast.makeText(this, "Pridružili ste se izazovu!", Toast.LENGTH_SHORT).show();
-                                loadActive();
-                            })
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-    }
-
-    private void startChallenge(String challengeDocId) {
-        challengeManager.attachToChallenge(challengeDocId);
-        challengeManager.startChallenge()
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Izazov započet!", Toast.LENGTH_SHORT).show();
-                    loadActive();
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Greška: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-    }
-
-    private void playChallenge(String challengeDocId) {
-        Intent intent = new Intent(this, ChallengePlayActivity.class);
-        intent.putExtra("challenge_id", challengeDocId);
-        startActivity(intent);
     }
 }
