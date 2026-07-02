@@ -29,7 +29,7 @@ public class ChatRepository {
                 .document(regionCode)
                 .collection("messages")
                 .add(message)
-                .addOnSuccessListener(aVoid -> notifyOfflineUsers(regionCode, senderName, text));
+                .addOnSuccessListener(aVoid -> notifyOfflineUsers(regionCode, senderId, senderName, text));
     }
 
     public Query getMessagesQuery(String regionCode) {
@@ -39,7 +39,7 @@ public class ChatRepository {
                 .orderBy("timestamp", Query.Direction.ASCENDING);
     }
 
-    private void notifyOfflineUsers(String regionCode, String senderName, String messageText) {
+    private void notifyOfflineUsers(String regionCode, String senderId, String senderName, String messageText) {
         String regionName = RegionRepository.getCodeToName(regionCode);
         if (regionName == null) return;
 
@@ -50,6 +50,7 @@ public class ChatRepository {
                     long fiveMinutesAgo = System.currentTimeMillis() - 5 * 60 * 1000;
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         String targetUid = doc.getId();
+                        if (targetUid.equals(senderId)) continue;
                         Timestamp lastSeen = doc.getTimestamp("lastSeen");
                         if (lastSeen == null || lastSeen.toDate().getTime() < fiveMinutesAgo) {
                             Map<String, Object> notif = new HashMap<>();
