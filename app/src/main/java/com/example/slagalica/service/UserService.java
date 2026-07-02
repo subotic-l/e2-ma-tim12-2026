@@ -108,6 +108,18 @@ public class UserService {
         return repository.applyMatchRewards(user.getUid(), delta);
     }
 
+    /**
+     * Recalculates and updates the player's league based on current star count.
+     * Call this after any star-changing operation outside of regular match rewards.
+     */
+    public Task<Void> syncLeague() {
+        FirebaseUser user = repository.getCurrentUser();
+        if (user == null) {
+            return Tasks.forException(new IllegalStateException("No authenticated user"));
+        }
+        return repository.syncLeague(user.getUid());
+    }
+
     /** Updates the lastSeen timestamp for the authenticated user. */
     public Task<Void> updateLastSeen() {
         FirebaseUser user = repository.getCurrentUser();

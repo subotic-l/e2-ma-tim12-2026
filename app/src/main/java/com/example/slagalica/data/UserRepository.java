@@ -305,6 +305,23 @@ public class UserRepository {
         });
     }
 
+    /**
+     * Reads the user's current stars and updates the league field accordingly.
+     * Call this after any star-changing operation that is not already handled
+     * inside applyMatchRewards.
+     */
+    public Task<Void> syncLeague(String uid) {
+        DocumentReference ref = db.collection(USERS_COLLECTION).document(uid);
+        return db.runTransaction((Transaction.Function<Void>) transaction -> {
+            DocumentSnapshot snap = transaction.get(ref);
+            Long stars = snap.getLong("stars");
+            if (stars == null) stars = 0L;
+            long newLeague = LeagueHelper.getLeagueIndex(stars);
+            transaction.update(ref, "league", newLeague);
+            return null;
+        });
+    }
+
     /** Updates the lastSeen timestamp to the server time. */
     public Task<Void> updateLastSeen(String uid) {
         return db.collection(USERS_COLLECTION)
