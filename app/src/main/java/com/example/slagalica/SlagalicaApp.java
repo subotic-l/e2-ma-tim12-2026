@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import com.cloudinary.android.MediaManager;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,6 +52,15 @@ public class SlagalicaApp extends Application {
             @Override public void onActivityStopped(Activity activity) {}
             @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
             @Override public void onActivityDestroyed(Activity activity) {}
+        });
+
+        // Start watching the user's stars → league whenever the auth state changes
+        FirebaseAuth.getInstance().addAuthStateListener(auth -> {
+            if (auth.getCurrentUser() != null) {
+                LeagueWatcher.startWatching(this);
+            } else {
+                LeagueWatcher.stopWatching();
+            }
         });
     }
 
