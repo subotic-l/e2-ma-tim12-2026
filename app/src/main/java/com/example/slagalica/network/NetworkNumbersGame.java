@@ -631,9 +631,6 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         }
         disableAllInputs();
         writeSubmission();
-        if (iAmFinisher) {
-            checkBothSubmitted();
-        }
     }
 
     private void writeSubmission() {
@@ -646,15 +643,19 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         long p1s = gs.containsKey("p1Submitted") ? (long) gs.get("p1Submitted") : 0;
         long p2s = gs.containsKey("p2Submitted") ? (long) gs.get("p2Submitted") : 0;
 
-        if (p1s != 0 && p2s != 0 && iAmFinisher) {
+        if (p1s != 0 && p2s != 0) {
             double p1r = gs.containsKey("p1Result") ? ((Number) gs.get("p1Result")).doubleValue() : 0;
             double p2r = gs.containsKey("p2Result") ? ((Number) gs.get("p2Result")).doubleValue() : 0;
             int targetVal = gs.containsKey("target") ? ((Long) gs.get("target")).intValue() : 0;
 
             int[] scores = calculateRoundScore(p1r, p2r, targetVal, revealer,
                     p1s != 0, p2s != 0);
-            int r1s = round == 1 ? scores[0] : round1Score + scores[0];
-            int r2s = round == 1 ? scores[1] : round2Score + scores[1];
+
+            int fsR1 = gs.containsKey("round1Score") ? ((Long) gs.get("round1Score")).intValue() : 0;
+            int fsR2 = gs.containsKey("round2Score") ? ((Long) gs.get("round2Score")).intValue() : 0;
+            int r1s = round == 1 ? scores[0] : fsR1 + scores[0];
+            int r2s = round == 1 ? scores[1] : fsR2 + scores[1];
+
             round1Score = r1s;
             round2Score = r2s;
 
@@ -666,11 +667,6 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
             res.put("round2Score", (long) r2s);
             sm.updateGameState(res);
         }
-    }
-
-    private void checkBothSubmitted() {
-        // Called by finisher after submitting locally.
-        // The next onStateChanged will trigger checkAndScore.
     }
 
     private int[] calculateRoundScore(double p1r, double p2r, int target,

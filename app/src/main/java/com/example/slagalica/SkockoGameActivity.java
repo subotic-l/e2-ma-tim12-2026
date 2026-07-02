@@ -165,7 +165,7 @@ public class SkockoGameActivity extends AppCompatActivity {
 
             for (int col = 0; col < 4; col++) {
                 ImageView iv = new ImageView(this);
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(160, 160);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(180, 180);
                 params.setMargins(3, 3, 3, 3);
                 iv.setLayoutParams(params);
                 iv.setBackgroundResource(R.drawable.cell_background);
@@ -189,7 +189,7 @@ public class SkockoGameActivity extends AppCompatActivity {
             submitBtn.setEnabled(false);
             submitBtn.setVisibility(row == 0 ? View.VISIBLE : View.INVISIBLE);
 
-            LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(100, 100);
+            LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(110, 110);
             btnParams.setMargins(6, 0, 4, 0);
             submitBtn.setLayoutParams(btnParams);
 
@@ -221,7 +221,7 @@ public class SkockoGameActivity extends AppCompatActivity {
 
         for (int i = 0; i < 4; i++) {
             ImageView fb = new ImageView(this);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(44, 44);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(48, 48);
             params.setMargins(3, 3, 3, 3);
             fb.setLayoutParams(params);
             fb.setBackgroundResource(R.drawable.feedback_circle);

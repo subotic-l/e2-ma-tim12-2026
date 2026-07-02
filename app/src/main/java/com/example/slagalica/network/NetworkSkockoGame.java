@@ -884,7 +884,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
 
             for (int c = 0; c < TOTAL_COLS; c++) {
                 ImageView iv = new ImageView(this);
-                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(160, 130);
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(180, 150);
                 p.setMargins(2, 2, 2, 2);
                 iv.setLayoutParams(p);
                 iv.setPadding(cellPad, cellPad, cellPad, cellPad);
@@ -923,7 +923,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
             sb.setPadding(0, 0, 0, 0);
             sb.setEnabled(false);
             sb.setVisibility(View.GONE);
-            LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(90, 90);
+            LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(100, 100);
             bp.setMargins(4, 0, 2, 0);
             sb.setLayoutParams(bp);
             final int fr2 = r;
@@ -939,7 +939,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
             fb2.setOrientation(LinearLayout.HORIZONTAL);
             for (int i = 0; i < 4; i++) {
                 ImageView fv = new ImageView(this);
-                LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(28, 28);
+                LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(32, 32);
                 fp.setMargins(1, 1, 1, 1);
                 fv.setLayoutParams(fp);
                 fv.setBackgroundResource(R.drawable.feedback_circle);
@@ -1015,7 +1015,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
         stealBtn.setGravity(Gravity.CENTER);
         stealBtn.setPadding(0, 0, 0, 0);
         stealBtn.setEnabled(false);
-        LinearLayout.LayoutParams sbp2 = new LinearLayout.LayoutParams(75, 75);
+        LinearLayout.LayoutParams sbp2 = new LinearLayout.LayoutParams(85, 85);
         sbp2.setMargins(2, 0, 2, 0);
         stealBtn.setLayoutParams(sbp2);
         stealBtn.setOnClickListener(v -> onSubmitSteal());
@@ -1030,7 +1030,7 @@ public class NetworkSkockoGame extends AppCompatActivity {
         stealDots = new ImageView[4];
         for (int i = 0; i < 4; i++) {
             ImageView fv = new ImageView(this);
-            LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(25, 25);
+            LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(30, 30);
             fp.setMargins(1, 1, 1, 1);
             fv.setLayoutParams(fp);
             fv.setBackgroundResource(R.drawable.feedback_circle);

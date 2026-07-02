@@ -302,7 +302,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
             lastPhase = syncPhase;
             onPhaseChanged();
             // onPhaseChanged resets pendingGuess, restore after phase init
-            if (playing && isMyTurn) {
+            if (playing && isMyTurn && pendingGuess) {
                 btnSkip.setVisibility(View.VISIBLE);
             }
         }
@@ -315,7 +315,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
         }
 
         if (playing) {
-            btnSkip.setVisibility(isMyTurn ? View.VISIBLE : View.GONE);
+            btnSkip.setVisibility(isMyTurn && pendingGuess ? View.VISIBLE : View.GONE);
             if (pendingGuess) {
                 tvInstr.setText(isMyTurn ? "Pogodi kolonu ili konačno rešenje" : "Protivnik pogađa...");
             } else if (isMyTurn) {
