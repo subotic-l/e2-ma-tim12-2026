@@ -23,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.slagalica.R;
+import com.example.slagalica.data.AvatarHelper;
 import com.example.slagalica.data.GameSessionManager;
 
 import java.util.ArrayList;
@@ -268,20 +269,22 @@ public class NetworkSkockoGame extends AppCompatActivity {
         String p2n = (String) full.get("player2Name");
         String p1a = (String) full.get("player1Avatar");
         String p2a = (String) full.get("player2Avatar");
+        String p1id = (String) full.get("player1Id");
+        String p2id = (String) full.get("player2Id");
         if (me == 1) {
             tvMyName.setText(p1n != null ? p1n : "Igrač 1");
             tvOppName.setText(p2n != null ? p2n : "Protivnik");
             tvMyName.setTextColor(0xFF1565C0);
             tvOppName.setTextColor(0xFFE65100);
-            if (p1a != null) loadAvatar(ivMyAvatar, p1a);
-            if (p2a != null) loadAvatar(ivOppAvatar, p2a);
+            if (p1a != null) loadAvatar(ivMyAvatar, p1id, p1a);
+            if (p2a != null) loadAvatar(ivOppAvatar, p2id, p2a);
         } else {
             tvMyName.setText(p2n != null ? p2n : "Igrač 2");
             tvOppName.setText(p1n != null ? p1n : "Protivnik");
             tvMyName.setTextColor(0xFFE65100);
             tvOppName.setTextColor(0xFF1565C0);
-            if (p1a != null) loadAvatar(ivOppAvatar, p1a);
-            if (p2a != null) loadAvatar(ivMyAvatar, p2a);
+            if (p1a != null) loadAvatar(ivOppAvatar, p1id, p1a);
+            if (p2a != null) loadAvatar(ivMyAvatar, p2id, p2a);
         }
     }
 
@@ -1072,14 +1075,8 @@ public class NetworkSkockoGame extends AppCompatActivity {
         return o instanceof String ? (String) o : PHASE_INIT;
     }
 
-    private void loadAvatar(ImageView iv, String url) {
-        if (iv == null || isDestroyed()) return;
-        Glide.with(this)
-                .load(url != null && !url.isEmpty() ? url : R.drawable.default_profile)
-                .apply(RequestOptions.circleCropTransform())
-                .placeholder(R.drawable.default_profile)
-                .error(R.drawable.default_profile)
-                .into(iv);
+    private void loadAvatar(ImageView iv, String uid, String url) {
+        AvatarHelper.loadAvatar(iv, uid, url);
     }
 
     // ===== SERIALIZATION =====

@@ -365,6 +365,8 @@ public class FriendsFragment extends Fragment {
                         entry.stars = doc.getLong("stars") != null ? doc.getLong("stars") : 0;
                         entry.league = doc.getLong("league") != null ? doc.getLong("league") : 0;
                         entry.avatarUrl = doc.getString("avatarUrl");
+                        Long rankVal = doc.getLong("lastMonthRegionRank");
+                        entry.regionRank = rankVal != null ? rankVal.intValue() : 0;
                         return new LeaderboardManager()
                                 .getPlayerRank(LeaderboardManager.Period.MONTHLY, entry.friendId);
                     }
@@ -404,6 +406,7 @@ public class FriendsFragment extends Fragment {
         long stars;
         long league;
         int monthlyRank;
+        int regionRank;
 
         FriendEntry(String friendId, String username, String avatarUrl) {
             this.friendId = friendId;
@@ -412,6 +415,7 @@ public class FriendsFragment extends Fragment {
             this.stars = 0;
             this.league = 0;
             this.monthlyRank = -1;
+            this.regionRank = 0;
         }
     }
 
@@ -451,6 +455,16 @@ public class FriendsFragment extends Fragment {
             }
 
 
+
+            if (entry.regionRank == 1) {
+                holder.avatarImage.setBackgroundResource(R.drawable.profile_frame_gold);
+            } else if (entry.regionRank == 2) {
+                holder.avatarImage.setBackgroundResource(R.drawable.profile_frame_silver);
+            } else if (entry.regionRank == 3) {
+                holder.avatarImage.setBackgroundResource(R.drawable.profile_frame_bronze);
+            } else {
+                holder.avatarImage.setBackgroundResource(R.drawable.profile_frame);
+            }
 
             if (holder.monthlyRankText != null) {
                 if (entry.monthlyRank > 0) {

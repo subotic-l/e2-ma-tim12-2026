@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.slagalica.data.AvatarHelper;
 import com.example.slagalica.data.LeaderboardManager;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -321,11 +322,7 @@ public class RangListaFragment extends Fragment {
             h.playerName.setText(e.getUserName() != null ? e.getUserName() : "Nepoznat");
             h.starCount.setText(String.valueOf(e.getStars()));
             h.leagueIcon.setImageResource(LeagueHelper.getLeagueIconByIndex(e.getLeague()));
-            if (e.getAvatarUrl() != null && !e.getAvatarUrl().isEmpty()) {
-                NetworkMatchActivity.loadAvatarStatic(h.avatar, e.getAvatarUrl());
-            } else {
-                h.avatar.setImageResource(R.drawable.ic_profile);
-            }
+            AvatarHelper.loadAvatar(h.avatar, e.getUserId(), e.getAvatarUrl());
 
             if (rank <= 3) {
                 int color = rank == 1 ? 0xFFFFD700 : (rank == 2 ? 0xFFC0C0C0 : 0xFFCD7F32);

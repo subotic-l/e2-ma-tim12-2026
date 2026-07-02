@@ -14,6 +14,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.slagalica.R;
 import com.example.slagalica.StepByStepGame;
+import com.example.slagalica.data.AvatarHelper;
 import com.example.slagalica.data.GameSessionManager;
 import com.example.slagalica.data.StepByStepRepository;
 import com.google.android.material.button.MaterialButton;
@@ -62,7 +63,7 @@ public class NetworkStepByStep extends AppCompatActivity {
 
     private boolean isTimerRunning = false;
     private boolean roundEnding = false;
-    private String myName, myAvatar;
+    private String myName, myAvatar, myPlayerId;
     private int p1StepFound = -1, p2StepFound = -1;
     private boolean p1StealSuccess = false, p2StealSuccess = false;
 
@@ -96,6 +97,7 @@ public class NetworkStepByStep extends AppCompatActivity {
         myName = i.getStringExtra("myPlayerName");
         if (myName == null || myName.isEmpty()) myName = "Igra\u010D 1";
         myAvatar = i.getStringExtra("myAvatarUrl");
+        myPlayerId = i.getStringExtra("myPlayerId");
 
         repo = new StepByStepRepository();
 
@@ -135,6 +137,8 @@ public class NetworkStepByStep extends AppCompatActivity {
                 String p2n = (String) full.get("player2Name");
                 String p1a = (String) full.get("player1Avatar");
                 String p2a = (String) full.get("player2Avatar");
+                String p1id = (String) full.get("player1Id");
+                String p2id = (String) full.get("player2Id");
 
                 runOnUiThread(() -> {
                     if (me == 1) {
@@ -142,15 +146,15 @@ public class NetworkStepByStep extends AppCompatActivity {
                         myNameView.setTextColor(0xFF1565C0);
                         oppNameView.setText(p2n != null ? p2n : "Protivnik");
                         oppNameView.setTextColor(0xFFE65100);
-                        loadAvatar(myAvatarView, myAvatar);
-                        if (p2a != null) loadAvatar(oppAvatarView, p2a);
+                        loadAvatar(myAvatarView, myPlayerId, myAvatar);
+                        if (p2a != null) loadAvatar(oppAvatarView, p2id, p2a);
                     } else {
                         myNameView.setText(p2n != null ? p2n : myName);
                         myNameView.setTextColor(0xFFE65100);
                         oppNameView.setText(p1n != null ? p1n : "Protivnik");
                         oppNameView.setTextColor(0xFF1565C0);
-                        loadAvatar(myAvatarView, myAvatar);
-                        if (p1a != null) loadAvatar(oppAvatarView, p1a);
+                        loadAvatar(myAvatarView, myPlayerId, myAvatar);
+                        if (p1a != null) loadAvatar(oppAvatarView, p1id, p1a);
                     }
                 });
 
@@ -440,13 +444,8 @@ public class NetworkStepByStep extends AppCompatActivity {
         }, 1500);
     }
 
-    private void loadAvatar(android.widget.ImageView iv, String url) {
-        Glide.with(this)
-                .load(url != null && !url.isEmpty() ? url : R.drawable.default_profile)
-                .apply(RequestOptions.circleCropTransform())
-                .placeholder(R.drawable.default_profile)
-                .error(R.drawable.default_profile)
-                .into(iv);
+    private void loadAvatar(android.widget.ImageView iv, String uid, String url) {
+        AvatarHelper.loadAvatar(iv, uid, url);
     }
 
     @Override

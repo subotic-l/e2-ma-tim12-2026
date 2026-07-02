@@ -20,6 +20,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.slagalica.Question;
 import com.example.slagalica.R;
+import com.example.slagalica.data.AvatarHelper;
 import com.example.slagalica.data.GameSessionManager;
 import com.example.slagalica.data.QuestionRepository;
 
@@ -56,7 +57,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
     private CountDownTimer timer;
     private long remain = Q_TIME_MS;
 
-    private String myName, myAvatar;
+    private String myName, myAvatar, myPlayerId;
     //private int totalGames;
 
     @Override
@@ -99,6 +100,7 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         myName = i.getStringExtra("myPlayerName");
         if (myName == null || myName.isEmpty()) myName = "Igrač 1";
         myAvatar = i.getStringExtra("myAvatarUrl");
+        myPlayerId = i.getStringExtra("myPlayerId");
 
         for (Button b : btns) b.setVisibility(View.GONE);
         timerView.setVisibility(View.GONE);
@@ -127,21 +129,23 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
                 String p2n = (String) full.get("player2Name");
                 String p1a = (String) full.get("player1Avatar");
                 String p2a = (String) full.get("player2Avatar");
+                String p1id = (String) full.get("player1Id");
+                String p2id = (String) full.get("player2Id");
 
                 if (me == 1) {
                     myNameView.setText(p1n != null ? p1n : myName);
                     myNameView.setTextColor(0xFF1565C0);
                     oppNameView.setText(p2n != null ? p2n : "Protivnik");
                     oppNameView.setTextColor(0xFFE65100);
-                    loadAvatar(myAvatarView, myAvatar);
-                    if (p2a != null) loadAvatar(oppAvatarView, p2a);
+                    loadAvatar(myAvatarView, myPlayerId, myAvatar);
+                    if (p2a != null) loadAvatar(oppAvatarView, p2id, p2a);
                 } else {
                     myNameView.setText(p2n != null ? p2n : myName);
                     myNameView.setTextColor(0xFFE65100);
                     oppNameView.setText(p1n != null ? p1n : "Protivnik");
                     oppNameView.setTextColor(0xFF1565C0);
-                    loadAvatar(myAvatarView, myAvatar);
-                    if (p1a != null) loadAvatar(oppAvatarView, p1a);
+                    loadAvatar(myAvatarView, myPlayerId, myAvatar);
+                    if (p1a != null) loadAvatar(oppAvatarView, p1id, p1a);
                 }
 
                 Map<String, Object> gs = (Map<String, Object>) full.get("gameState");
@@ -183,13 +187,8 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         };
     }
 
-    private void loadAvatar(android.widget.ImageView iv, String url) {
-        Glide.with(this)
-                .load(url != null && !url.isEmpty() ? url : R.drawable.default_profile)
-                .apply(RequestOptions.circleCropTransform())
-                .placeholder(R.drawable.default_profile)
-                .error(R.drawable.default_profile)
-                .into(iv);
+    private void loadAvatar(android.widget.ImageView iv, String uid, String url) {
+        AvatarHelper.loadAvatar(iv, uid, url);
     }
 
     private void process(Map<String, Object> gs) {
