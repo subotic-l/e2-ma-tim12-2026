@@ -66,6 +66,17 @@
             app:backgroundTint="@color/button_default_color"
             app:fabSize="normal" />
 
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/challengeFab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="16dp"
+            android:src="@android:drawable/ic_menu_myplaces"
+            android:contentDescription="Izazov"
+            app:backgroundTint="#FF9800"
+            app:fabSize="normal" />
+
         <FrameLayout
             android:id="@+id/chatContainer"
             android:layout_width="match_parent"

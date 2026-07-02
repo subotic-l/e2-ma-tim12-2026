@@ -29,7 +29,7 @@ public class ChallengeManager {
     private ListenerRegistration listener;
 
     public static final int MAX_PARTICIPANTS = 4;
-    public static final int MIN_PARTICIPANTS = 2;
+    public static final int MIN_PARTICIPANTS = 4;
 
     public ChallengeManager() {
         this.db = FirebaseFirestore.getInstance();
@@ -155,8 +155,11 @@ public class ChallengeManager {
     }
 
     public Task<List<DocumentSnapshot>> findActiveChallenges(String region, String excludePlayerId) {
-        return db.collection(CHALLENGES_COLLECTION)
-                .whereEqualTo("region", region)
+        com.google.firebase.firestore.Query query = db.collection(CHALLENGES_COLLECTION);
+        if (region != null && !region.isEmpty()) {
+            query = query.whereEqualTo("region", region);
+        }
+        return query
                 .whereIn("status", Arrays.asList("waiting", "playing"))
                 .get()
                 .continueWith(task -> {
@@ -170,6 +173,19 @@ public class ChallengeManager {
                             result.add(doc);
                         }
                         return result;
+                    }
+                    throw task.getException();
+                });
+    }
+
+    public Task<List<DocumentSnapshot>> findFinishedChallenges(String excludePlayerId) {
+        return db.collection(CHALLENGES_COLLECTION)
+                .whereEqualTo("status", "finished")
+                .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .get()
+                .continueWith(task -> {
+                    if (task.isSuccessful()) {
+                        return task.getResult().getDocuments();
                     }
                     throw task.getException();
                 });

@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -9,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.slagalica.data.RegionRepository;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -63,6 +65,7 @@ public class RegionsFragment extends Fragment {
     private final Map<String, List<List<GeoPoint>>> regionPolygonsCache = new HashMap<>();
 
     private FloatingActionButton chatFab;
+    private FloatingActionButton challengeFab;
     private View chatContainer;
     private ChatFragment chatFragment;
 
@@ -114,6 +117,7 @@ public class RegionsFragment extends Fragment {
         listTab = view.findViewById(R.id.listTab);
         textDateRange = view.findViewById(R.id.textRegionDateRange);
         chatFab = view.findViewById(R.id.chatFab);
+        challengeFab = view.findViewById(R.id.challengeFab);
         chatContainer = view.findViewById(R.id.chatContainer);
 
         Calendar cal = Calendar.getInstance();
@@ -147,6 +151,8 @@ public class RegionsFragment extends Fragment {
         updateChatFabVisibility();
 
         chatFab.setOnClickListener(v -> openChat());
+
+        challengeFab.setOnClickListener(v -> openChallenges());
 
         loadRegionData();
     }
@@ -208,6 +214,32 @@ public class RegionsFragment extends Fragment {
             chatContainer.setVisibility(View.GONE);
             chatFab.setVisibility(View.VISIBLE);
         }, 250);
+    }
+
+    private void openChallenges() {
+        if (currentUser == null) {
+            Toast.makeText(requireContext(),
+                    "Morate biti prijavljeni za izazov", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (currentUserRegionName == null) {
+            Toast.makeText(requireContext(),
+                    "Region nije učitan. Pokušajte ponovo.",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String regionCode = RegionRepository.getNameToCode(currentUserRegionName);
+        if (regionCode == null) return;
+
+        String regionName = RegionRepository.getCodeToName(regionCode);
+
+        Intent intent = new Intent(requireContext(), ChallengeLobbyActivity.class);
+        intent.putExtra("region_code", regionCode);
+        intent.putExtra("region_name", regionName);
+        intent.putExtra("all_regions", true);
+        startActivity(intent);
     }
 
     private void initRegionData() {
