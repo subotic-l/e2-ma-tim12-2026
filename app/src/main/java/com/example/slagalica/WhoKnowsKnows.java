@@ -34,9 +34,9 @@ public class WhoKnowsKnows extends AppCompatActivity {
     private TextView questionTextView;
     private MaterialButton[] answerButtons;
     private int score = 0;
+    private int baseScore = 0;
     private boolean resultSent = false;
     private QuestionRepository questionRepository;
-    private TextView playerNameView, playerScoreView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,11 +50,9 @@ public class WhoKnowsKnows extends AppCompatActivity {
         });
         timerText = findViewById(R.id.timerText);
         questionTextView = findViewById(R.id.questionTextView);
-        playerNameView = findViewById(R.id.playerOneName);
-        playerScoreView = findViewById(R.id.playerOneScore);
         String pn = getIntent().getStringExtra("playerName");
-        playerNameView.setText(pn != null ? pn : "Ko zna zna");
-        playerScoreView.setText("0");
+        baseScore = getIntent().getIntExtra("totalScore", 0);
+        MatchUiHelper.bindHeader(this, pn != null && !pn.isEmpty() ? pn : "Igrač", baseScore);
         answerButtons = new MaterialButton[] {
                 findViewById(R.id.answerButton1),
                 findViewById(R.id.answerButton2),
@@ -253,6 +251,6 @@ public class WhoKnowsKnows extends AppCompatActivity {
     }
 
     private void updateScoreHeader() {
-        playerScoreView.setText(String.valueOf(score));
+        MatchUiHelper.updateScore(this, baseScore + score);
     }
 }

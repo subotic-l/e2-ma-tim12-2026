@@ -39,8 +39,8 @@ public class SkockoGameActivity extends AppCompatActivity {
     private android.os.CountDownTimer countDownTimer;
     private TextView timerText;
     private int score = 0;
+    private int baseScore = 0;
     private boolean resultSent = false;
-    private TextView playerNameView, playerScoreView;
 
     private final String[] symbols = {"S", "T", "K", "P", "H", "Z"};
     private final int[] drawableIds = {
@@ -65,11 +65,9 @@ public class SkockoGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        playerNameView = findViewById(R.id.playerOneName);
-        playerScoreView = findViewById(R.id.playerOneScore);
         String pn = getIntent().getStringExtra("playerName");
-        playerNameView.setText(pn != null ? pn : "Skocko");
-        playerScoreView.setText("0");
+        baseScore = getIntent().getIntExtra("totalScore", 0);
+        MatchUiHelper.bindHeader(this, pn != null && !pn.isEmpty() ? pn : "Igrač", baseScore);
 
         timerText = findViewById(R.id.timerText);
         startTimer();
@@ -378,7 +376,7 @@ public class SkockoGameActivity extends AppCompatActivity {
             } else {
                 score = 10;
             }
-            playerScoreView.setText(String.valueOf(score));
+            MatchUiHelper.updateScore(this, baseScore + score);
         } else {
             score = 0;
         }

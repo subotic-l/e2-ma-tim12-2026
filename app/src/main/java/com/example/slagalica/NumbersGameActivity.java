@@ -53,7 +53,6 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
     private int baseScore = 0;
     private boolean resultSent = false;
     private boolean submitted = false;
-    private TextView playerNameView, playerScoreView;
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -85,12 +84,9 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
         });
         targetTextView = findViewById(R.id.targetTextView);
         expressionTextView = findViewById(R.id.expressionTextView);
-        playerNameView = findViewById(R.id.playerOneName);
-        playerScoreView = findViewById(R.id.playerOneScore);
         String pn = getIntent().getStringExtra("playerName");
-        playerNameView.setText(pn != null ? pn : "Moj broj");
         baseScore = getIntent().getIntExtra("totalScore", 0);
-        playerScoreView.setText(String.valueOf(baseScore));
+        MatchUiHelper.bindHeader(this, pn != null && !pn.isEmpty() ? pn : "Igrač", baseScore);
         stopTimerTextView = findViewById(R.id.stopTimerTextView);
         timerText = findViewById(R.id.timerText);
         stopTimerRow = findViewById(R.id.stopTimerRow);
@@ -426,7 +422,7 @@ public class NumbersGameActivity extends AppCompatActivity implements SensorEven
                     Toast.makeText(this, "Pokušaj: " + formatResult(result), Toast.LENGTH_SHORT).show();
                     score = 0;
                 }
-                playerScoreView.setText(String.valueOf(baseScore + score));
+                MatchUiHelper.updateScore(this, baseScore + score);
             } catch (Exception e) {
                 Toast.makeText(this, "Neispravan izraz", Toast.LENGTH_SHORT).show();
             }

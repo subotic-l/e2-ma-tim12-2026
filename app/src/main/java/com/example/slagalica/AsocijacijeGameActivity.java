@@ -44,8 +44,8 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
     private boolean[][] openedFields = new boolean[4][4];
     private int[] openedCounts = new int[4];
     private int score = 0;
+    private int baseScore = 0;
     private boolean resultSent = false;
-    private TextView playerNameView, playerScoreView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,11 +57,9 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        playerNameView = findViewById(R.id.playerOneName);
-        playerScoreView = findViewById(R.id.playerOneScore);
         String pn = getIntent().getStringExtra("playerName");
-        playerNameView.setText(pn != null ? pn : "Asocijacije");
-        playerScoreView.setText("0");
+        baseScore = getIntent().getIntExtra("totalScore", 0);
+        MatchUiHelper.bindHeader(this, pn != null && !pn.isEmpty() ? pn : "Igrač", baseScore);
 
         setupViews();
         setupClickListeners();
@@ -189,7 +187,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
         int unopened = 4 - openedCounts[groupIndex];
         int points = GROUP_POINTS + Math.max(0, unopened);
         score += points;
-        playerScoreView.setText(String.valueOf(score));
+        MatchUiHelper.updateScore(this, baseScore + score);
         solvedGroups[groupIndex] = true;
         for (int i = 0; i < 4; i++) {
             wordButtons[groupIndex][i].setText(groups[groupIndex][i]);
@@ -214,7 +212,7 @@ public class AsocijacijeGameActivity extends AppCompatActivity {
             String guess = input.getText().toString().trim().toUpperCase();
             if (guess.equals(finalWord)) {
                 score += FINAL_POINTS;
-                playerScoreView.setText(String.valueOf(score));
+                MatchUiHelper.updateScore(this, baseScore + score);
                 if (countDownTimer != null) {
                     countDownTimer.cancel();
                 }
