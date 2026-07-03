@@ -1,5 +1,6 @@
 package com.example.slagalica;
 
+import com.example.slagalica.data.FcmHelper;
 import com.example.slagalica.data.RegionRepository;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
@@ -63,6 +64,7 @@ public class ChatRepository {
                                     .document(targetUid)
                                     .collection("notifications")
                                     .add(notif);
+                            FcmHelper.sendChatPush(targetUid, senderName, messageText, regionCode);
                         }
                     }
                 });

@@ -29,11 +29,13 @@ public class FcmHelper {
     private static final String KEY_ACCESS_TOKEN = "fcm_access_token";
     private static final String KEY_TOKEN_EXPIRY = "fcm_token_expiry";
 
+    private static Context appContext;
     private static String projectId;
     private static String clientEmail;
     private static PrivateKey privateKey;
 
     public static void initialize(Context context) {
+        appContext = context.getApplicationContext();
         try {
             InputStream is = context.getAssets().open("firebase_service_account.json");
             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
@@ -143,6 +145,87 @@ public class FcmHelper {
                             Log.d(TAG, "FCM response code=" + code + " body=" + respBody);
                         } catch (Exception e) {
                             Log.e(TAG, "sendFriendInvitationPush error: " + e.getMessage(), e);
+                        }
+                    });
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to read target user: " + e.getMessage(), e));
+    }
+
+    public static void sendChatPush(String targetUid, String senderName, String messageText, String regionCode) {
+        if (projectId == null || clientEmail == null || privateKey == null) {
+            Log.w(TAG, "sendChatPush skipped - not initialized");
+            return;
+        }
+
+        Log.d(TAG, "sendChatPush to uid=" + targetUid + " from=" + senderName);
+
+        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(targetUid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) {
+                        Log.w(TAG, "Target user doc not found");
+                        return;
+                    }
+                    String token = doc.getString("fcmToken");
+                    if (token == null || token.isEmpty()) {
+                        Log.w(TAG, "Target user has no fcmToken");
+                        return;
+                    }
+
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        try {
+                            String accessToken = getAccessToken(appContext);
+
+                            JSONObject notification = new JSONObject();
+                            notification.put("title", senderName);
+                            notification.put("body", messageText);
+
+                            JSONObject messageData = new JSONObject();
+                            messageData.put("type", "chat_message");
+                            messageData.put("channelId", "chat");
+                            messageData.put("title", senderName);
+                            messageData.put("body", messageText);
+                            messageData.put("regionCode", regionCode);
+
+                            JSONObject message = new JSONObject();
+                            message.put("token", token);
+                            message.put("notification", notification);
+                            message.put("data", messageData);
+
+                            JSONObject root = new JSONObject();
+                            root.put("message", message);
+
+                            String endpoint = "https://fcm.googleapis.com/v1/projects/"
+                                    + projectId + "/messages:send";
+
+                            URL url = new URL(endpoint);
+                            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                            conn.setRequestMethod("POST");
+                            conn.setRequestProperty("Authorization", "Bearer " + accessToken);
+                            conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                            conn.setDoOutput(true);
+
+                            OutputStream os = conn.getOutputStream();
+                            os.write(root.toString().getBytes(StandardCharsets.UTF_8));
+                            os.close();
+
+                            int code = conn.getResponseCode();
+                            BufferedReader reader = new BufferedReader(
+                                    new InputStreamReader(conn.getErrorStream() != null
+                                            ? conn.getErrorStream() : conn.getInputStream(),
+                                            StandardCharsets.UTF_8));
+                            StringBuilder rb = new StringBuilder();
+                            String l;
+                            while ((l = reader.readLine()) != null) rb.append(l);
+                            reader.close();
+                            String respBody = rb.toString();
+                            conn.disconnect();
+
+                            Log.d(TAG, "sendChatPush FCM response code=" + code + " body=" + respBody);
+                        } catch (Exception e) {
+                            Log.e(TAG, "sendChatPush error: " + e.getMessage(), e);
                         }
                     });
                 })

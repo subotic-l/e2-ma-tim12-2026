@@ -40,6 +40,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         if ("friend_invitation".equals(type)) {
             handleFriendInvitation(data);
+        } else if ("chat_message".equals(type)) {
+            handleChatMessage(data);
         } else {
             String channelId = data.getOrDefault("channelId", SlagalicaApp.CHANNEL_GENERAL);
             String title = data.getOrDefault("title", "Slagalica");
@@ -47,6 +49,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             String uid = data.getOrDefault("uid", null);
             NotificationHelper.show(this, channelId, title, body, uid);
         }
+    }
+
+    private void handleChatMessage(Map<String, String> data) {
+        String title = data.getOrDefault("title", "Slagalica");
+        String body = data.getOrDefault("body", "");
+        NotificationHelper.show(this, SlagalicaApp.CHANNEL_CHAT, title, body, null);
     }
 
     private void handleFriendInvitation(Map<String, String> data) {
