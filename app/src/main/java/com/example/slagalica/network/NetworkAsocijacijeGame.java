@@ -204,6 +204,11 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
             public void onStateChanged(Map<String, Object> full) {
                 if (finished || isFinishing()) return;
                 try {
+                    String status = (String) full.get("status");
+                    if ("forfeit".equals(status)) {
+                        opponentLeft = true;
+                    }
+
                     Map<String, Object> gs = (Map<String, Object>) full.get("gameState");
                     if (gs == null || gs.isEmpty()) return;
 
@@ -287,7 +292,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     // ───────────────────────────── UI ─────────────────────────────────────
 
     private void updateUI() {
-        isMyTurn = syncActivePlayer == me;
+        isMyTurn = syncActivePlayer == me || opponentLeft;
 
         boolean r1     = PHASE_R1.equals(syncPhase);
         boolean r2     = PHASE_R2.equals(syncPhase);
@@ -515,7 +520,7 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     // ───────────────────────────── KLIKOVI ────────────────────────────────
 
     private void onWordClick(int g, int f) {
-        if (finished || !isMyTurn || pendingGuess) return;
+        if (finished || (!(isMyTurn || opponentLeft)) || pendingGuess) return;
         if (!PHASE_R1.equals(syncPhase) && !PHASE_R2.equals(syncPhase)) return;
         if (syncOpened[g][f] || syncSolved[g] != 0) return;
 
@@ -537,12 +542,12 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     }
 
     private void onColumnClick(int g) {
-        if (finished || !pendingGuess || syncSolved[g] != 0) return;
+        if (finished || (!(isMyTurn || opponentLeft)) || !pendingGuess || syncSolved[g] != 0) return;
         showInputDialog(g, false);
     }
 
     private void onFinalClick() {
-        if (finished || !pendingGuess) return;
+        if (finished || (!(isMyTurn || opponentLeft)) || !pendingGuess) return;
         showInputDialog(-1, true);
     }
 
@@ -625,6 +630,12 @@ public class NetworkAsocijacijeGame extends AppCompatActivity {
     private void switchTurn() {
         // Prebaci turn na protivnika — timer se NE restartuje, samo activePlayer
         pendingGuess = false;
+        if (opponentLeft) {
+            Map<String, Object> u = new HashMap<>();
+            u.put("activePlayer", (long) me);
+            sm.updateGameState(u);
+            return;
+        }
         int next = (syncActivePlayer == 1) ? 2 : 1;
         Map<String, Object> u = new HashMap<>();
         u.put("activePlayer", (long) next);

@@ -43,6 +43,7 @@ public class NetworkStepByStep extends AppCompatActivity {
     private CountDownTimer timer;
 
     private int step = 0;
+    private int finalPts = 0;
     private int round = 0;
     private boolean myTurn = false;
     private boolean stealPhase = false;
@@ -63,6 +64,7 @@ public class NetworkStepByStep extends AppCompatActivity {
 
     private boolean isTimerRunning = false;
     private boolean roundEnding = false;
+    private boolean opponentLeft = false;
     private String myName, myAvatar, myPlayerId;
     private int p1StepFound = -1, p2StepFound = -1;
     private boolean p1StealSuccess = false, p2StealSuccess = false;
@@ -133,6 +135,11 @@ public class NetworkStepByStep extends AppCompatActivity {
             public void onStateChanged(Map<String, Object> full) {
                 if (done) return;
 
+                String status = (String) full.get("status");
+                if ("forfeit".equals(status)) {
+                    opponentLeft = true;
+                }
+
                 String p1n = (String) full.get("player1Name");
                 String p2n = (String) full.get("player2Name");
                 String p1a = (String) full.get("player1Avatar");
@@ -201,7 +208,7 @@ public class NetworkStepByStep extends AppCompatActivity {
 
                 runOnUiThread(() -> updateUI());
 
-                if (myTurn && !"finished".equals(phase) && !roundEnding) {
+                if ((myTurn || (opponentLeft && !roundEnding)) && !"finished".equals(phase) && !roundEnding) {
                     if (!isTimerRunning) {
                         startTimer();
                     }
@@ -292,7 +299,7 @@ public class NetworkStepByStep extends AppCompatActivity {
         }
 
         if (roundEnding) {
-            pointsView.setText("Ta\u010Dno! +" + (stealPhase ? 5 : Math.max(0, 20 - step * 2)) + " poena");
+            pointsView.setText("Ta\u010Dno! +" + (stealPhase ? 5 : finalPts + " poena"));
         } else if (myTurn) {
             if (stealPhase) {
                 pointsView.setText("Tvoj poku\u0161aj: 5 poena");
@@ -311,16 +318,21 @@ public class NetworkStepByStep extends AppCompatActivity {
 
         int totalMy = previousP1Score + (me == 1 ? myScore : oppScore);
         int totalOpp = previousP2Score + (me == 1 ? oppScore : myScore);
-        myScoreView.setText(String.valueOf(totalMy));
-        oppScoreView.setText(String.valueOf(totalOpp));
+        if (me == 1) {
+            myScoreView.setText(String.valueOf(totalMy));
+            oppScoreView.setText(String.valueOf(totalOpp));
+        }else{
+            myScoreView.setText(String.valueOf(totalOpp));
+            oppScoreView.setText(String.valueOf(totalMy));
+        }
     }
 
     private void startTimer() {
         if (timer != null) timer.cancel();
         isTimerRunning = true;
 
-        long duration = stealPhase ? STEAL_TIME_MS : TOTAL_TIME_MS;
-        long firstTrigger = stealPhase ? 0 : duration - 10000;
+        long duration = (!myTurn && opponentLeft) ? 5000 : (stealPhase ? STEAL_TIME_MS : TOTAL_TIME_MS);
+        long firstTrigger = (stealPhase || duration <= 10000) ? 0 : duration - 10000;
 
         timer = new CountDownTimer(duration, 1000) {
             private long nextTrigger = firstTrigger;
@@ -342,7 +354,13 @@ public class NetworkStepByStep extends AppCompatActivity {
             public void onFinish() {
                 timerView.setText("0");
                 timerView.setTextColor(0xFFFF0000);
-                runOnUiThread(() -> next());
+                runOnUiThread(() -> {
+                    if (opponentLeft && !myTurn) {
+                        advanceForOpponentTimeout();
+                    } else {
+                        next();
+                    }
+                });
             }
         }.start();
     }
@@ -360,6 +378,7 @@ public class NetworkStepByStep extends AppCompatActivity {
         String g = input.getText() != null ? input.getText().toString().trim() : "";
         if (g.equalsIgnoreCase(answer)) {
             int pts = stealPhase ? 5 : Math.max(0, 20 - step * 2);
+            finalPts = pts;
             addScore(pts);
             roundEnding = true;
             stopTimer();
@@ -396,6 +415,18 @@ public class NetworkStepByStep extends AppCompatActivity {
         }
     }
 
+    private void advanceForOpponentTimeout() {
+        if (stealPhase) {
+            advanceRound();
+            return;
+        }
+        Map<String, Object> up = new HashMap<>();
+        up.put("step", 6L);
+        up.put("phase", "steal");
+        up.put("currentPlayer", (long) me);
+        sm.updateGameState(up);
+    }
+
     private void addScore(int pts) {
         String key = me == 1 ? "p1Score" : "p2Score";
         int newScore = myScore + pts;
@@ -408,6 +439,7 @@ public class NetworkStepByStep extends AppCompatActivity {
             Map<String, Object> up = new HashMap<>();
             up.put("round", 1L);
             up.put("step", 0L);
+            up.put("finalPts", 0L);
             up.put("phase", "play");
             up.put("currentPlayer", 2L);
             if (!round2Clues.isEmpty()) up.put("clues", round2Clues);

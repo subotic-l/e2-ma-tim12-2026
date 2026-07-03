@@ -146,6 +146,11 @@ public class NetworkWhoKnowsKnows extends AppCompatActivity {
         return new GameSessionManager.StateListener() {
             public void onStateChanged(Map<String, Object> full) {
                 if (done || isFinishing()) return;
+                String status = (String) full.get("status");
+                if ("forfeit".equals(status)) {
+                    opponentLeft = true;
+                    iAmFinisher = true;
+                }
 
                 String p1n = (String) full.get("player1Name");
                 String p2n = (String) full.get("player2Name");

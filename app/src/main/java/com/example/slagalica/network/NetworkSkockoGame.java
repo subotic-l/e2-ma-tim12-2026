@@ -221,6 +221,12 @@ public class NetworkSkockoGame extends AppCompatActivity {
             public void onStateChanged(Map<String, Object> full) {
                 if (finished || isFinishing()) return;
                 try {
+                    String status = (String) full.get("status");
+                    if ("forfeit".equals(status)) {
+                        opponentLeft = true;
+                        iAmFinisher = true;
+                    }
+
                     Map<String, Object> gs = (Map<String, Object>) full.get("gameState");
                     if (gs == null || gs.isEmpty()) return;
 
@@ -250,6 +256,9 @@ public class NetworkSkockoGame extends AppCompatActivity {
                         boolean prevR2SD = syncR2SDone;
                         syncState(gs);
                         updateUI();
+                        if (opponentLeft && !isMyTurn && (timer == null || timerSec > 5)) {
+                            startTimer(5);
+                        }
                         if (syncR1Won && !prevR1W)
                             Toast.makeText(NetworkSkockoGame.this,
                                     "Kombinacija pogodjena u rundi 1!",
@@ -526,8 +535,9 @@ public class NetworkSkockoGame extends AppCompatActivity {
         stealCol = 0;
         boolean isP = PHASE_R1_PLAY.equals(syncPhase) || PHASE_R2_PLAY.equals(syncPhase);
         boolean isS = PHASE_R1_STEAL.equals(syncPhase) || PHASE_R2_STEAL.equals(syncPhase);
-        if (isP) startTimer(ROUND_TIME);
-        else if (isS) startTimer(STEAL_TIME);
+        int shortTime = 5;
+        if (isP) startTimer(opponentLeft && !isMyTurn ? shortTime : ROUND_TIME);
+        else if (isS) startTimer(opponentLeft && !isMyTurn ? shortTime : STEAL_TIME);
     }
 
     private void startTimer(int sec) {

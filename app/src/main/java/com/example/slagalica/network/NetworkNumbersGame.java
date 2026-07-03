@@ -60,9 +60,10 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
     private double myResult = 0;
 
     private int round1Score = 0, round2Score = 0;
-    private int lastDisplayedR1Score = 0, lastDisplayedR2Score = 0;
     private int p1FoundExactCount = 0;
     private int p2FoundExactCount = 0;
+    private int lastHandledResultRound = -1;
+    private int lastFinalizationScheduledRound = -1;
 
     private TextView timerView, targetView, exprView, myNameView, oppNameView, myScoreView, oppScoreView;
     private android.widget.ImageView myAvatarView, oppAvatarView;
@@ -285,6 +286,13 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         return new GameSessionManager.StateListener() {
             public void onStateChanged(Map<String, Object> full) {
                 if (done || isFinishing()) return;
+                String status = (String) full.get("status");
+                if ("forfeit".equals(status)) {
+                    opponentLeft = true;
+                    if (!iAmFinisher) {
+                        iAmFinisher = true;
+                    }
+                }
 
                 String p1n = (String) full.get("player1Name");
                 String p2n = (String) full.get("player2Name");
@@ -362,6 +370,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         playInitialized = false;
         phaseCompleted = false;
         transitionScheduled = false;
+        lastFinalizationScheduledRound = -1;
         tokens.clear();
         openParensCount = 0;
         usedNumberButtons.clear();
@@ -405,6 +414,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         phaseCompleted = false;
         submitted = false;
         transitionScheduled = false;
+        lastFinalizationScheduledRound = -1;
         exprView.setText("");
         for (MaterialButton b : numBtns) { b.setText(""); b.setAlpha(1f); }
         if (iAmRevealer) {
@@ -443,7 +453,7 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         }
 
         if (phaseCompleted) return;
-        checkAndScore(gs);
+        scheduleRoundFinalizationIfReady(gs);
     }
 
     private void handleResult(Map<String, Object> gs) {
@@ -460,13 +470,24 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
 
         int r1Score = gs.containsKey("round1Score") ? ((Long) gs.get("round1Score")).intValue() : 0;
         int r2Score = gs.containsKey("round2Score") ? ((Long) gs.get("round2Score")).intValue() : 0;
+
+        if (lastHandledResultRound == round && round1Score == r1Score && round2Score == r2Score) {
+            return;
+        }
+        lastHandledResultRound = round;
+
         round1Score = r1Score;
         round2Score = r2Score;
 
-        int totalMy = previousP1Score + (me == 1 ? r1Score : r2Score);
-        int totalOpp = previousP2Score + (me == 1 ? r2Score : r1Score);
+        int totalP1 = gs.containsKey("player1Score") ? ((Number) gs.get("player1Score")).intValue() : previousP1Score + r1Score;
+        int totalP2 = gs.containsKey("player2Score") ? ((Number) gs.get("player2Score")).intValue() : previousP2Score + r2Score;
+        int totalMy = me == 1 ? totalP1 : totalP2;
+        int totalOpp = me == 1 ? totalP2 : totalP1;
         myScoreView.setText(String.valueOf(totalMy));
         oppScoreView.setText(String.valueOf(totalOpp));
+
+        String msg = "Runda " + round + " zavrsena";
+        instrView.setText(msg);
 
         int target = gs.containsKey("target") ? ((Long) gs.get("target")).intValue() : 0;
         double p1r = gs.containsKey("p1Result") ? ((Number) gs.get("p1Result")).doubleValue() : 0;
@@ -478,22 +499,6 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         boolean p2Exact = p2sub && Math.abs(p2r - target) < 0.0001;
         if (p1Exact) p1FoundExactCount++;
         if (p2Exact) p2FoundExactCount++;
-
-        String myRes = formatResult(me == 1 ? p1r : p2r, target, me == 1 ? p1sub : p2sub);
-        String oppRes = formatResult(me == 1 ? p2r : p1r, target, me == 1 ? p2sub : p1sub);
-
-        int p1RoundScore = r1Score - lastDisplayedR1Score;
-        int p2RoundScore = r2Score - lastDisplayedR2Score;
-        lastDisplayedR1Score = r1Score;
-        lastDisplayedR2Score = r2Score;
-
-        int myRoundScore = me == 1 ? p1RoundScore : p2RoundScore;
-        int oppRoundScore = me == 1 ? p2RoundScore : p1RoundScore;
-
-        String msg = "Runda " + round + " - Cilj: " + target + "\n"
-                + "Ti: " + myRes + " (" + myRoundScore + " poena)\n"
-                + "Protivnik: " + oppRes + " (" + oppRoundScore + " poena)";
-        instrView.setText(msg);
 
         if (iAmFinisher && !transitionScheduled) {
             transitionScheduled = true;
@@ -507,13 +512,6 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
                 }
             }, 7000);
         }
-    }
-
-    private String formatResult(double result, int target, boolean submitted) {
-        if (!submitted) return "nije uneo";
-        boolean exact = Math.abs(result - target) < 0.0001;
-        if (exact) return String.format("%.0f (ta\u010Dno!)", result);
-        return String.format("%.0f (razlika %.0f)", result, Math.abs(result - target));
     }
 
     // --- Round Management ---
@@ -638,60 +636,28 @@ public class NetworkNumbersGame extends AppCompatActivity implements SensorEvent
         sm.updateField("gameState." + p + "Result", myResult);
     }
 
-    private void checkAndScore(Map<String, Object> gs) {
+    private void scheduleRoundFinalizationIfReady(Map<String, Object> gs) {
+        if (phaseCompleted) return;
+
         long p1s = gs.containsKey("p1Submitted") ? (long) gs.get("p1Submitted") : 0;
         long p2s = gs.containsKey("p2Submitted") ? (long) gs.get("p2Submitted") : 0;
 
-        if (p1s != 0 && p2s != 0) {
-            double p1r = gs.containsKey("p1Result") ? ((Number) gs.get("p1Result")).doubleValue() : 0;
-            double p2r = gs.containsKey("p2Result") ? ((Number) gs.get("p2Result")).doubleValue() : 0;
-            int targetVal = gs.containsKey("target") ? ((Long) gs.get("target")).intValue() : 0;
-
-            int[] scores = calculateRoundScore(p1r, p2r, targetVal, revealer,
-                    p1s != 0, p2s != 0);
-
-            int fsR1 = gs.containsKey("round1Score") ? ((Long) gs.get("round1Score")).intValue() : 0;
-            int fsR2 = gs.containsKey("round2Score") ? ((Long) gs.get("round2Score")).intValue() : 0;
-            int r1s = round == 1 ? scores[0] : fsR1 + scores[0];
-            int r2s = round == 1 ? scores[1] : fsR2 + scores[1];
-
-            round1Score = r1s;
-            round2Score = r2s;
-
-            phaseCompleted = true;
-            Map<String, Object> res = new HashMap<>();
-            res.put("phase", "result");
-            res.put("round", (long) round);
-            res.put("round1Score", (long) r1s);
-            res.put("round2Score", (long) r2s);
-            sm.updateGameState(res);
-        }
-    }
-
-    private int[] calculateRoundScore(double p1r, double p2r, int target,
-                                       int roundRevealer, boolean p1sub, boolean p2sub) {
-        boolean p1Hit = p1sub && Math.abs(p1r - target) < 0.0001;
-        boolean p2Hit = p2sub && Math.abs(p2r - target) < 0.0001;
-
-        if (roundRevealer == 1) {
-            if (p1Hit) return new int[]{10, 0};
-            if (p2Hit) return new int[]{0, 10};
-        } else {
-            if (p2Hit) return new int[]{0, 10};
-            if (p1Hit) return new int[]{10, 0};
+        boolean canFinalize = (p1s != 0 && p2s != 0) || (opponentLeft && (p1s != 0 || p2s != 0));
+        if (!canFinalize || lastFinalizationScheduledRound == round) {
+            return;
         }
 
-        if (!p1sub && !p2sub) return new int[]{0, 0};
-        if (!p1sub) return new int[]{0, 5};
-        if (!p2sub) return new int[]{5, 0};
-
-        double d1 = Math.abs(p1r - target);
-        double d2 = Math.abs(p2r - target);
-
-        if (d1 < d2) return new int[]{5, 0};
-        if (d2 < d1) return new int[]{0, 5};
-
-        return roundRevealer == 1 ? new int[]{5, 0} : new int[]{0, 5};
+        lastFinalizationScheduledRound = round;
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (done || phaseCompleted) return;
+            sm.finalizeNumbersRound(round).addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    phaseCompleted = true;
+                } else {
+                    lastFinalizationScheduledRound = -1;
+                }
+            });
+        }, 2500);
     }
 
     // --- UI Helpers ---

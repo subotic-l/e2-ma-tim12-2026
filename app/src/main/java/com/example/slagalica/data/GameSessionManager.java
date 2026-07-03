@@ -3,6 +3,7 @@ package com.example.slagalica.data;
 import android.util.Log;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -159,7 +160,7 @@ public class GameSessionManager {
                     Map<String, Object> data = snapshot.getData();
                     if (stateListener != null) {
                         String status = (String) data.get("status");
-                        if ("finished".equals(status) || "forfeit".equals(status)) {
+                        if ("finished".equals(status)) {
                             stateListener.onMatchEnded(data);
                         } else {
                             stateListener.onStateChanged(data);
@@ -190,6 +191,95 @@ public class GameSessionManager {
         if (matchDocRef == null) return;
         matchDocRef.update(fieldPath, value)
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to update " + fieldPath, e));
+    }
+
+    public void updateFields(Map<String, Object> updates) {
+        if (matchDocRef == null || updates == null || updates.isEmpty()) return;
+        matchDocRef.update(updates)
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to update match fields", e));
+    }
+
+    public Task<Void> finalizeNumbersRound(int round) {
+        if (matchDocRef == null) return Tasks.forResult(null);
+
+        return db.runTransaction((Transaction.Function<Void>) transaction -> {
+            DocumentSnapshot snapshot = transaction.get(matchDocRef);
+            if (!snapshot.exists()) return null;
+
+            Map<String, Object> full = snapshot.getData();
+            if (full == null) return null;
+
+            Map<String, Object> gs = (Map<String, Object>) full.get("gameState");
+            if (gs == null || gs.isEmpty()) return null;
+
+                String status = full.get("status") instanceof String ? (String) full.get("status") : "playing";
+                boolean forfeit = "forfeit".equals(status);
+
+            long finalizedRound = gs.get("scoreFinalizedRound") instanceof Long
+                    ? (Long) gs.get("scoreFinalizedRound") : 0L;
+            if (finalizedRound >= round) return null;
+
+            long p1s = gs.get("p1Submitted") instanceof Long ? (Long) gs.get("p1Submitted") : 0L;
+            long p2s = gs.get("p2Submitted") instanceof Long ? (Long) gs.get("p2Submitted") : 0L;
+                if (!forfeit && (p1s == 0 || p2s == 0)) return null;
+                if (forfeit && p1s == 0 && p2s == 0) return null;
+
+            double p1r = gs.get("p1Result") instanceof Number ? ((Number) gs.get("p1Result")).doubleValue() : 0d;
+            double p2r = gs.get("p2Result") instanceof Number ? ((Number) gs.get("p2Result")).doubleValue() : 0d;
+            int target = gs.get("target") instanceof Long ? ((Long) gs.get("target")).intValue() : 0;
+            int revealer = gs.get("revealer") instanceof Long ? ((Long) gs.get("revealer")).intValue() : 1;
+
+            int[] roundScores = calculateNumbersRoundScore(p1r, p2r, target, revealer, p1s != 0, p2s != 0);
+            int currentRoundP1 = round == 1 ? roundScores[0] : getInt(gs.get("round1Score")) + roundScores[0];
+            int currentRoundP2 = round == 1 ? roundScores[1] : getInt(gs.get("round2Score")) + roundScores[1];
+
+            int currentTotalP1 = getInt(full.get("player1Score"));
+            int currentTotalP2 = getInt(full.get("player2Score"));
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("player1Score", currentTotalP1 + roundScores[0]);
+            updates.put("player2Score", currentTotalP2 + roundScores[1]);
+            updates.put("gameState.phase", "result");
+            updates.put("gameState.round", (long) round);
+            updates.put("gameState.round1Score", (long) currentRoundP1);
+            updates.put("gameState.round2Score", (long) currentRoundP2);
+            updates.put("gameState.scoreFinalizedRound", (long) round);
+            transaction.update(matchDocRef, updates);
+            return null;
+        });
+    }
+
+    private int getInt(Object value) {
+        if (value instanceof Long) return ((Long) value).intValue();
+        if (value instanceof Integer) return (Integer) value;
+        if (value instanceof Number) return ((Number) value).intValue();
+        return 0;
+    }
+
+    private int[] calculateNumbersRoundScore(double p1r, double p2r, int target,
+                                             int roundRevealer, boolean p1sub, boolean p2sub) {
+        boolean p1Hit = p1sub && Math.abs(p1r - target) < 0.0001;
+        boolean p2Hit = p2sub && Math.abs(p2r - target) < 0.0001;
+
+        if (roundRevealer == 1) {
+            if (p1Hit) return new int[]{10, 0};
+            if (p2Hit) return new int[]{0, 10};
+        } else {
+            if (p2Hit) return new int[]{0, 10};
+            if (p1Hit) return new int[]{10, 0};
+        }
+
+        if (!p1sub && !p2sub) return new int[]{0, 0};
+        if (!p1sub) return new int[]{0, 5};
+        if (!p2sub) return new int[]{5, 0};
+
+        double d1 = Math.abs(p1r - target);
+        double d2 = Math.abs(p2r - target);
+
+        if (d1 < d2) return new int[]{5, 0};
+        if (d2 < d1) return new int[]{0, 5};
+
+        return roundRevealer == 1 ? new int[]{5, 0} : new int[]{0, 5};
     }
 
     public void finishCurrentGame(int gameIndex, int player1GameScore, int player2GameScore,

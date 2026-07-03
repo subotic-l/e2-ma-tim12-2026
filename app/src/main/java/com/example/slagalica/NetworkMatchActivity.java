@@ -129,7 +129,13 @@ public class NetworkMatchActivity extends AppCompatActivity {
 
     private void handleState(Map<String, Object> state) {
         String status = (String) state.get("status");
-        if ("finished".equals(status) || "forfeit".equals(status)) {
+        if ("forfeit".equals(status)) {
+            networkStatusText.setText("Protivnik je napustio partiju. Nastavljaš sam.");
+            waitingProgressBar.setVisibility(android.view.View.GONE);
+            return;
+        }
+
+        if ("finished".equals(status)) {
             showFinalSummary(state);
             return;
         }

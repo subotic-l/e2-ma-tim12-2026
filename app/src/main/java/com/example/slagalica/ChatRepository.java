@@ -48,7 +48,7 @@ public class ChatRepository {
                 .whereEqualTo("region", regionName)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    long fiveMinutesAgo = System.currentTimeMillis() - 5 * 60 * 1000;
+                    long fiveMinutesAgo = System.currentTimeMillis() - 1 * 60 * 1000; // 1 minute in milliseconds, for testing purposes
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         String targetUid = doc.getId();
                         if (targetUid.equals(senderId)) continue;

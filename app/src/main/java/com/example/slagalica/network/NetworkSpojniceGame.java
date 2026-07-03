@@ -213,6 +213,12 @@ public class NetworkSpojniceGame extends AppCompatActivity {
             public void onStateChanged(Map<String, Object> full) {
                 if (finished || isFinishing()) return;
 
+                String status = (String) full.get("status");
+                if ("forfeit".equals(status)) {
+                    opponentLeft = true;
+                    iAmFinisher = true;
+                }
+
                 String p1n = (String) full.get("player1Name");
                 String p2n = (String) full.get("player2Name");
                 String p1a = (String) full.get("player1Avatar");
@@ -276,6 +282,9 @@ public class NetworkSpojniceGame extends AppCompatActivity {
                 runOnUiThread(() -> {
                     syncFromState(gs);
                     updateUI();
+                    if (opponentLeft && !isMyTurn && !finished && (!timerRunning || remainingSec > 5)) {
+                        startTimer(5);
+                    }
                 });
             }
 
@@ -480,7 +489,7 @@ public class NetworkSpojniceGame extends AppCompatActivity {
         }
 
         // Both players start the timer so they see the same countdown
-        startTimer(ROUND_TIME);
+        startTimer(opponentLeft && !isMyTurn ? 5 : ROUND_TIME);
     }
 
     private void startRound1() {
