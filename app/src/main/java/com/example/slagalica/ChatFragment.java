@@ -171,6 +171,8 @@ public class ChatFragment extends Fragment {
 
         String name = senderName != null ? senderName : "Korisnik";
         chatRepository.sendMessage(regionCode, currentUser.getUid(), name, text);
+        new com.example.slagalica.data.DailyMissionManager()
+                .markMissionDone(currentUser.getUid(), com.example.slagalica.data.DailyMissionManager.Mission.SEND_CHAT);
         chatInput.setText("");
     }
 
